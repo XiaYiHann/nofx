@@ -216,6 +216,17 @@ func (cs *CryptoService) GetPublicKeyPEM() string {
 	return string(publicKeyPEM)
 }
 
+// SetPrivateKey sets the private key for the CryptoService.
+func (cs *CryptoService) SetPrivateKey(privateKey *rsa.PrivateKey) {
+	cs.privateKey = privateKey
+	cs.publicKey = &privateKey.PublicKey
+}
+
+// GetPublicKey returns the public key for the CryptoService.
+func (cs *CryptoService) GetPublicKey() *rsa.PublicKey {
+	return cs.publicKey
+}
+
 func (cs *CryptoService) EncryptForStorage(plaintext string, aadParts ...string) (string, error) {
 	if plaintext == "" {
 		return "", nil
