@@ -861,7 +861,6 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 		}
 	}
 
-<<<<<<< HEAD
 	// 🔥 热重载指标配置：如果trader正在运行且配置有更新，立即应用新配置
 	if len(req.IndicatorConfig) > 0 {
 		var indicatorConfig market.IndicatorConfig
@@ -874,8 +873,6 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 		}
 	}
 
-=======
->>>>>>> fc8a4d3d (fix(stats): fixed the PNL calculation (#963))
 	// 🔄 从内存中移除旧的trader实例，以便重新加载最新配置
 	s.traderManager.RemoveTrader(traderID)
 
