@@ -267,11 +267,11 @@ func (m *WSMonitor) processKlineUpdate(symbol string, wsData KlineWSData, _time 
 	klineDataMap.Store(symbol, klines)
 }
 
-func (m *WSMonitor) GetCurrentKlines(symbol string, _time string) ([]Kline, error) {
+func (m *WSMonitor) GetCurrentKlines(symbol string, duration string) ([]Kline, error) {
 	// 获取对应时间框架的数据映射
-	klineDataMap := m.getKlineDataMap(_time)
+	klineDataMap := m.getKlineDataMap(duration)
 	if klineDataMap == nil {
-		return nil, fmt.Errorf("不支持的时间框架: %s", _time)
+		return nil, fmt.Errorf("不支持的时间框架: %s", duration)
 	}
 
 	// 对每一个进来的symbol检测是否存在内类 是否的话就订阅它
@@ -279,20 +279,21 @@ func (m *WSMonitor) GetCurrentKlines(symbol string, _time string) ([]Kline, erro
 	if !exists {
 		// 如果Ws数据未初始化完成时,单独使用api获取 - 兼容性代码 (防止在未初始化完成是,已经有交易员运行)
 		apiClient := NewAPIClient()
-		klines, err := apiClient.GetKlines(symbol, _time, 100)
+		klines, err := apiClient.GetKlines(symbol, duration, 100)
 		if err != nil {
-			return nil, fmt.Errorf("获取%v K线失败: %v", _time, err)
+			return nil, fmt.Errorf("获取%v K线失败: %v", duration, err)
 		}
 
 		// 动态缓存进缓存
 		klineDataMap.Store(strings.ToUpper(symbol), klines)
 
 		// 订阅 WebSocket 流
-		subStr := m.subscribeSymbol(symbol, _time)
+		subStr := m.subscribeSymbol(symbol, duration)
 		subErr := m.combinedClient.subscribeStreams(subStr)
-		log.Printf("动态订阅流: %v (时间框架: %s)", subStr, _time)
+		log.Printf("动态订阅流: %v (时间框架: %s)", subStr, duration)
 		if subErr != nil {
-			log.Printf("警告: 动态订阅%v K线失败: %v (使用API数据)", _time, subErr)
+			log.Printf("警告: 动态订阅%v K线失败: %v (使用API数据)", duration, subErr)
+		}
 		}
 
 		// ✅ FIX: 返回深拷贝而非引用
