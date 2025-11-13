@@ -294,7 +294,7 @@ func (m *WSMonitor) GetCurrentKlines(symbol string, duration string) ([]Kline, e
 		if subErr != nil {
 			log.Printf("警告: 动态订阅%v K线失败: %v (使用API数据)", duration, subErr)
 		}
-		}
+
 
 		// ✅ FIX: 返回深拷贝而非引用
 		result := make([]Kline, len(klines))

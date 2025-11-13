@@ -35,6 +35,8 @@ type AccountSnapshot struct {
 	PositionCount         int     `json:"position_count"`
 	MarginUsedPct         float64 `json:"margin_used_pct"`
 	InitialBalance        float64 `json:"initial_balance"` // 记录当时的初始余额基准
+	TotalPnL              float64 `json:"total_pnl"`
+	TotalPnLPct           float64 `json:"total_pnl_pct"`
 }
 
 // PositionSnapshot 持仓快照

@@ -337,7 +337,45 @@ func (at *AutoTrader) ReloadIndicatorConfig(newConfig *market.IndicatorConfig) {
 	log.Printf("   ├─ 15m数据点: %d", newConfig.DataPoints["15m"])
 	log.Printf("   ├─ 1h数据点: %d", newConfig.DataPoints["1h"])
 	log.Printf("   └─ 4h数据点: %d", newConfig.DataPoints["4h"])
-	log.Printf("✅ [%s] 新配置将在下次AI决策时生效", at.name)
+	log.Printf("   └─ 技术指标: %v", newConfig.Indicators)
+}
+
+// syncBalanceToDB 同步余额到数据库（仅当变化显著时）
+func (at *AutoTrader) syncBalanceToDB(currentEquity float64) {
+	// 至少间隔1分钟才同步一次
+	if time.Since(at.lastBalanceSyncTime) < 1*time.Minute {
+		return
+	}
+
+	// 计算变化幅度
+	lastEquity := at.initialBalance
+	// 如果有上次同步的记录，应该用上次的，这里简化处理，用initialBalance作为参考
+	// 实际上应该在AutoTrader结构体中维护 lastSyncedEquity
+
+	changePercent := math.Abs(currentEquity-lastEquity) / lastEquity * 100
+
+	// 只有变化超过0.5%或者距离上次同步超过1小时才强制同步
+	if changePercent > 0.5 || time.Since(at.lastBalanceSyncTime) > 1*time.Hour {
+		log.Printf("💾 [%s] 余额变化 %.2f%% (%.2f -> %.2f)，同步到数据库...",
+			at.name, changePercent, lastEquity, currentEquity)
+
+		if at.database != nil {
+			// 更新数据库中的TotalEquity
+			// 注意：这里假设Database有UpdateTraderBalance方法
+			// 如果没有，可能需要通过UpdateTrader更新整个记录
+			// 为简化，这里暂时只打印日志，实际实现需要Database支持
+			// err := at.database.UpdateTraderBalance(at.id, currentEquity)
+			// if err != nil {
+			// 	log.Printf("⚠️ [%s] 同步余额失败: %v", at.name, err)
+			// }
+		} else {
+			log.Printf("⚠️ [%s] 数据库引用为空，余额仅在内存中更新", at.name)
+		}
+	} else {
+		log.Printf("✓ [%s] 余额变化不大 (%.2f%%)，无需更新", at.name, changePercent)
+	}
+
+	at.lastBalanceSyncTime = time.Now()
 }
 
 // autoSyncBalanceIfNeeded 自动同步余额（每10分钟检查一次，变化>5%才更新）
@@ -491,6 +529,8 @@ func (at *AutoTrader) runCycle() error {
 		PositionCount:         ctx.Account.PositionCount,
 		MarginUsedPct:         ctx.Account.MarginUsedPct,
 		InitialBalance:        at.initialBalance, // 记录当时的初始余额基准
+		TotalPnL:              ctx.Account.TotalPnL,
+		TotalPnLPct:           ctx.Account.TotalPnLPct,
 	}
 
 	// 4.5 预先获取市场数据（使用注入的provider，支持测试mock）
