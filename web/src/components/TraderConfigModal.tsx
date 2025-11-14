@@ -9,6 +9,8 @@ import type {
 import { useLanguage } from '../contexts/LanguageContext'
 import { t } from '../i18n/translations'
 import { IndicatorConfigPanel } from './IndicatorConfigPanel'
+import { Pencil, Plus, X as IconX } from 'lucide-react'
+import { httpClient } from '../lib/httpClient'
 
 // 提取下划线后面的名称部分
 function getShortName(fullName: string): string {
@@ -130,7 +132,7 @@ export function TraderConfigModal({
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const response = await fetch('/api/config')
+        const response = await httpClient.get('/api/config')
         const config = await response.json()
         if (config.default_coins) {
           setAvailableCoins(config.default_coins)
@@ -156,7 +158,7 @@ export function TraderConfigModal({
   useEffect(() => {
     const fetchPromptTemplates = async () => {
       try {
-        const response = await fetch('/api/prompt-templates')
+        const response = await httpClient.get('/api/prompt-templates')
         const data = await response.json()
         if (data.templates) {
           setPromptTemplates(data.templates)
@@ -214,32 +216,13 @@ export function TraderConfigModal({
         throw new Error('未登录，请先登录')
       }
 
-      const response = await fetch(
+      const response = await httpClient.get(
         `/api/account?trader_id=${traderData.trader_id}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          Authorization: `Bearer ${token}`,
         }
       )
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        const errorMsg = errorData.error || `HTTP ${response.status}`
-
-        // 根据不同错误提供更详细的提示
-        if (response.status === 404) {
-          throw new Error('交易员不存在，请刷新页面后重试')
-        } else if (response.status === 401) {
-          throw new Error('登录已过期，请重新登录')
-        } else if (response.status === 500) {
-          throw new Error(
-            `获取余额失败: ${errorMsg}\n提示: 请确保交易员已启动并且交易所配置正确`
-          )
-        } else {
-          throw new Error(`获取账户余额失败 (${response.status}): ${errorMsg}`)
-        }
-      }
 
       const data = await response.json()
 
@@ -458,8 +441,8 @@ export function TraderConfigModal({
                       type="button"
                       onClick={() => handleInputChange('is_cross_margin', true)}
                       className={`flex-1 px-3 py-2 rounded text-sm ${formData.is_cross_margin
-                          ? 'bg-[#F0B90B] text-black'
-                          : 'bg-[#0B0E11] text-[#848E9C] border border-[#2B3139]'
+                        ? 'bg-[#F0B90B] text-black'
+                        : 'bg-[#0B0E11] text-[#848E9C] border border-[#2B3139]'
                         }`}
                     >
                       全仓
@@ -470,8 +453,8 @@ export function TraderConfigModal({
                         handleInputChange('is_cross_margin', false)
                       }
                       className={`flex-1 px-3 py-2 rounded text-sm ${!formData.is_cross_margin
-                          ? 'bg-[#F0B90B] text-black'
-                          : 'bg-[#0B0E11] text-[#848E9C] border border-[#2B3139]'
+                        ? 'bg-[#F0B90B] text-black'
+                        : 'bg-[#0B0E11] text-[#848E9C] border border-[#2B3139]'
                         }`}
                     >
                       逐仓
@@ -656,8 +639,8 @@ export function TraderConfigModal({
                           type="button"
                           onClick={() => handleCoinToggle(coin)}
                           className={`px-2 py-1 text-xs rounded transition-colors ${selectedCoins.includes(coin)
-                              ? 'bg-[#F0B90B] text-black'
-                              : 'bg-[#1E2329] text-[#848E9C] border border-[#2B3139] hover:border-[#F0B90B]'
+                            ? 'bg-[#F0B90B] text-black'
+                            : 'bg-[#1E2329] text-[#848E9C] border border-[#2B3139] hover:border-[#F0B90B]'
                             }`}
                         >
                           {coin.replace('USDT', '')}
