@@ -1,9 +1,15 @@
 package api
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/http"
+	"nofx/backtest"
 	"nofx/config"
+	"nofx/market"
+	"nofx/mcp"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -63,7 +69,7 @@ func (s *Server) handleCreateBacktest(c *gin.Context) {
 	}
 
 	// 验证trader存在
-	trader, _, _, err := s.database.GetTraderConfig(userID, req.TraderID)
+	trader, aiModel, _, err := s.database.GetTraderConfig(userID, req.TraderID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Trader not found"})
 		return
@@ -108,13 +114,13 @@ func (s *Server) handleCreateBacktest(c *gin.Context) {
 		return
 	}
 
-	// TODO: 启动异步回测引擎
-	// go s.runBacktest(backtestID, backtest)
+	// 启动异步回测引擎
+	go s.runBacktest(backtestID, backtest, trader, aiModel)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"backtest_id": backtestID,
 		"status":      "pending",
-		"message":     "Backtest created successfully (execution not yet implemented)",
+		"message":     "Backtest started successfully",
 		"config": gin.H{
 			"trader_id":        req.TraderID,
 			"trader_name":      trader.Name,
@@ -188,4 +194,83 @@ func (s *Server) handleDeleteBacktest(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Backtest deleted successfully"})
+}
+
+// runBacktest 异步执行回测
+func (s *Server) runBacktest(backtestID string, backtestRun *config.BacktestRun, trader *config.TraderRecord, aiModel *config.AIModelConfig) {
+	log.Printf("[Backtest %s] Starting backtest execution", backtestID)
+	
+	// 更新状态为运行中
+	if err := s.database.UpdateBacktestStatus(backtestID, "running", 0); err != nil {
+		log.Printf("[Backtest %s] Failed to update status: %v", backtestID, err)
+		return
+	}
+	
+	// 解析指标配置
+	var indicatorConfig *market.IndicatorConfig
+	if backtestRun.IndicatorConfig != "" {
+		var err error
+		indicatorConfig, err = backtest.ParseIndicatorConfig(backtestRun.IndicatorConfig)
+		if err != nil {
+			log.Printf("[Backtest %s] Failed to parse indicator config: %v", backtestID, err)
+			s.database.UpdateBacktestStatus(backtestID, "failed", 0)
+			return
+		}
+	}
+	
+	// 解析交易币种
+	tradingSymbols := []string{}
+	if backtestRun.TradingSymbols != "" {
+		tradingSymbols = strings.Split(backtestRun.TradingSymbols, ",")
+		for i := range tradingSymbols {
+			tradingSymbols[i] = strings.TrimSpace(tradingSymbols[i])
+		}
+	}
+	
+	// 构建回测配置
+	cfg := &backtest.Config{
+		TraderID:             backtestRun.TraderID,
+		UserID:               backtestRun.UserID,
+		StartTime:            backtestRun.StartTime,
+		EndTime:              backtestRun.EndTime,
+		InitialBalance:       backtestRun.InitialBalance,
+		ScanInterval:         time.Duration(backtestRun.ScanIntervalMinutes) * time.Minute,
+		TradingSymbols:       tradingSymbols,
+		Slippage:             10, // 默认10基点(0.1%)滑点
+		UseTraderConfig:      backtestRun.UseTraderConfig,
+		IndicatorConfig:      indicatorConfig,
+		CustomPrompt:         backtestRun.CustomPrompt,
+		OverrideBasePrompt:   backtestRun.OverrideBasePrompt,
+		SystemPromptTemplate: backtestRun.SystemPromptTemplate,
+		BTCETHLeverage:       trader.BTCETHLeverage,
+		AltcoinLeverage:      trader.AltcoinLeverage,
+	}
+	
+	// 创建MCP客户端
+	mcpClient := mcp.New()
+	switch aiModel.Provider {
+	case "openai", "custom":
+		mcpClient.SetCustomAPI(aiModel.CustomAPIURL, aiModel.APIKey, aiModel.CustomModelName)
+	case "qwen":
+		mcpClient.SetQwenAPIKey(aiModel.APIKey, aiModel.CustomAPIURL, aiModel.CustomModelName)
+	case "deepseek":
+		mcpClient.SetDeepSeekAPIKey(aiModel.APIKey, aiModel.CustomAPIURL, aiModel.CustomModelName)
+	default:
+		log.Printf("[Backtest %s] Unknown AI model provider: %s", backtestID, aiModel.Provider)
+		s.database.UpdateBacktestStatus(backtestID, "failed", 0)
+		return
+	}
+	
+	// 创建回测引擎
+	engine := backtest.NewEngine(backtestID, cfg, s.database, mcpClient)
+	
+	// 执行回测
+	ctx := context.Background()
+	if err := engine.Run(ctx); err != nil {
+		log.Printf("[Backtest %s] Execution failed: %v", backtestID, err)
+		s.database.UpdateBacktestStatus(backtestID, "failed", 0)
+		return
+	}
+	
+	log.Printf("[Backtest %s] Execution completed successfully", backtestID)
 }

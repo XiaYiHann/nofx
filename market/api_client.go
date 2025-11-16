@@ -158,3 +158,117 @@ func (c *APIClient) GetCurrentPrice(symbol string) (float64, error) {
 
 	return price, nil
 }
+
+// GetKlinesRange 获取指定时间范围的K线数据(支持大批量下载)
+// Binance API限制每次最多返回1500条K线,该方法会自动分批请求
+func (c *APIClient) GetKlinesRange(symbol, interval string, startTime, endTime int64) ([]Kline, error) {
+	const maxLimit = 1500 // Binance API限制
+	var allKlines []Kline
+	
+	// 计算间隔毫秒数
+	intervalMs, err := parseIntervalToMs(interval)
+	if err != nil {
+		return nil, fmt.Errorf("invalid interval: %w", err)
+	}
+	
+	currentStart := startTime
+	for currentStart < endTime {
+		// 计算本次请求的结束时间(不超过maxLimit条)
+		maxEnd := currentStart + int64(maxLimit)*intervalMs
+		currentEnd := endTime
+		if maxEnd < endTime {
+			currentEnd = maxEnd
+		}
+		
+		// 请求本批数据
+		klines, err := c.getKlinesBatch(symbol, interval, currentStart, currentEnd, maxLimit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get klines batch: %w", err)
+		}
+		
+		if len(klines) == 0 {
+			break
+		}
+		
+		allKlines = append(allKlines, klines...)
+		
+		// 更新下次请求的起始时间(使用最后一条K线的closeTime + 1)
+		currentStart = klines[len(klines)-1].CloseTime + 1
+		
+		// 避免API限流(每50ms一次请求)
+		time.Sleep(50 * time.Millisecond)
+	}
+	
+	return allKlines, nil
+}
+
+// getKlinesBatch 获取单批K线数据
+func (c *APIClient) getKlinesBatch(symbol, interval string, startTime, endTime int64, limit int) ([]Kline, error) {
+	url := fmt.Sprintf("%s/fapi/v1/klines", baseURL)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	q := req.URL.Query()
+	q.Add("symbol", symbol)
+	q.Add("interval", interval)
+	q.Add("startTime", strconv.FormatInt(startTime, 10))
+	q.Add("endTime", strconv.FormatInt(endTime, 10))
+	q.Add("limit", strconv.Itoa(limit))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var klineResponses []KlineResponse
+	err = json.Unmarshal(body, &klineResponses)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal klines: %w", err)
+	}
+
+	var klines []Kline
+	for _, kr := range klineResponses {
+		kline, err := parseKline(kr)
+		if err != nil {
+			log.Printf("解析K线数据失败: %v", err)
+			continue
+		}
+		klines = append(klines, kline)
+	}
+
+	return klines, nil
+}
+
+// parseIntervalToMs 将间隔字符串转换为毫秒
+func parseIntervalToMs(interval string) (int64, error) {
+	if len(interval) < 2 {
+		return 0, fmt.Errorf("invalid interval format: %s", interval)
+	}
+	
+	unit := interval[len(interval)-1]
+	valueStr := interval[:len(interval)-1]
+	value, err := strconv.ParseInt(valueStr, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid interval value: %s", interval)
+	}
+	
+	switch unit {
+	case 'm':
+		return value * 60 * 1000, nil
+	case 'h':
+		return value * 60 * 60 * 1000, nil
+	case 'd':
+		return value * 24 * 60 * 60 * 1000, nil
+	default:
+		return 0, fmt.Errorf("unsupported interval unit: %c", unit)
+	}
+}

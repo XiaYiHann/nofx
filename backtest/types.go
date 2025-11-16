@@ -1,5 +1,4 @@
 package backtest
-package backtest
 
 import (
 	"nofx/market"
@@ -41,39 +40,38 @@ type Result struct {
 	Trades          []Trade          // 交易记录
 }
 
+// EquitySnapshot 净值快照
+type EquitySnapshot struct {
+	Time   time.Time
+	Equity float64
+	PnL    float64
+	PnLPct float64
+}
 
+// Trade 交易记录
+type Trade struct {
+	Symbol     string  // 币种
+	Side       string  // long/short
+	Action     string  // open/close
+	EntryPrice float64
+	ExitPrice  float64
+	Quantity   float64
+	Leverage   int
+	PnL        float64
+	PnLPct     float64
+	Fee        float64
+	EntryTime  time.Time
+	ExitTime   time.Time
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}	EntryTime      time.Time	UnrealizedPnL  float64	MarginUsed     float64	Leverage       int	Quantity       float64	EntryPrice     float64	Side           string  // long/short	Symbol         stringtype Position struct {// Position 持仓}	ExitTime   time.Time	EntryTime  time.Time	Fee        float64	PnLPct     float64	PnL        float64	Leverage   int	Quantity   float64	ExitPrice  float64	EntryPrice float64	Action     string  // open/close	Side       string  // long/short	Symbol     stringtype Trade struct {// Trade 交易记录}	PnLPct float64	PnL    float64	Equity float64	Time   time.Timetype EquitySnapshot struct {// EquitySnapshot 净值快照
+// Position 持仓
+type Position struct {
+	Symbol         string
+	Side           string  // long/short
+	EntryPrice     float64
+	Quantity       float64
+	Leverage       int
+	MarginUsed     float64
+	UnrealizedPnL  float64
+	EntryTime      time.Time
+}
