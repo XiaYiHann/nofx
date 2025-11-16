@@ -230,6 +230,72 @@ func (d *Database) createTables() error {
 			BEGIN
 				UPDATE system_config SET updated_at = CURRENT_TIMESTAMP WHERE key = NEW.key;
 			END`,
+
+		// 回测运行记录表
+		`CREATE TABLE IF NOT EXISTS backtest_runs (
+			id TEXT PRIMARY KEY,
+			user_id TEXT NOT NULL,
+			trader_id TEXT NOT NULL,
+			start_time DATETIME NOT NULL,
+			end_time DATETIME NOT NULL,
+			initial_balance REAL NOT NULL,
+			scan_interval_minutes INTEGER DEFAULT 3,
+			trading_symbols TEXT DEFAULT '',
+			use_trader_config BOOLEAN DEFAULT 1,
+			indicator_config TEXT DEFAULT '',
+			custom_prompt TEXT DEFAULT '',
+			override_base_prompt BOOLEAN DEFAULT 0,
+			system_prompt_template TEXT DEFAULT 'default',
+			status TEXT DEFAULT 'pending',
+			progress REAL DEFAULT 0.0,
+			final_equity REAL DEFAULT 0,
+			total_pnl REAL DEFAULT 0,
+			total_pnl_pct REAL DEFAULT 0,
+			max_drawdown REAL DEFAULT 0,
+			sharpe_ratio REAL DEFAULT 0,
+			win_rate REAL DEFAULT 0,
+			total_trades INTEGER DEFAULT 0,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			completed_at DATETIME,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+			FOREIGN KEY (trader_id) REFERENCES traders(id) ON DELETE CASCADE
+		)`,
+
+		// 回测交易记录表
+		`CREATE TABLE IF NOT EXISTS backtest_trades (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			backtest_id TEXT NOT NULL,
+			symbol TEXT NOT NULL,
+			side TEXT NOT NULL,
+			action TEXT NOT NULL,
+			entry_price REAL,
+			exit_price REAL,
+			quantity REAL NOT NULL,
+			leverage INTEGER DEFAULT 1,
+			pnl REAL DEFAULT 0,
+			pnl_pct REAL DEFAULT 0,
+			fee REAL DEFAULT 0,
+			entry_time DATETIME,
+			exit_time DATETIME,
+			FOREIGN KEY (backtest_id) REFERENCES backtest_runs(id) ON DELETE CASCADE
+		)`,
+
+		// 回测净值快照表
+		`CREATE TABLE IF NOT EXISTS backtest_equity_snapshots (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			backtest_id TEXT NOT NULL,
+			time DATETIME NOT NULL,
+			equity REAL NOT NULL,
+			pnl REAL DEFAULT 0,
+			pnl_pct REAL DEFAULT 0,
+			FOREIGN KEY (backtest_id) REFERENCES backtest_runs(id) ON DELETE CASCADE
+		)`,
+
+		// 回测表索引
+		`CREATE INDEX IF NOT EXISTS idx_backtest_runs_user_id ON backtest_runs(user_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_backtest_runs_trader_id ON backtest_runs(trader_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_backtest_trades_backtest_id ON backtest_trades(backtest_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_backtest_equity_snapshots_backtest_id ON backtest_equity_snapshots(backtest_id)`,
 	}
 
 	for _, query := range queries {
@@ -505,6 +571,62 @@ type UserSignalSource struct {
 	OITopURL    string    `json:"oi_top_url"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// BacktestRun 回测运行记录
+type BacktestRun struct {
+	ID                   string    `json:"id"`
+	UserID               string    `json:"user_id"`
+	TraderID             string    `json:"trader_id"`
+	StartTime            time.Time `json:"start_time"`
+	EndTime              time.Time `json:"end_time"`
+	InitialBalance       float64   `json:"initial_balance"`
+	ScanIntervalMinutes  int       `json:"scan_interval_minutes"`
+	TradingSymbols       string    `json:"trading_symbols"`
+	UseTraderConfig      bool      `json:"use_trader_config"`
+	IndicatorConfig      string    `json:"indicator_config"`
+	CustomPrompt         string    `json:"custom_prompt"`
+	OverrideBasePrompt   bool      `json:"override_base_prompt"`
+	SystemPromptTemplate string    `json:"system_prompt_template"`
+	Status               string    `json:"status"` // pending/running/completed/failed
+	Progress             float64   `json:"progress"`
+	FinalEquity          float64   `json:"final_equity"`
+	TotalPnL             float64   `json:"total_pnl"`
+	TotalPnLPct          float64   `json:"total_pnl_pct"`
+	MaxDrawdown          float64   `json:"max_drawdown"`
+	SharpeRatio          float64   `json:"sharpe_ratio"`
+	WinRate              float64   `json:"win_rate"`
+	TotalTrades          int       `json:"total_trades"`
+	CreatedAt            time.Time `json:"created_at"`
+	CompletedAt          *time.Time `json:"completed_at,omitempty"`
+}
+
+// BacktestTrade 回测交易记录
+type BacktestTrade struct {
+	ID          int        `json:"id"`
+	BacktestID  string     `json:"backtest_id"`
+	Symbol      string     `json:"symbol"`
+	Side        string     `json:"side"`   // long/short
+	Action      string     `json:"action"` // open/close
+	EntryPrice  *float64   `json:"entry_price,omitempty"`
+	ExitPrice   *float64   `json:"exit_price,omitempty"`
+	Quantity    float64    `json:"quantity"`
+	Leverage    int        `json:"leverage"`
+	PnL         float64    `json:"pnl"`
+	PnLPct      float64    `json:"pnl_pct"`
+	Fee         float64    `json:"fee"`
+	EntryTime   *time.Time `json:"entry_time,omitempty"`
+	ExitTime    *time.Time `json:"exit_time,omitempty"`
+}
+
+// BacktestEquitySnapshot 回测净值快照
+type BacktestEquitySnapshot struct {
+	ID         int       `json:"id"`
+	BacktestID string    `json:"backtest_id"`
+	Time       time.Time `json:"time"`
+	Equity     float64   `json:"equity"`
+	PnL        float64   `json:"pnl"`
+	PnLPct     float64   `json:"pnl_pct"`
 }
 
 
@@ -1289,3 +1411,266 @@ func (d *Database) decryptSensitiveData(encrypted string) string {
 
 	return decrypted
 }
+
+// CreateBacktest 创建回测记录
+func (d *Database) CreateBacktest(backtest *BacktestRun) error {
+	_, err := d.db.Exec(`
+		INSERT INTO backtest_runs (
+			id, user_id, trader_id, start_time, end_time, initial_balance,
+			scan_interval_minutes, trading_symbols, use_trader_config,
+			indicator_config, custom_prompt, override_base_prompt,
+			system_prompt_template, status, progress
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, backtest.ID, backtest.UserID, backtest.TraderID, backtest.StartTime,
+		backtest.EndTime, backtest.InitialBalance, backtest.ScanIntervalMinutes,
+		backtest.TradingSymbols, backtest.UseTraderConfig, backtest.IndicatorConfig,
+		backtest.CustomPrompt, backtest.OverrideBasePrompt, backtest.SystemPromptTemplate,
+		backtest.Status, backtest.Progress)
+	return err
+}
+
+// UpdateBacktestStatus 更新回测状态
+func (d *Database) UpdateBacktestStatus(id, status string, progress float64) error {
+	_, err := d.db.Exec(`
+		UPDATE backtest_runs SET status = ?, progress = ? WHERE id = ?
+	`, status, progress, id)
+	return err
+}
+
+// SaveBacktestResult 保存回测结果
+func (d *Database) SaveBacktestResult(id string, result *BacktestRun) error {
+	_, err := d.db.Exec(`
+		UPDATE backtest_runs SET
+			status = ?,
+			progress = 1.0,
+			final_equity = ?,
+			total_pnl = ?,
+			total_pnl_pct = ?,
+			max_drawdown = ?,
+			sharpe_ratio = ?,
+			win_rate = ?,
+			total_trades = ?,
+			completed_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`, result.Status, result.FinalEquity, result.TotalPnL, result.TotalPnLPct,
+		result.MaxDrawdown, result.SharpeRatio, result.WinRate, result.TotalTrades, id)
+	return err
+}
+
+// SaveEquitySnapshots 批量保存净值快照
+func (d *Database) SaveEquitySnapshots(backtestID string, snapshots []BacktestEquitySnapshot) error {
+	if len(snapshots) == 0 {
+		return nil
+	}
+
+	tx, err := d.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`
+		INSERT INTO backtest_equity_snapshots (backtest_id, time, equity, pnl, pnl_pct)
+		VALUES (?, ?, ?, ?, ?)
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, snapshot := range snapshots {
+		_, err := stmt.Exec(backtestID, snapshot.Time, snapshot.Equity, snapshot.PnL, snapshot.PnLPct)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+// SaveBacktestTrades 批量保存交易记录
+func (d *Database) SaveBacktestTrades(backtestID string, trades []BacktestTrade) error {
+	if len(trades) == 0 {
+		return nil
+	}
+
+	tx, err := d.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`
+		INSERT INTO backtest_trades (
+			backtest_id, symbol, side, action, entry_price, exit_price,
+			quantity, leverage, pnl, pnl_pct, fee, entry_time, exit_time
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, trade := range trades {
+		_, err := stmt.Exec(backtestID, trade.Symbol, trade.Side, trade.Action,
+			trade.EntryPrice, trade.ExitPrice, trade.Quantity, trade.Leverage,
+			trade.PnL, trade.PnLPct, trade.Fee, trade.EntryTime, trade.ExitTime)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+// GetBacktest 获取回测记录
+func (d *Database) GetBacktest(id string) (*BacktestRun, error) {
+	var backtest BacktestRun
+	var completedAt sql.NullTime
+
+	err := d.db.QueryRow(`
+		SELECT id, user_id, trader_id, start_time, end_time, initial_balance,
+			scan_interval_minutes, trading_symbols, use_trader_config,
+			indicator_config, custom_prompt, override_base_prompt,
+			system_prompt_template, status, progress, final_equity,
+			total_pnl, total_pnl_pct, max_drawdown, sharpe_ratio,
+			win_rate, total_trades, created_at, completed_at
+		FROM backtest_runs WHERE id = ?
+	`, id).Scan(
+		&backtest.ID, &backtest.UserID, &backtest.TraderID, &backtest.StartTime,
+		&backtest.EndTime, &backtest.InitialBalance, &backtest.ScanIntervalMinutes,
+		&backtest.TradingSymbols, &backtest.UseTraderConfig, &backtest.IndicatorConfig,
+		&backtest.CustomPrompt, &backtest.OverrideBasePrompt, &backtest.SystemPromptTemplate,
+		&backtest.Status, &backtest.Progress, &backtest.FinalEquity,
+		&backtest.TotalPnL, &backtest.TotalPnLPct, &backtest.MaxDrawdown,
+		&backtest.SharpeRatio, &backtest.WinRate, &backtest.TotalTrades,
+		&backtest.CreatedAt, &completedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if completedAt.Valid {
+		backtest.CompletedAt = &completedAt.Time
+	}
+
+	return &backtest, nil
+}
+
+// GetEquitySnapshots 获取净值快照
+func (d *Database) GetEquitySnapshots(backtestID string) ([]BacktestEquitySnapshot, error) {
+	rows, err := d.db.Query(`
+		SELECT id, backtest_id, time, equity, pnl, pnl_pct
+		FROM backtest_equity_snapshots
+		WHERE backtest_id = ?
+		ORDER BY time ASC
+	`, backtestID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var snapshots []BacktestEquitySnapshot
+	for rows.Next() {
+		var snapshot BacktestEquitySnapshot
+		err := rows.Scan(&snapshot.ID, &snapshot.BacktestID, &snapshot.Time,
+			&snapshot.Equity, &snapshot.PnL, &snapshot.PnLPct)
+		if err != nil {
+			return nil, err
+		}
+		snapshots = append(snapshots, snapshot)
+	}
+
+	return snapshots, rows.Err()
+}
+
+// GetBacktestTrades 获取交易记录
+func (d *Database) GetBacktestTrades(backtestID string) ([]BacktestTrade, error) {
+	rows, err := d.db.Query(`
+		SELECT id, backtest_id, symbol, side, action, entry_price, exit_price,
+			quantity, leverage, pnl, pnl_pct, fee, entry_time, exit_time
+		FROM backtest_trades
+		WHERE backtest_id = ?
+		ORDER BY entry_time ASC
+	`, backtestID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var trades []BacktestTrade
+	for rows.Next() {
+		var trade BacktestTrade
+		var entryPrice, exitPrice sql.NullFloat64
+		var entryTime, exitTime sql.NullTime
+
+		err := rows.Scan(&trade.ID, &trade.BacktestID, &trade.Symbol,
+			&trade.Side, &trade.Action, &entryPrice, &exitPrice,
+			&trade.Quantity, &trade.Leverage, &trade.PnL, &trade.PnLPct,
+			&trade.Fee, &entryTime, &exitTime)
+		if err != nil {
+			return nil, err
+		}
+
+		if entryPrice.Valid {
+			val := entryPrice.Float64
+			trade.EntryPrice = &val
+		}
+		if exitPrice.Valid {
+			val := exitPrice.Float64
+			trade.ExitPrice = &val
+		}
+		if entryTime.Valid {
+			trade.EntryTime = &entryTime.Time
+		}
+		if exitTime.Valid {
+			trade.ExitTime = &exitTime.Time
+		}
+
+		trades = append(trades, trade)
+	}
+
+	return trades, rows.Err()
+}
+
+// ListBacktests 列出回测记录
+func (d *Database) ListBacktests(userID string) ([]BacktestRun, error) {
+	rows, err := d.db.Query(`
+		SELECT id, user_id, trader_id, start_time, end_time, initial_balance,
+			scan_interval_minutes, trading_symbols, use_trader_config,
+			status, progress, total_pnl_pct, total_trades, created_at
+		FROM backtest_runs
+		WHERE user_id = ?
+		ORDER BY created_at DESC
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var backtests []BacktestRun
+	for rows.Next() {
+		var backtest BacktestRun
+		err := rows.Scan(
+			&backtest.ID, &backtest.UserID, &backtest.TraderID, &backtest.StartTime,
+			&backtest.EndTime, &backtest.InitialBalance, &backtest.ScanIntervalMinutes,
+			&backtest.TradingSymbols, &backtest.UseTraderConfig, &backtest.Status,
+			&backtest.Progress, &backtest.TotalPnLPct, &backtest.TotalTrades,
+			&backtest.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		backtests = append(backtests, backtest)
+	}
+
+	return backtests, rows.Err()
+}
+
+// DeleteBacktest 删除回测记录(级联删除)
+func (d *Database) DeleteBacktest(id string) error {
+	_, err := d.db.Exec(`DELETE FROM backtest_runs WHERE id = ?`, id)
+	return err
+}
+

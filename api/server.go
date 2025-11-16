@@ -169,6 +169,14 @@ func (s *Server) setupRoutes() {
 			protected.GET("/decisions/latest", s.handleLatestDecisions)
 			protected.GET("/statistics", s.handleStatistics)
 			protected.GET("/performance", s.handlePerformance)
+
+			// 回测管理
+			protected.POST("/backtest", s.handleCreateBacktest)
+			protected.GET("/backtest/:id", s.handleGetBacktest)
+			protected.GET("/backtest/:id/equity-history", s.handleGetBacktestEquityHistory)
+			protected.GET("/backtest/:id/trades", s.handleGetBacktestTrades)
+			protected.GET("/backtests", s.handleListBacktests)
+			protected.DELETE("/backtest/:id", s.handleDeleteBacktest)
 		}
 	}
 }

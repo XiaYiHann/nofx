@@ -1,0 +1,224 @@
+{
+  "main": {
+    "id": "487746a6c931598b",
+    "type": "split",
+    "children": [
+      {
+        "id": "1bc67f9a9b83db14",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "850b0e6d2b30f96c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "openspec/changes/add-backtest-system/design.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "design"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "6d3e9540d66e65b5",
+    "type": "split",
+    "children": [
+      {
+        "id": "c2114921550c5f9c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "63a38f0a45f32a2c",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "c223a9fd4b74fcaa",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "12d7ffaccfd28125",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "6cf660a71bc8f935",
+    "type": "split",
+    "children": [
+      {
+        "id": "7b52db672d8924e6",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "dc88bc1bcbd54ab5",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "DEVELOPMENT_MODE.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "DEVELOPMENT_MODE 的反向链接列表"
+            }
+          },
+          {
+            "id": "d95a3025a51b59b5",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "DEVELOPMENT_MODE.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "DEVELOPMENT_MODE 的出链列表"
+            }
+          },
+          {
+            "id": "eba63b4f20618645",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "53685caee344bf08",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "添加笔记属性"
+            }
+          },
+          {
+            "id": "0e51d64a07e9fe1b",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "DEVELOPMENT_MODE.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "DEVELOPMENT_MODE 的大纲"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:创建新数据库": false
+    }
+  },
+  "active": "63a38f0a45f32a2c",
+  "lastOpenFiles": [
+    "api/backtest_handlers.go",
+    "backtest/types.go",
+    "openspec/changes/add-backtest-system/CONFIG_REUSE_GUIDE.md",
+    "openspec/changes/add-backtest-system/DATA_LOADING_STRATEGY.md",
+    "openspec/changes/add-backtest-system/proposal.md",
+    "openspec/changes/add-backtest-system/tasks.md",
+    "DEVELOPMENT_MODE.md",
+    "openspec/changes/add-backtest-system/specs/backtest-ui/spec.md",
+    "openspec/changes/add-backtest-system/specs/backtest-api/spec.md",
+    "openspec/changes/add-backtest-system/specs/backtest-engine/spec.md",
+    "openspec/changes/add-backtest-system/design.md",
+    "openspec/changes/add-backtest-system/specs/backtest-api",
+    "openspec/changes/add-backtest-system/specs/backtest-ui",
+    "openspec/changes/add-backtest-system/specs/backtest-engine",
+    "openspec/changes/add-backtest-system/specs",
+    "openspec/changes/add-backtest-system",
+    "openspec/changes/implement-backtest-system/specs/backtest-data/spec.md",
+    "openspec/changes/implement-backtest-system/specs/backtest-data",
+    "openspec/changes/implement-backtest-system/tasks.md",
+    "openspec/changes/implement-backtest-system/proposal.md",
+    "openspec/changes/implement-backtest-system/specs",
+    "openspec/changes/implement-backtest-system/design.md",
+    "openspec/changes/implement-backtest-system",
+    "IMPLEMENTATION_GUIDE.md",
+    "openspec/changes/implement-backtest-system/BINANCE_API_DESIGN.md",
+    "openspec/changes/implement-backtest-system/UPDATE_SUMMARY.md",
+    "trader/backtest_trader_test.go",
+    "openspec/changes/add-backtesting-feature/tasks.md",
+    "openspec/changes/add-backtesting-feature/design.md",
+    "openspec/changes/add-backtesting-feature/proposal.md",
+    "QWEN.md",
+    "DOCKER_DEPLOY.ja.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "CHANGELOG.zh-CN.md"
+  ]
+}
