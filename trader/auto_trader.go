@@ -20,7 +20,7 @@ type AutoTraderConfig struct {
 	// Trader标识
 	ID      string // Trader唯一标识（用于日志目录等）
 	Name    string // Trader显示名称
-	AIModel string // AI模型: "qwen" 或 "deepseek"
+	AIModel string // AI模型: "qwen"、"glm" 或 "deepseek"
 
 	// 交易平台选择
 	Exchange string // "binance", "hyperliquid" 或 "aster"
@@ -43,8 +43,10 @@ type AutoTraderConfig struct {
 
 	// AI配置
 	UseQwen     bool
+	UseGLM      bool
 	DeepSeekKey string
 	QwenKey     string
+	GLMKey      string
 
 	// 自定义AI API配置
 	CustomAPIURL    string
@@ -124,6 +126,8 @@ func NewAutoTrader(config AutoTraderConfig, database interface{}, userID string)
 	if config.AIModel == "" {
 		if config.UseQwen {
 			config.AIModel = "qwen"
+		} else if config.UseGLM {
+			config.AIModel = "glm"
 		} else {
 			config.AIModel = "deepseek"
 		}
@@ -143,6 +147,14 @@ func NewAutoTrader(config AutoTraderConfig, database interface{}, userID string)
 			log.Printf("🤖 [%s] 使用阿里云Qwen AI (自定义URL: %s, 模型: %s)", config.Name, config.CustomAPIURL, config.CustomModelName)
 		} else {
 			log.Printf("🤖 [%s] 使用阿里云Qwen AI", config.Name)
+		}
+	} else if config.UseGLM || config.AIModel == "glm" {
+		// 使用GLM (智谱) OpenAI兼容接口
+		mcpClient.SetGLMAPIKey(config.GLMKey, config.CustomAPIURL, config.CustomModelName)
+		if config.CustomAPIURL != "" || config.CustomModelName != "" {
+			log.Printf("🤖 [%s] 使用GLM (自定义URL: %s, 模型: %s)", config.Name, config.CustomAPIURL, config.CustomModelName)
+		} else {
+			log.Printf("🤖 [%s] 使用GLM 默认配置", config.Name)
 		}
 	} else {
 		// 默认使用DeepSeek (支持自定义URL和Model)
@@ -1331,8 +1343,12 @@ func (at *AutoTrader) GetDecisionLogger() *logger.DecisionLogger {
 // GetStatus 获取系统状态（用于API）
 func (at *AutoTrader) GetStatus() map[string]interface{} {
 	aiProvider := "DeepSeek"
-	if at.config.UseQwen {
+	if at.config.UseQwen || at.aiModel == "qwen" {
 		aiProvider = "Qwen"
+	} else if at.config.UseGLM || at.aiModel == "glm" {
+		aiProvider = "GLM"
+	} else if at.aiModel == "custom" {
+		aiProvider = "Custom"
 	}
 
 	return map[string]interface{}{

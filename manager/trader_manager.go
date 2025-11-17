@@ -245,8 +245,10 @@ func (tm *TraderManager) addTraderFromDB(traderCfg *config.TraderRecord, aiModel
 		HyperliquidTestnet:    exchangeCfg.Testnet,
 		CoinPoolAPIURL:        effectiveCoinPoolURL,
 		UseQwen:               aiModelCfg.Provider == "qwen",
+		UseGLM:                aiModelCfg.Provider == "glm",
 		DeepSeekKey:           "",
 		QwenKey:               "",
+		GLMKey:                "",
 		CustomAPIURL:          aiModelCfg.CustomAPIURL,    // 自定义API URL
 		CustomModelName:       aiModelCfg.CustomModelName, // 自定义模型名称
 		ScanInterval:          time.Duration(traderCfg.ScanIntervalMinutes) * time.Minute,
@@ -286,6 +288,8 @@ func (tm *TraderManager) addTraderFromDB(traderCfg *config.TraderRecord, aiModel
 		traderConfig.QwenKey = aiModelCfg.APIKey
 	} else if aiModelCfg.Provider == "deepseek" {
 		traderConfig.DeepSeekKey = aiModelCfg.APIKey
+	} else if aiModelCfg.Provider == "glm" {
+		traderConfig.GLMKey = aiModelCfg.APIKey
 	}
 
 	// 创建trader实例
@@ -373,8 +377,10 @@ func (tm *TraderManager) AddTraderFromDB(traderCfg *config.TraderRecord, aiModel
 		HyperliquidTestnet:    exchangeCfg.Testnet,
 		CoinPoolAPIURL:        effectiveCoinPoolURL,
 		UseQwen:               aiModelCfg.Provider == "qwen",
+		UseGLM:                aiModelCfg.Provider == "glm",
 		DeepSeekKey:           "",
 		QwenKey:               "",
+		GLMKey:                "",
 		CustomAPIURL:          aiModelCfg.CustomAPIURL,    // 自定义API URL
 		CustomModelName:       aiModelCfg.CustomModelName, // 自定义模型名称
 		ScanInterval:          time.Duration(traderCfg.ScanIntervalMinutes) * time.Minute,
@@ -413,6 +419,8 @@ func (tm *TraderManager) AddTraderFromDB(traderCfg *config.TraderRecord, aiModel
 		traderConfig.QwenKey = aiModelCfg.APIKey
 	} else if aiModelCfg.Provider == "deepseek" {
 		traderConfig.DeepSeekKey = aiModelCfg.APIKey
+	} else if aiModelCfg.Provider == "glm" {
+		traderConfig.GLMKey = aiModelCfg.APIKey
 	}
 
 	// 创建trader实例
@@ -513,7 +521,7 @@ func (tm *TraderManager) ReloadIndicatorConfig(traderID string, newConfig *marke
 	// 调用trader的热重载方法
 	t.ReloadIndicatorConfig(newConfig)
 	log.Printf("🔄 TraderManager: 已通知 %s 重载配置", traderID)
-	
+
 	return nil
 }
 
@@ -915,6 +923,7 @@ func (tm *TraderManager) LoadUserTraders(database *config.Database, userID strin
 //   - database: 数据库实例
 //   - userID: 用户ID
 //   - traderID: 交易员ID
+//
 // 返回:
 //   - error: 如果交易员不存在、配置无效或加载失败则返回错误
 func (tm *TraderManager) LoadTraderByID(database *config.Database, userID, traderID string) error {
@@ -1099,6 +1108,7 @@ func (tm *TraderManager) loadSingleTrader(traderCfg *config.TraderRecord, aiMode
 		CustomAPIURL:         aiModelCfg.CustomAPIURL,    // 自定义API URL
 		CustomModelName:      aiModelCfg.CustomModelName, // 自定义模型名称
 		UseQwen:              aiModelCfg.Provider == "qwen",
+		UseGLM:               aiModelCfg.Provider == "glm",
 		MaxDailyLoss:         maxDailyLoss,
 		MaxDrawdown:          maxDrawdown,
 		StopTradingTime:      time.Duration(stopTradingMinutes) * time.Minute,
@@ -1132,6 +1142,8 @@ func (tm *TraderManager) loadSingleTrader(traderCfg *config.TraderRecord, aiMode
 		traderConfig.QwenKey = aiModelCfg.APIKey
 	} else if aiModelCfg.Provider == "deepseek" {
 		traderConfig.DeepSeekKey = aiModelCfg.APIKey
+	} else if aiModelCfg.Provider == "glm" {
+		traderConfig.GLMKey = aiModelCfg.APIKey
 	}
 
 	// 创建trader实例

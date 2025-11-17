@@ -37,14 +37,21 @@ func (ts *TimeSimulator) HasNext() bool {
 
 // Progress 获取回测进度(0.0 - 1.0)
 func (ts *TimeSimulator) Progress() float64 {
-	total := ts.endTime.Sub(ts.currentTime.Add(-ts.interval)).Seconds()
-	elapsed := ts.currentTime.Sub(ts.currentTime.Add(-ts.interval)).Seconds()
+	// 计算总时长和已经过时长
+	startTime := ts.currentTime.Add(-ts.interval) // 原始开始时间
+	total := ts.endTime.Sub(startTime).Seconds()
+	elapsed := ts.currentTime.Sub(startTime).Seconds()
+
 	if total <= 0 {
 		return 1.0
 	}
+
 	progress := elapsed / total
 	if progress > 1.0 {
 		return 1.0
+	}
+	if progress < 0 {
+		return 0.0
 	}
 	return progress
 }

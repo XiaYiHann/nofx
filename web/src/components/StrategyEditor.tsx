@@ -28,16 +28,6 @@ export default function StrategyEditor({
 
   const isEditing = strategy !== null
 
-  useEffect(() => {
-    if (strategy) {
-      setName(strategy.name.replace(/^user_[^_]+_/, ''))
-      setContent(strategy.content || '')
-    }
-
-    // Load system templates for reference
-    loadTemplates()
-  }, [strategy])
-
   const loadTemplates = async () => {
     try {
       const response = await fetch('/api/prompt-templates', {
@@ -71,6 +61,16 @@ export default function StrategyEditor({
     }
   }
 
+  useEffect(() => {
+    if (strategy) {
+      setName(strategy.name.replace(/^user_[^_]+_/, ''))
+      setContent(strategy.content || '')
+    }
+
+    // Load system templates for reference
+    loadTemplates()
+  }, [strategy])
+
   const handleSubmit = () => {
     if (!name.trim()) {
       alert(t('strategyNameRequired', language))
@@ -93,16 +93,16 @@ export default function StrategyEditor({
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-[var(--panel-bg)] border border-[var(--panel-border)] rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-xl">
         {/* Header */}
-        <div className="p-6 border-b border-gray-700 flex items-center justify-between">
-          <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-            <FileText className="w-5 h-5" />
+        <div className="p-6 border-b border-[var(--panel-border)] flex items-center justify-between">
+          <h3 className="text-xl font-semibold flex items-center gap-2">
+            <FileText className="w-5 h-5 text-[var(--binance-yellow)]" />
             {t(isEditing ? 'editStrategy' : 'createStrategy', language)}
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             aria-label="Close"
           >
             <X className="w-6 h-6" />
@@ -114,7 +114,7 @@ export default function StrategyEditor({
           <div className="space-y-6">
             {/* Strategy Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                 {t('strategyName', language)} *
               </label>
               <input
@@ -123,9 +123,9 @@ export default function StrategyEditor({
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t('strategyNamePlaceholder', language)}
                 disabled={isEditing}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--panel-border)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--binance-yellow)] disabled:opacity-50 disabled:cursor-not-allowed"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-[var(--text-secondary)] mt-1">
                 {language === 'zh'
                   ? '只能包含字母、数字、下划线和中文，编辑时不可修改'
                   : 'Letters, numbers, underscores and Chinese only, cannot be changed when editing'}
@@ -133,13 +133,13 @@ export default function StrategyEditor({
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 border-b border-gray-700">
+            <div className="flex gap-2 border-b border-[var(--panel-border)]">
               <button
                 onClick={() => setShowPreview(false)}
                 className={`px-4 py-2 font-medium transition-colors ${
                   !showPreview
-                    ? 'text-blue-400 border-b-2 border-blue-400'
-                    : 'text-gray-400 hover:text-gray-300'
+                    ? 'text-[var(--binance-yellow)] border-b-2 border-[var(--binance-yellow)]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 {t('strategyEditor', language)}
@@ -148,8 +148,8 @@ export default function StrategyEditor({
                 onClick={() => setShowPreview(true)}
                 className={`px-4 py-2 font-medium transition-colors flex items-center gap-1 ${
                   showPreview
-                    ? 'text-blue-400 border-b-2 border-blue-400'
-                    : 'text-gray-400 hover:text-gray-300'
+                    ? 'text-[var(--binance-yellow)] border-b-2 border-[var(--binance-yellow)]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 <Eye className="w-4 h-4" />
@@ -157,7 +157,7 @@ export default function StrategyEditor({
               </button>
               <button
                 onClick={() => setShowTemplateSelector(!showTemplateSelector)}
-                className="ml-auto px-4 py-2 font-medium text-gray-400 hover:text-gray-300 transition-colors flex items-center gap-1"
+                className="ml-auto px-4 py-2 font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1"
               >
                 <BookOpen className="w-4 h-4" />
                 {t('referenceTemplates', language)}
@@ -166,8 +166,8 @@ export default function StrategyEditor({
 
             {/* Template Selector */}
             {showTemplateSelector && (
-              <div className="bg-gray-900/50 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-gray-300 mb-3">
+              <div className="bg-[var(--background)] border border-[var(--panel-border)] rounded-lg p-4">
+                <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-3">
                   {t('systemTemplates', language)}
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -175,7 +175,7 @@ export default function StrategyEditor({
                     <button
                       key={template.name}
                       onClick={() => loadTemplateContent(template.name)}
-                      className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition-colors text-left"
+                      className="px-3 py-2 bg-[var(--background)] border border-[var(--panel-border)] hover:border-[var(--binance-yellow)] text-[var(--text-primary)] text-sm rounded transition-colors text-left"
                     >
                       {template.name}
                     </button>
@@ -187,16 +187,16 @@ export default function StrategyEditor({
             {/* Editor or Preview */}
             {!showPreview ? (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                   {t('strategyContent', language)} *
                 </label>
                 <textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder={t('strategyContentPlaceholder', language)}
-                  className="w-full h-96 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm resize-none"
+                  className="w-full h-96 px-4 py-3 bg-[var(--background)] border border-[var(--panel-border)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--binance-yellow)] font-mono text-sm resize-none"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-[var(--text-secondary)] mt-1">
                   {language === 'zh'
                     ? '提示：可以从系统模板加载后修改，或完全自定义'
                     : 'Tip: Load from system templates and modify, or create from scratch'}
@@ -204,10 +204,10 @@ export default function StrategyEditor({
               </div>
             ) : (
               <div>
-                <div className="bg-gray-900/50 rounded-lg p-4 h-96 overflow-y-auto">
-                  <pre className="text-sm text-gray-300 whitespace-pre-wrap font-mono">
+                <div className="bg-[var(--background)] border border-[var(--panel-border)] rounded-lg p-4 h-96 overflow-y-auto">
+                  <pre className="text-sm text-[var(--text-primary)] whitespace-pre-wrap font-mono">
                     {content || (
-                      <span className="text-gray-500">
+                      <span className="text-[var(--text-secondary)]">
                         {language === 'zh'
                           ? '暂无内容预览'
                           : 'No content to preview'}
@@ -221,16 +221,16 @@ export default function StrategyEditor({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-700 flex items-center justify-end gap-3">
+        <div className="p-6 border-t border-[var(--panel-border)] flex items-center justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            className="px-6 py-2 border border-[var(--panel-border)] rounded-lg text-[var(--text-primary)] hover:border-[var(--binance-yellow)] transition-colors"
           >
             {t('cancelEdit', language)}
           </button>
           <button
             onClick={handleSubmit}
-            className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center gap-2"
+            className="btn-binance inline-flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
             {t('saveStrategy', language)}

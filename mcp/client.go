@@ -19,6 +19,7 @@ type Provider string
 const (
 	ProviderDeepSeek Provider = "deepseek"
 	ProviderQwen     Provider = "qwen"
+	ProviderGLM      Provider = "glm"
 	ProviderCustom   Provider = "custom"
 )
 
@@ -77,6 +78,30 @@ func (client *Client) SetDeepSeekAPIKey(apiKey string, customURL string, customM
 	// 打印 API Key 的前后各4位用于验证
 	if len(apiKey) > 8 {
 		log.Printf("🔧 [MCP] DeepSeek API Key: %s...%s", apiKey[:4], apiKey[len(apiKey)-4:])
+	}
+}
+
+// SetGLMAPIKey 设置GLM (智谱) API密钥
+// customURL 为空时使用默认OpenAI兼容端点，customModel 为空时使用默认模型
+func (client *Client) SetGLMAPIKey(apiKey string, customURL string, customModel string) {
+	client.Provider = ProviderGLM
+	client.APIKey = apiKey
+	baseURL := customURL
+	if baseURL == "" {
+		baseURL = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+	}
+	client.BaseURL = baseURL
+	client.UseFullURL = strings.HasSuffix(baseURL, "/chat/completions")
+	if customModel != "" {
+		client.Model = customModel
+		log.Printf("🔧 [MCP] GLM 使用自定义 Model: %s", customModel)
+	} else {
+		client.Model = "glm-4-plus"
+		log.Printf("🔧 [MCP] GLM 使用默认 Model: %s", client.Model)
+	}
+	log.Printf("🔧 [MCP] GLM BaseURL: %s (UseFullURL=%v)", client.BaseURL, client.UseFullURL)
+	if len(apiKey) > 8 {
+		log.Printf("🔧 [MCP] GLM API Key: %s...%s", apiKey[:4], apiKey[len(apiKey)-4:])
 	}
 }
 
@@ -242,6 +267,8 @@ func (client *Client) callOnce(systemPrompt, userPrompt string) (string, error) 
 		// 阿里云Qwen使用API-Key认证
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", client.APIKey))
 		// 注意：如果使用的不是兼容模式，可能需要不同的认证方式
+	case ProviderGLM:
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", client.APIKey))
 	default:
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", client.APIKey))
 	}

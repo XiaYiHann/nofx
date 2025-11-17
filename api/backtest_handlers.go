@@ -75,6 +75,9 @@ func (s *Server) handleCreateBacktest(c *gin.Context) {
 		return
 	}
 
+	// 强制使用固定的主流币种进行回测
+	forcedTradingSymbols := "BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT,DOGEUSDT"
+
 	// 创建回测记录
 	backtestID := uuid.New().String()
 	backtest := &config.BacktestRun{
@@ -85,7 +88,7 @@ func (s *Server) handleCreateBacktest(c *gin.Context) {
 		EndTime:             endTime,
 		InitialBalance:      req.InitialBalance,
 		ScanIntervalMinutes: trader.ScanIntervalMinutes,
-		TradingSymbols:      trader.TradingSymbols,
+		TradingSymbols:      forcedTradingSymbols,
 		UseTraderConfig:     useTraderConfig,
 		Status:              "pending",
 		Progress:            0,
