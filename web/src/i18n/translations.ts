@@ -20,6 +20,7 @@ export const translations = {
     realtimeNav: 'Live',
     configNav: 'Config',
     dashboardNav: 'Dashboard',
+    backtestNav: 'Backtest',
     faqNav: 'FAQ',
 
     // Footer

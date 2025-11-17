@@ -122,11 +122,11 @@ func (s *Server) handleCreateBacktest(c *gin.Context) {
 		"status":      "pending",
 		"message":     "Backtest started successfully",
 		"config": gin.H{
-			"trader_id":        req.TraderID,
-			"trader_name":      trader.Name,
-			"start_time":       startTime,
-			"end_time":         endTime,
-			"initial_balance":  req.InitialBalance,
+			"trader_id":         req.TraderID,
+			"trader_name":       trader.Name,
+			"start_time":        startTime,
+			"end_time":          endTime,
+			"initial_balance":   req.InitialBalance,
 			"use_trader_config": useTraderConfig,
 		},
 	})
@@ -199,13 +199,13 @@ func (s *Server) handleDeleteBacktest(c *gin.Context) {
 // runBacktest 异步执行回测
 func (s *Server) runBacktest(backtestID string, backtestRun *config.BacktestRun, trader *config.TraderRecord, aiModel *config.AIModelConfig) {
 	log.Printf("[Backtest %s] Starting backtest execution", backtestID)
-	
+
 	// 更新状态为运行中
 	if err := s.database.UpdateBacktestStatus(backtestID, "running", 0); err != nil {
 		log.Printf("[Backtest %s] Failed to update status: %v", backtestID, err)
 		return
 	}
-	
+
 	// 解析指标配置
 	var indicatorConfig *market.IndicatorConfig
 	if backtestRun.IndicatorConfig != "" {
@@ -217,7 +217,7 @@ func (s *Server) runBacktest(backtestID string, backtestRun *config.BacktestRun,
 			return
 		}
 	}
-	
+
 	// 解析交易币种
 	tradingSymbols := []string{}
 	if backtestRun.TradingSymbols != "" {
@@ -226,7 +226,7 @@ func (s *Server) runBacktest(backtestID string, backtestRun *config.BacktestRun,
 			tradingSymbols[i] = strings.TrimSpace(tradingSymbols[i])
 		}
 	}
-	
+
 	// 构建回测配置
 	cfg := &backtest.Config{
 		TraderID:             backtestRun.TraderID,
@@ -245,7 +245,7 @@ func (s *Server) runBacktest(backtestID string, backtestRun *config.BacktestRun,
 		BTCETHLeverage:       trader.BTCETHLeverage,
 		AltcoinLeverage:      trader.AltcoinLeverage,
 	}
-	
+
 	// 创建MCP客户端
 	mcpClient := mcp.New()
 	switch aiModel.Provider {
@@ -260,10 +260,10 @@ func (s *Server) runBacktest(backtestID string, backtestRun *config.BacktestRun,
 		s.database.UpdateBacktestStatus(backtestID, "failed", 0)
 		return
 	}
-	
+
 	// 创建回测引擎
 	engine := backtest.NewEngine(backtestID, cfg, s.database, mcpClient)
-	
+
 	// 执行回测
 	ctx := context.Background()
 	if err := engine.Run(ctx); err != nil {
@@ -271,6 +271,6 @@ func (s *Server) runBacktest(backtestID string, backtestRun *config.BacktestRun,
 		s.database.UpdateBacktestStatus(backtestID, "failed", 0)
 		return
 	}
-	
+
 	log.Printf("[Backtest %s] Execution completed successfully", backtestID)
 }

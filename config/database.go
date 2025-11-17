@@ -575,48 +575,48 @@ type UserSignalSource struct {
 
 // BacktestRun 回测运行记录
 type BacktestRun struct {
-	ID                   string    `json:"id"`
-	UserID               string    `json:"user_id"`
-	TraderID             string    `json:"trader_id"`
-	StartTime            time.Time `json:"start_time"`
-	EndTime              time.Time `json:"end_time"`
-	InitialBalance       float64   `json:"initial_balance"`
-	ScanIntervalMinutes  int       `json:"scan_interval_minutes"`
-	TradingSymbols       string    `json:"trading_symbols"`
-	UseTraderConfig      bool      `json:"use_trader_config"`
-	IndicatorConfig      string    `json:"indicator_config"`
-	CustomPrompt         string    `json:"custom_prompt"`
-	OverrideBasePrompt   bool      `json:"override_base_prompt"`
-	SystemPromptTemplate string    `json:"system_prompt_template"`
-	Status               string    `json:"status"` // pending/running/completed/failed
-	Progress             float64   `json:"progress"`
-	FinalEquity          float64   `json:"final_equity"`
-	TotalPnL             float64   `json:"total_pnl"`
-	TotalPnLPct          float64   `json:"total_pnl_pct"`
-	MaxDrawdown          float64   `json:"max_drawdown"`
-	SharpeRatio          float64   `json:"sharpe_ratio"`
-	WinRate              float64   `json:"win_rate"`
-	TotalTrades          int       `json:"total_trades"`
-	CreatedAt            time.Time `json:"created_at"`
+	ID                   string     `json:"id"`
+	UserID               string     `json:"user_id"`
+	TraderID             string     `json:"trader_id"`
+	StartTime            time.Time  `json:"start_time"`
+	EndTime              time.Time  `json:"end_time"`
+	InitialBalance       float64    `json:"initial_balance"`
+	ScanIntervalMinutes  int        `json:"scan_interval_minutes"`
+	TradingSymbols       string     `json:"trading_symbols"`
+	UseTraderConfig      bool       `json:"use_trader_config"`
+	IndicatorConfig      string     `json:"indicator_config"`
+	CustomPrompt         string     `json:"custom_prompt"`
+	OverrideBasePrompt   bool       `json:"override_base_prompt"`
+	SystemPromptTemplate string     `json:"system_prompt_template"`
+	Status               string     `json:"status"` // pending/running/completed/failed
+	Progress             float64    `json:"progress"`
+	FinalEquity          float64    `json:"final_equity"`
+	TotalPnL             float64    `json:"total_pnl"`
+	TotalPnLPct          float64    `json:"total_pnl_pct"`
+	MaxDrawdown          float64    `json:"max_drawdown"`
+	SharpeRatio          float64    `json:"sharpe_ratio"`
+	WinRate              float64    `json:"win_rate"`
+	TotalTrades          int        `json:"total_trades"`
+	CreatedAt            time.Time  `json:"created_at"`
 	CompletedAt          *time.Time `json:"completed_at,omitempty"`
 }
 
 // BacktestTrade 回测交易记录
 type BacktestTrade struct {
-	ID          int        `json:"id"`
-	BacktestID  string     `json:"backtest_id"`
-	Symbol      string     `json:"symbol"`
-	Side        string     `json:"side"`   // long/short
-	Action      string     `json:"action"` // open/close
-	EntryPrice  *float64   `json:"entry_price,omitempty"`
-	ExitPrice   *float64   `json:"exit_price,omitempty"`
-	Quantity    float64    `json:"quantity"`
-	Leverage    int        `json:"leverage"`
-	PnL         float64    `json:"pnl"`
-	PnLPct      float64    `json:"pnl_pct"`
-	Fee         float64    `json:"fee"`
-	EntryTime   *time.Time `json:"entry_time,omitempty"`
-	ExitTime    *time.Time `json:"exit_time,omitempty"`
+	ID         int        `json:"id"`
+	BacktestID string     `json:"backtest_id"`
+	Symbol     string     `json:"symbol"`
+	Side       string     `json:"side"`   // long/short
+	Action     string     `json:"action"` // open/close
+	EntryPrice *float64   `json:"entry_price,omitempty"`
+	ExitPrice  *float64   `json:"exit_price,omitempty"`
+	Quantity   float64    `json:"quantity"`
+	Leverage   int        `json:"leverage"`
+	PnL        float64    `json:"pnl"`
+	PnLPct     float64    `json:"pnl_pct"`
+	Fee        float64    `json:"fee"`
+	EntryTime  *time.Time `json:"entry_time,omitempty"`
+	ExitTime   *time.Time `json:"exit_time,omitempty"`
 }
 
 // BacktestEquitySnapshot 回测净值快照
@@ -628,7 +628,6 @@ type BacktestEquitySnapshot struct {
 	PnL        float64   `json:"pnl"`
 	PnLPct     float64   `json:"pnl_pct"`
 }
-
 
 // CreateUser 创建用户
 func (d *Database) CreateUser(user *User) error {
@@ -1225,11 +1224,11 @@ func (d *Database) GetCustomCoins() []string {
 		SELECT GROUP_CONCAT(custom_coins , ',') as symbol
 		FROM main.traders where custom_coins != ''
 	`).Scan(&symbol)
-	
+
 	if err != nil {
 		log.Printf("⚠️  查询交易员自定义币种失败: %v", err)
 	}
-	
+
 	// 检测用户是否未配置币种 - 兼容性
 	if symbol == "" {
 		log.Printf("📋 交易员未配置自定义币种,尝试从系统配置读取default_coins")
@@ -1249,7 +1248,7 @@ func (d *Database) GetCustomCoins() []string {
 	} else {
 		log.Printf("✅ 从交易员配置读取到自定义币种: %s", symbol)
 	}
-	
+
 	// filter Symbol
 	for _, s := range strings.Split(symbol, ",") {
 		if s == "" {
@@ -1260,7 +1259,7 @@ func (d *Database) GetCustomCoins() []string {
 			symbols = append(symbols, coin)
 		}
 	}
-	
+
 	log.Printf("📋 GetCustomCoins最终返回: %d 个币种 %v", len(symbols), symbols)
 	return symbols
 }
@@ -1673,4 +1672,3 @@ func (d *Database) DeleteBacktest(id string) error {
 	_, err := d.db.Exec(`DELETE FROM backtest_runs WHERE id = ?`, id)
 	return err
 }
-

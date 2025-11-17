@@ -24,7 +24,6 @@ export function RegisterPage() {
   const [registrationEnabled, setRegistrationEnabled] = useState(true)
   const [otpCode, setOtpCode] = useState('')
   const [userID, setUserID] = useState('')
-  const [otpSecret, setOtpSecret] = useState('')
   const [qrCodeURL, setQrCodeURL] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -68,10 +67,9 @@ export function RegisterPage() {
 
     const result = await register(email, password, betaCode.trim() || undefined)
 
-    if (result.success && result.userID) {
-      setUserID(result.userID)
-      setOtpSecret(result.otpSecret || '')
-      setQrCodeURL(result.qrCodeURL || '')
+    if (result.success && result.user_id) {
+      setUserID(result.user_id)
+      setQrCodeURL(result.qr_code_url || '')
       setStep('setup-otp')
     } else {
       const msg = result.message || t('registrationFailed', language)
@@ -428,10 +426,13 @@ export function RegisterPage() {
                           color: 'var(--brand-light-gray)',
                         }}
                       >
-                        {otpSecret}
+                        {qrCodeURL ? decodeURIComponent(qrCodeURL.match(/secret=([^&]+)/)?.[1] || '') : ''}
                       </code>
                       <button
-                        onClick={() => copyToClipboard(otpSecret)}
+                        onClick={() => {
+                          const secret = qrCodeURL ? decodeURIComponent(qrCodeURL.match(/secret=([^&]+)/)?.[1] || '') : ''
+                          copyToClipboard(secret)
+                        }}
                         className="px-2 py-1 text-xs rounded"
                         style={{
                           background: 'var(--brand-yellow)',

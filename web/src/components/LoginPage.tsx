@@ -44,8 +44,8 @@ export function LoginPage() {
     const result = await login(email, password)
 
     if (result.success) {
-      if (result.requiresOTP && result.userID) {
-        setUserID(result.userID)
+      if (result.requires_otp && result.user_id) {
+        setUserID(result.user_id)
         setStep('otp')
       }
     } else {

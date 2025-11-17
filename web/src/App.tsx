@@ -10,6 +10,8 @@ import { CompetitionPage } from './components/CompetitionPage'
 import { LandingPage } from './pages/LandingPage'
 import { FAQPage } from './pages/FAQPage'
 import StrategiesPage from './pages/StrategiesPage'
+import BacktestPage from './pages/BacktestPage'
+import BacktestDetailPage from './pages/BacktestDetailPage'
 import HeaderBar from './components/landing/HeaderBar'
 import AILearning from './components/AILearning'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
@@ -26,7 +28,7 @@ import type {
   TraderInfo,
 } from './types'
 
-type Page = 'competition' | 'traders' | 'trader' | 'strategies'
+type Page = 'competition' | 'traders' | 'trader' | 'strategies' | 'backtest'
 
 // 获取友好的AI模型名称
 function getModelDisplayName(modelId: string): string {
@@ -229,6 +231,8 @@ function App() {
       setCurrentPage('trader')
     } else if (route === '/strategies') {
       setCurrentPage('strategies')
+    } else if (route.startsWith('/backtest')) {
+      setCurrentPage('backtest')
     }
   }, [route])
 
@@ -264,6 +268,61 @@ function App() {
   if (route === '/reset-password') {
     return <ResetPasswordPage />
   }
+  
+  // Backtest routes
+  if (route.startsWith('/backtest')) {
+    if (!user || !token) {
+      window.location.href = '/login'
+      return null
+    }
+    
+    const backtestId = route.split('/')[2] // /backtest/:id
+    
+    return (
+      <div
+        className="min-h-screen"
+        style={{ background: '#0B0E11', color: '#EAECEF' }}
+      >
+        <HeaderBar
+          isLoggedIn={!!user}
+          currentPage="trader"
+          language={language}
+          onLanguageChange={setLanguage}
+          user={user}
+          onLogout={logout}
+          onPageChange={(page) => {
+            if (page === 'competition') {
+              window.history.pushState({}, '', '/competition')
+              setRoute('/competition')
+            } else if (page === 'traders') {
+              window.history.pushState({}, '', '/traders')
+              setRoute('/traders')
+            } else if (page === 'trader') {
+              window.history.pushState({}, '', '/dashboard')
+              setRoute('/dashboard')
+            } else if (page === 'faq') {
+              window.history.pushState({}, '', '/faq')
+              setRoute('/faq')
+            } else if (page === 'strategies') {
+            } else if (page === 'backtest') {
+              window.history.pushState({}, '', '/backtest')
+              setRoute('/backtest')
+              window.history.pushState({}, '', '/strategies')
+              setRoute('/strategies')
+            }
+          }}
+        />
+        <main className="max-w-[1920px] mx-auto px-6 py-6 pt-24">
+          {backtestId ? (
+            <BacktestDetailPage backtestId={backtestId} />
+          ) : (
+            <BacktestPage />
+          )}
+        </main>
+      </div>
+    )
+  }
+  
   if (route === '/strategies') {
     return (
       <div
@@ -291,8 +350,14 @@ function App() {
               window.history.pushState({}, '', '/faq')
               setRoute('/faq')
             } else if (page === 'strategies') {
+            } else if (page === 'backtest') {
+              window.history.pushState({}, '', '/backtest')
+              setRoute('/backtest')
               window.history.pushState({}, '', '/strategies')
               setRoute('/strategies')
+            } else if (page === 'backtest') {
+              window.history.pushState({}, '', '/backtest')
+              setRoute('/backtest')
             }
           }}
         />
@@ -342,6 +407,10 @@ function App() {
               console.log('Navigating to strategies')
               window.history.pushState({}, '', '/strategies')
               setRoute('/strategies')
+            } else if (page === 'backtest') {
+              console.log('Navigating to backtest')
+              window.history.pushState({}, '', '/backtest')
+              setRoute('/backtest')
             }
 
             console.log(
@@ -393,6 +462,9 @@ function App() {
             } else if (page === 'strategies') {
               window.history.pushState({}, '', '/strategies')
               setRoute('/strategies')
+            } else if (page === 'backtest') {
+              window.history.pushState({}, '', '/backtest')
+              setRoute('/backtest')
             }
           }}
         />
@@ -444,6 +516,9 @@ function App() {
             } else if (page === 'strategies') {
               window.history.pushState({}, '', '/strategies')
               setRoute('/strategies')
+            } else if (page === 'backtest') {
+              window.history.pushState({}, '', '/backtest')
+              setRoute('/backtest')
             }
           }}
         />
@@ -518,6 +593,9 @@ function App() {
           } else if (page === 'strategies') {
             window.history.pushState({}, '', '/strategies')
             setRoute('/strategies')
+          } else if (page === 'backtest') {
+            window.history.pushState({}, '', '/backtest')
+            setRoute('/backtest')
           }
         }}
       />

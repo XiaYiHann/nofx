@@ -7,10 +7,10 @@ import (
 
 // PositionManager 持仓管理器
 type PositionManager struct {
-	positions      map[string]*Position // symbol -> position
-	equity         float64              // 账户净值
-	initialBalance float64              // 初始资金
-	availableBalance float64            // 可用资金
+	positions        map[string]*Position // symbol -> position
+	equity           float64              // 账户净值
+	initialBalance   float64              // 初始资金
+	availableBalance float64              // 可用资金
 }
 
 // NewPositionManager 创建持仓管理器
@@ -29,29 +29,29 @@ func (pm *PositionManager) OpenPosition(symbol, side string, entryPrice, quantit
 	if _, exists := pm.positions[symbol]; exists {
 		return fmt.Errorf("position already exists for %s", symbol)
 	}
-	
+
 	// 计算所需保证金
 	marginUsed := (entryPrice * quantity) / float64(leverage)
-	
+
 	// 检查可用资金
 	if marginUsed > pm.availableBalance {
 		return fmt.Errorf("insufficient balance: need %.2f, available %.2f", marginUsed, pm.availableBalance)
 	}
-	
+
 	// 创建持仓
 	position := &Position{
-		Symbol:         symbol,
-		Side:           side,
-		EntryPrice:     entryPrice,
-		Quantity:       quantity,
-		Leverage:       leverage,
-		MarginUsed:     marginUsed,
-		UnrealizedPnL:  0,
+		Symbol:        symbol,
+		Side:          side,
+		EntryPrice:    entryPrice,
+		Quantity:      quantity,
+		Leverage:      leverage,
+		MarginUsed:    marginUsed,
+		UnrealizedPnL: 0,
 	}
-	
+
 	pm.positions[symbol] = position
 	pm.availableBalance -= marginUsed
-	
+
 	return nil
 }
 
@@ -61,7 +61,7 @@ func (pm *PositionManager) ClosePosition(symbol string, exitPrice float64) (*Tra
 	if !exists {
 		return nil, fmt.Errorf("no position found for %s", symbol)
 	}
-	
+
 	// 计算盈亏
 	var pnl float64
 	if position.Side == "long" {
@@ -69,9 +69,9 @@ func (pm *PositionManager) ClosePosition(symbol string, exitPrice float64) (*Tra
 	} else {
 		pnl = (position.EntryPrice - exitPrice) * position.Quantity
 	}
-	
+
 	pnlPct := (pnl / position.MarginUsed) * 100
-	
+
 	// 创建交易记录
 	trade := &Trade{
 		Symbol:     symbol,
@@ -84,14 +84,14 @@ func (pm *PositionManager) ClosePosition(symbol string, exitPrice float64) (*Tra
 		PnL:        pnl,
 		PnLPct:     pnlPct,
 	}
-	
+
 	// 更新账户
 	pm.availableBalance += position.MarginUsed + pnl
 	pm.equity += pnl
-	
+
 	// 移除持仓
 	delete(pm.positions, symbol)
-	
+
 	return trade, nil
 }
 
@@ -101,14 +101,14 @@ func (pm *PositionManager) UpdateUnrealizedPnL(symbol string, currentPrice float
 	if !exists {
 		return fmt.Errorf("no position found for %s", symbol)
 	}
-	
+
 	var unrealizedPnL float64
 	if position.Side == "long" {
 		unrealizedPnL = (currentPrice - position.EntryPrice) * position.Quantity
 	} else {
 		unrealizedPnL = (position.EntryPrice - currentPrice) * position.Quantity
 	}
-	
+
 	position.UnrealizedPnL = unrealizedPnL
 	return nil
 }
@@ -153,21 +153,21 @@ func CalculateMaxDrawdown(equitySnapshots []EquitySnapshot) float64 {
 	if len(equitySnapshots) == 0 {
 		return 0
 	}
-	
+
 	maxEquity := equitySnapshots[0].Equity
 	maxDrawdown := 0.0
-	
+
 	for _, snapshot := range equitySnapshots {
 		if snapshot.Equity > maxEquity {
 			maxEquity = snapshot.Equity
 		}
-		
+
 		drawdown := (maxEquity - snapshot.Equity) / maxEquity * 100
 		if drawdown > maxDrawdown {
 			maxDrawdown = drawdown
 		}
 	}
-	
+
 	return maxDrawdown
 }
 
@@ -176,20 +176,20 @@ func CalculateSharpeRatio(equitySnapshots []EquitySnapshot) float64 {
 	if len(equitySnapshots) < 2 {
 		return 0
 	}
-	
+
 	// 计算收益率序列
 	returns := make([]float64, len(equitySnapshots)-1)
 	for i := 1; i < len(equitySnapshots); i++ {
 		returns[i-1] = (equitySnapshots[i].Equity - equitySnapshots[i-1].Equity) / equitySnapshots[i-1].Equity
 	}
-	
+
 	// 计算平均收益率
 	var sumReturns float64
 	for _, r := range returns {
 		sumReturns += r
 	}
 	avgReturn := sumReturns / float64(len(returns))
-	
+
 	// 计算标准差
 	var sumSquaredDiff float64
 	for _, r := range returns {
@@ -197,14 +197,14 @@ func CalculateSharpeRatio(equitySnapshots []EquitySnapshot) float64 {
 		sumSquaredDiff += diff * diff
 	}
 	stdDev := math.Sqrt(sumSquaredDiff / float64(len(returns)))
-	
+
 	if stdDev == 0 {
 		return 0
 	}
-	
+
 	// 年化(假设252个交易日)
 	annualizedReturn := avgReturn * 252
 	annualizedStdDev := stdDev * math.Sqrt(252)
-	
+
 	return annualizedReturn / annualizedStdDev
 }
