@@ -2033,6 +2033,11 @@ func (s *Server) initUserDefaultConfigs(userID string) error {
 
 // handleGetSupportedModels 获取系统支持的AI模型列表
 func (s *Server) handleGetSupportedModels(c *gin.Context) {
+	if err := s.database.EnsureDefaultAIModels(); err != nil {
+		log.Printf("❌ 确保默认AI模型失败: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取支持的AI模型失败"})
+		return
+	}
 	// 返回系统支持的AI模型（从default用户获取）
 	models, err := s.database.GetAIModels("default")
 	if err != nil {

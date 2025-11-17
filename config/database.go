@@ -343,24 +343,32 @@ func (d *Database) createTables() error {
 	return nil
 }
 
+var defaultAIModels = []struct {
+	id, name, provider, defaultURL, defaultModel string
+}{
+	{"deepseek", "DeepSeek", "deepseek", "https://api.deepseek.com/v1", "deepseek-chat"},
+	{"qwen", "Qwen", "qwen", "https://dashscope.aliyuncs.com/compatible-mode/v1", "qwen3-max"},
+	{"glm", "GLM (Zhipu)", "glm", "https://open.bigmodel.cn/api/paas/v4/chat/completions", "glm-4-plus"},
+}
+
+// EnsureDefaultAIModels 确保默认AI模型存在
+func (d *Database) EnsureDefaultAIModels() error {
+	for _, model := range defaultAIModels {
+		_, err := d.db.Exec(`
+			INSERT OR IGNORE INTO ai_models (id, user_id, name, provider, enabled, api_key, custom_api_url, custom_model_name)
+			VALUES (?, 'default', ?, ?, 0, '', ?, ?)
+		`, model.id, model.name, model.provider, model.defaultURL, model.defaultModel)
+		if err != nil {
+			return fmt.Errorf("确保默认AI模型失败 [%s]: %w", model.id, err)
+		}
+	}
+	return nil
+}
+
 // initDefaultData 初始化默认数据
 func (d *Database) initDefaultData() error {
-	// 初始化AI模型（使用default用户）
-	aiModels := []struct {
-		id, name, provider string
-	}{
-		{"deepseek", "DeepSeek", "deepseek"},
-		{"qwen", "Qwen", "qwen"},
-	}
-
-	for _, model := range aiModels {
-		_, err := d.db.Exec(`
-			INSERT OR IGNORE INTO ai_models (id, user_id, name, provider, enabled) 
-			VALUES (?, 'default', ?, ?, 0)
-		`, model.id, model.name, model.provider)
-		if err != nil {
-			return fmt.Errorf("初始化AI模型失败: %w", err)
-		}
+	if err := d.EnsureDefaultAIModels(); err != nil {
+		return err
 	}
 
 	// 初始化交易所（使用default用户）
@@ -800,7 +808,7 @@ func (d *Database) UpdateAIModel(userID, id string, enabled bool, apiKey, custom
 
 	// 没有找到任何现有配置，创建新的
 	// 推断 provider（从 id 中提取，或者直接使用 id）
-	if provider == id && (provider == "deepseek" || provider == "qwen") {
+	if provider == id && (provider == "deepseek" || provider == "qwen" || provider == "glm") {
 		// id 本身就是 provider
 		provider = id
 	} else {
@@ -824,6 +832,8 @@ func (d *Database) UpdateAIModel(userID, id string, enabled bool, apiKey, custom
 			name = "DeepSeek AI"
 		} else if provider == "qwen" {
 			name = "Qwen AI"
+		} else if provider == "glm" {
+			name = "GLM AI"
 		} else {
 			name = provider + " AI"
 		}
