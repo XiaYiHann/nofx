@@ -24,7 +24,7 @@ pkill nofx
 ### 2. 访问回测功能
 
 - 登录系统后，点击顶部导航栏的 **"回测"** 按钮
-- 或直接访问: http://localhost:5173/backtest
+- 或直接访问: http://localhost:3000/backtest
 
 ### 3. 创建第一个回测
 

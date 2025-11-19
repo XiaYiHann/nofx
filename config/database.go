@@ -291,11 +291,44 @@ func (d *Database) createTables() error {
 			FOREIGN KEY (backtest_id) REFERENCES backtest_runs(id) ON DELETE CASCADE
 		)`,
 
+		// 回测决策记录表
+		`CREATE TABLE IF NOT EXISTS backtest_decisions (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			backtest_id TEXT NOT NULL,
+			symbol TEXT NOT NULL,
+			action TEXT NOT NULL,
+			price REAL NOT NULL,
+			quantity REAL NOT NULL,
+			leverage INTEGER DEFAULT 1,
+			confidence REAL DEFAULT 0,
+			reasoning TEXT DEFAULT '',
+			timestamp DATETIME NOT NULL,
+			FOREIGN KEY (backtest_id) REFERENCES backtest_runs(id) ON DELETE CASCADE
+		)`,
+
 		// 回测表索引
 		`CREATE INDEX IF NOT EXISTS idx_backtest_runs_user_id ON backtest_runs(user_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_backtest_runs_trader_id ON backtest_runs(trader_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_backtest_trades_backtest_id ON backtest_trades(backtest_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_backtest_equity_snapshots_backtest_id ON backtest_equity_snapshots(backtest_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_backtest_decisions_backtest_id ON backtest_decisions(backtest_id)`,
+
+		// 回测K线缓存表
+		`CREATE TABLE IF NOT EXISTS backtest_kline_cache (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			symbol TEXT NOT NULL,
+			interval TEXT NOT NULL,
+			start_time INTEGER NOT NULL,
+			end_time INTEGER NOT NULL,
+			data_json TEXT NOT NULL,
+			kline_count INTEGER DEFAULT 0,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(symbol, interval, start_time, end_time)
+		)`,
+
+		// K线缓存表索引
+		`CREATE INDEX IF NOT EXISTS idx_kline_cache_symbol ON backtest_kline_cache(symbol)`,
+		`CREATE INDEX IF NOT EXISTS idx_kline_cache_lookup ON backtest_kline_cache(symbol, interval, start_time, end_time)`,
 	}
 
 	for _, query := range queries {
@@ -635,6 +668,32 @@ type BacktestEquitySnapshot struct {
 	Equity     float64   `json:"equity"`
 	PnL        float64   `json:"pnl"`
 	PnLPct     float64   `json:"pnl_pct"`
+}
+
+// BacktestDecision 回测决策记录
+type BacktestDecision struct {
+	ID         int       `json:"id"`
+	BacktestID string    `json:"backtest_id"`
+	Symbol     string    `json:"symbol"`
+	Action     string    `json:"action"`
+	Price      float64   `json:"price"`
+	Quantity   float64   `json:"quantity"`
+	Leverage   int       `json:"leverage"`
+	Confidence float64   `json:"confidence"`
+	Reasoning  string    `json:"reasoning"`
+	Timestamp  time.Time `json:"timestamp"`
+}
+
+// KlineCache K线缓存记录
+type KlineCache struct {
+	ID         int       `json:"id"`
+	Symbol     string    `json:"symbol"`
+	Interval   string    `json:"interval"`
+	StartTime  int64     `json:"start_time"`
+	EndTime    int64     `json:"end_time"`
+	DataJSON   string    `json:"data_json"`
+	KlineCount int       `json:"kline_count"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 // CreateUser 创建用户
@@ -1466,6 +1525,23 @@ func (d *Database) SaveBacktestResult(id string, result *BacktestRun) error {
 	return err
 }
 
+// UpdateBacktestStats 更新回测统计数据
+func (d *Database) UpdateBacktestStats(id string, result *BacktestRun) error {
+	_, err := d.db.Exec(`
+		UPDATE backtest_runs SET
+			final_equity = ?,
+			total_pnl = ?,
+			total_pnl_pct = ?,
+			max_drawdown = ?,
+			sharpe_ratio = ?,
+			win_rate = ?,
+			total_trades = ?
+		WHERE id = ?
+	`, result.FinalEquity, result.TotalPnL, result.TotalPnLPct,
+		result.MaxDrawdown, result.SharpeRatio, result.WinRate, result.TotalTrades, id)
+	return err
+}
+
 // SaveEquitySnapshots 批量保存净值快照
 func (d *Database) SaveEquitySnapshots(backtestID string, snapshots []BacktestEquitySnapshot) error {
 	if len(snapshots) == 0 {
@@ -1532,6 +1608,69 @@ func (d *Database) SaveBacktestTrades(backtestID string, trades []BacktestTrade)
 	return tx.Commit()
 }
 
+// SaveBacktestDecisions 批量保存决策记录
+func (d *Database) SaveBacktestDecisions(backtestID string, decisions []BacktestDecision) error {
+	if len(decisions) == 0 {
+		return nil
+	}
+
+	tx, err := d.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`
+		INSERT INTO backtest_decisions (
+			backtest_id, symbol, action, price, quantity, leverage,
+			confidence, reasoning, timestamp
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, dec := range decisions {
+		_, err := stmt.Exec(backtestID, dec.Symbol, dec.Action, dec.Price,
+			dec.Quantity, dec.Leverage, dec.Confidence, dec.Reasoning, dec.Timestamp)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+// GetBacktestDecisions 获取回测决策记录
+func (d *Database) GetBacktestDecisions(backtestID string) ([]BacktestDecision, error) {
+	rows, err := d.db.Query(`
+		SELECT id, backtest_id, symbol, action, price, quantity, leverage,
+			confidence, reasoning, timestamp
+		FROM backtest_decisions
+		WHERE backtest_id = ?
+		ORDER BY timestamp ASC
+	`, backtestID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	decisions := make([]BacktestDecision, 0)
+	for rows.Next() {
+		var dec BacktestDecision
+		if err := rows.Scan(
+			&dec.ID, &dec.BacktestID, &dec.Symbol, &dec.Action, &dec.Price,
+			&dec.Quantity, &dec.Leverage, &dec.Confidence, &dec.Reasoning, &dec.Timestamp,
+		); err != nil {
+			return nil, err
+		}
+		decisions = append(decisions, dec)
+	}
+
+	return decisions, nil
+}
+
 // GetBacktest 获取回测记录
 func (d *Database) GetBacktest(id string) (*BacktestRun, error) {
 	var backtest BacktestRun
@@ -1580,7 +1719,7 @@ func (d *Database) GetEquitySnapshots(backtestID string) ([]BacktestEquitySnapsh
 	}
 	defer rows.Close()
 
-	var snapshots []BacktestEquitySnapshot
+	snapshots := make([]BacktestEquitySnapshot, 0)
 	for rows.Next() {
 		var snapshot BacktestEquitySnapshot
 		err := rows.Scan(&snapshot.ID, &snapshot.BacktestID, &snapshot.Time,
@@ -1608,7 +1747,7 @@ func (d *Database) GetBacktestTrades(backtestID string) ([]BacktestTrade, error)
 	}
 	defer rows.Close()
 
-	var trades []BacktestTrade
+	trades := make([]BacktestTrade, 0)
 	for rows.Next() {
 		var trade BacktestTrade
 		var entryPrice, exitPrice sql.NullFloat64
@@ -1680,5 +1819,124 @@ func (d *Database) ListBacktests(userID string) ([]BacktestRun, error) {
 // DeleteBacktest 删除回测记录(级联删除)
 func (d *Database) DeleteBacktest(id string) error {
 	_, err := d.db.Exec(`DELETE FROM backtest_runs WHERE id = ?`, id)
+	return err
+}
+
+// ==================== K线缓存管理 ====================
+
+// GetKlineCache 获取K线缓存
+func (d *Database) GetKlineCache(symbol, interval string, startTime, endTime int64) ([]market.Kline, bool, error) {
+	var dataJSON string
+	err := d.db.QueryRow(`
+		SELECT data_json FROM backtest_kline_cache
+		WHERE symbol = ? AND interval = ? AND start_time = ? AND end_time = ?
+	`, symbol, interval, startTime, endTime).Scan(&dataJSON)
+
+	if err == sql.ErrNoRows {
+		return nil, false, nil // 缓存未命中
+	}
+	if err != nil {
+		return nil, false, err
+	}
+
+	// 解析JSON数据
+	var klines []market.Kline
+	if err := json.Unmarshal([]byte(dataJSON), &klines); err != nil {
+		return nil, false, fmt.Errorf("解析K线缓存失败: %w", err)
+	}
+
+	return klines, true, nil
+}
+
+// SaveKlineCache 保存K线缓存
+func (d *Database) SaveKlineCache(symbol, interval string, startTime, endTime int64, klines []market.Kline) error {
+	// 序列化K线数据
+	dataJSON, err := json.Marshal(klines)
+	if err != nil {
+		return fmt.Errorf("序列化K线数据失败: %w", err)
+	}
+
+	// 保存到数据库(使用 INSERT OR REPLACE 避免重复)
+	_, err = d.db.Exec(`
+		INSERT OR REPLACE INTO backtest_kline_cache 
+		(symbol, interval, start_time, end_time, data_json, kline_count)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`, symbol, interval, startTime, endTime, string(dataJSON), len(klines))
+
+	if err != nil {
+		return fmt.Errorf("保存K线缓存失败: %w", err)
+	}
+
+	log.Printf("✅ 已缓存K线数据: %s %s (%d-%d) 共 %d 条", symbol, interval, startTime, endTime, len(klines))
+	return nil
+}
+
+// GetCacheStats 获取缓存统计信息
+func (d *Database) GetCacheStats() (map[string]interface{}, error) {
+	stats := make(map[string]interface{})
+
+	// 总缓存记录数
+	var totalRecords int
+	err := d.db.QueryRow(`SELECT COUNT(*) FROM backtest_kline_cache`).Scan(&totalRecords)
+	if err != nil {
+		return nil, err
+	}
+	stats["total_records"] = totalRecords
+
+	// 总K线数量
+	var totalKlines int
+	err = d.db.QueryRow(`SELECT COALESCE(SUM(kline_count), 0) FROM backtest_kline_cache`).Scan(&totalKlines)
+	if err != nil {
+		return nil, err
+	}
+	stats["total_klines"] = totalKlines
+
+	// 按币种统计
+	rows, err := d.db.Query(`
+		SELECT symbol, COUNT(*) as count, SUM(kline_count) as total_klines
+		FROM backtest_kline_cache
+		GROUP BY symbol
+		ORDER BY count DESC
+		LIMIT 10
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	symbolStats := []map[string]interface{}{}
+	for rows.Next() {
+		var symbol string
+		var count, totalKlines int
+		if err := rows.Scan(&symbol, &count, &totalKlines); err != nil {
+			return nil, err
+		}
+		symbolStats = append(symbolStats, map[string]interface{}{
+			"symbol":       symbol,
+			"count":        count,
+			"total_klines": totalKlines,
+		})
+	}
+	stats["by_symbol"] = symbolStats
+
+	return stats, nil
+}
+
+// ClearCache 清理缓存
+func (d *Database) ClearCache(symbol string, olderThan time.Time) error {
+	if symbol != "" {
+		// 清理指定币种的缓存
+		_, err := d.db.Exec(`DELETE FROM backtest_kline_cache WHERE symbol = ?`, symbol)
+		return err
+	}
+
+	if !olderThan.IsZero() {
+		// 清理指定时间之前的缓存
+		_, err := d.db.Exec(`DELETE FROM backtest_kline_cache WHERE created_at < ?`, olderThan)
+		return err
+	}
+
+	// 清理所有缓存
+	_, err := d.db.Exec(`DELETE FROM backtest_kline_cache`)
 	return err
 }

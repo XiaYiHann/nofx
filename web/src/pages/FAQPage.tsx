@@ -51,6 +51,12 @@ export function FAQPage() {
           } else if (page === 'faq') {
             window.history.pushState({}, '', '/faq')
             window.location.href = '/faq'
+          } else if (page === 'strategies') {
+            window.history.pushState({}, '', '/strategies')
+            window.location.href = '/strategies'
+          } else if (page === 'backtest') {
+            window.history.pushState({}, '', '/backtest')
+            window.location.href = '/backtest'
           }
         }}
       />

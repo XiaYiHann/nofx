@@ -7,8 +7,10 @@ import (
 	"log"
 	"nofx/config"
 	"nofx/decision"
+	"nofx/logger"
 	"nofx/market"
 	"nofx/mcp"
+	"os"
 	"strings"
 	"time"
 )
@@ -22,11 +24,18 @@ type Engine struct {
 	timeSimulator   *TimeSimulator
 	positionManager *PositionManager
 	orderSimulator  *OrderSimulator
+	decisionLogger  *logger.DecisionLogger
 
 	// 回测状态
 	backtestID      string
 	equitySnapshots []EquitySnapshot
 	trades          []Trade
+	decisions       []config.BacktestDecision
+
+	// 增量保存状态
+	lastSavedSnapshotIdx int
+	lastSavedTradeIdx    int
+	lastSavedDecisionIdx int
 
 	// 数据缓存
 	klineCache map[string][]market.Kline // symbol -> klines
@@ -39,6 +48,10 @@ func NewEngine(
 	db *config.Database,
 	mcpClient *mcp.Client,
 ) *Engine {
+	// 初始化决策日志记录器
+	logDir := fmt.Sprintf("decision_logs/backtest_%s", backtestID)
+	decisionLogger := logger.NewDecisionLogger(logDir)
+
 	return &Engine{
 		config:          cfg,
 		db:              db,
@@ -47,9 +60,11 @@ func NewEngine(
 		timeSimulator:   NewTimeSimulator(cfg.StartTime, cfg.EndTime, cfg.ScanInterval),
 		positionManager: NewPositionManager(cfg.InitialBalance),
 		orderSimulator:  NewOrderSimulator(cfg.Slippage),
+		decisionLogger:  decisionLogger,
 		backtestID:      backtestID,
 		equitySnapshots: []EquitySnapshot{},
 		trades:          []Trade{},
+		decisions:       []config.BacktestDecision{},
 		klineCache:      make(map[string][]market.Kline),
 	}
 }
@@ -67,8 +82,10 @@ func (e *Engine) Run(ctx context.Context) error {
 	// 2. 记录初始净值
 	e.recordEquitySnapshot(e.timeSimulator.CurrentTime())
 
+	stepCount := 0
 	// 3. 主回测循环
 	for e.timeSimulator.HasNext() {
+		stepCount++
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -102,6 +119,99 @@ func (e *Engine) Run(ctx context.Context) error {
 			continue
 		}
 
+		// 记录决策
+		for _, dec := range decisions {
+			price := 0.0
+			if data, ok := marketDataMap[dec.Symbol]; ok {
+				price = data.CurrentPrice
+			}
+
+			e.decisions = append(e.decisions, config.BacktestDecision{
+				BacktestID: e.backtestID,
+				Symbol:     dec.Symbol,
+				Action:     dec.Action,
+				Price:      price,
+				Quantity:   dec.PositionSizeUSD,
+				Leverage:   dec.Leverage,
+				Confidence: float64(dec.Confidence),
+				Reasoning:  dec.Reasoning,
+				Timestamp:  currentTime,
+			})
+		}
+
+		// 实时记录决策到文件（用于前端实时显示）
+		// 即使没有决策（Wait/Hold），也记录账户状态和持仓，确保前端能实时更新
+		record := &logger.DecisionRecord{
+			Timestamp:      currentTime,
+			CandidateCoins: e.config.TradingSymbols,
+			Decisions:      []logger.DecisionAction{},
+			AccountState: logger.AccountSnapshot{
+				TotalBalance:          e.positionManager.GetEquity(),
+				AvailableBalance:      e.positionManager.GetAvailableBalance(),
+				TotalUnrealizedProfit: e.positionManager.GetEquity() - e.positionManager.GetAvailableBalance(), // 简化计算
+				PositionCount:         len(e.positionManager.GetAllPositions()),
+				MarginUsedPct:         0, // 简化
+				InitialBalance:        e.config.InitialBalance,
+			},
+			Positions: []logger.PositionSnapshot{},
+		}
+
+		// 填充持仓快照
+		for _, pos := range e.positionManager.GetAllPositions() {
+			record.Positions = append(record.Positions, logger.PositionSnapshot{
+				Symbol:           pos.Symbol,
+				Side:             pos.Side,
+				PositionAmt:      pos.Quantity,
+				EntryPrice:       pos.EntryPrice,
+				MarkPrice:        pos.EntryPrice, // 简化，使用入场价作为标记价
+				UnrealizedProfit: pos.UnrealizedPnL,
+				Leverage:         float64(pos.Leverage),
+			})
+		}
+
+		// 填充决策动作并打印控制台日志
+		if len(decisions) == 0 {
+			// 如果没有决策，打印观望日志
+			log.Printf("[Backtest %s] Step %d | Time: %s | AI Decision: WAIT/HOLD (No explicit actions)",
+				e.backtestID, stepCount, currentTime.Format("2006-01-02 15:04:05"))
+		} else {
+			for _, dec := range decisions {
+				price := 0.0
+				if data, ok := marketDataMap[dec.Symbol]; ok {
+					price = data.CurrentPrice
+				}
+				
+				// 1. 添加到文件记录
+				record.Decisions = append(record.Decisions, logger.DecisionAction{
+					Action:     dec.Action,
+					Symbol:     dec.Symbol,
+					Quantity:   dec.PositionSizeUSD,
+					Leverage:   dec.Leverage,
+					Price:      price,
+					Confidence: float64(dec.Confidence),
+					Reasoning:  dec.Reasoning,
+					Timestamp:  currentTime,
+					Success:    true,
+					Error:      "",
+				})
+
+				// 2. 打印控制台日志 (Backend Log)
+				// 截取Reasoning前100个字符避免太长
+				reasoningShort := dec.Reasoning
+				if len(reasoningShort) > 100 {
+					reasoningShort = reasoningShort[:100] + "..."
+				}
+				log.Printf("[Backtest %s] Step %d | Time: %s | AI Decision: %s %s | Conf: %d%% | Reason: %s",
+					e.backtestID, stepCount, currentTime.Format("15:04:05"), 
+					strings.ToUpper(dec.Action), dec.Symbol, dec.Confidence, reasoningShort)
+			}
+		}
+
+		// 写入日志文件
+		if err := e.decisionLogger.LogDecision(record); err != nil {
+			log.Printf("[Backtest %s] Failed to log decision to file: %v", e.backtestID, err)
+		}
+
 		// 执行交易决策
 		if err := e.executeDecisions(decisions, marketDataMap, currentTime); err != nil {
 			log.Printf("[Backtest %s] Failed to execute decisions: %v", e.backtestID, err)
@@ -109,7 +219,22 @@ func (e *Engine) Run(ctx context.Context) error {
 
 		// 记录净值快照
 		e.recordEquitySnapshot(currentTime)
+
+		// 6. 增量保存中间结果 (每10个周期保存一次，开发模式下每1个周期保存一次)
+		saveInterval := 10
+		if os.Getenv("NOFX_DEV_MODE") == "true" {
+			saveInterval = 1
+		}
+		if stepCount%saveInterval == 0 {
+			if err := e.saveIntermediateResults(); err != nil {
+				log.Printf("[Backtest %s] Failed to save intermediate results: %v", e.backtestID, err)
+			}
+		}
 	}
+
+	// 强制平掉所有未平仓的持仓（在回测结束时）
+	// 这样可以确保所有交易都有完整的记录（entry + exit）
+	e.closeAllOpenPositions()
 
 	// 4. 计算最终结果
 	result := e.calculateResult()
@@ -125,16 +250,21 @@ func (e *Engine) Run(ctx context.Context) error {
 	return nil
 }
 
-// loadHistoricalData 加载历史数据
+// loadHistoricalData 加载历史数据(优先使用缓存)
 func (e *Engine) loadHistoricalData(ctx context.Context) error {
 	log.Printf("[Backtest %s] Loading historical data for %d symbols",
 		e.backtestID, len(e.config.TradingSymbols))
 
-	startMs := e.config.StartTime.UnixMilli()
+	// 预加载12小时的数据用于计算指标
+	preheatDuration := 12 * time.Hour
+	startMs := e.config.StartTime.Add(-preheatDuration).UnixMilli()
 	endMs := e.config.EndTime.UnixMilli()
 
 	// 计算需要的间隔(3m用于主数据)
 	interval := "3m"
+
+	cacheHits := 0
+	cacheMisses := 0
 
 	for i, symbol := range e.config.TradingSymbols {
 		select {
@@ -146,14 +276,43 @@ func (e *Engine) loadHistoricalData(ctx context.Context) error {
 		log.Printf("[Backtest %s] Loading data for %s (%d/%d)",
 			e.backtestID, symbol, i+1, len(e.config.TradingSymbols))
 
-		klines, err := e.apiClient.GetKlinesRange(symbol, interval, startMs, endMs)
+		// 1. 优先尝试从缓存读取
+		cachedKlines, found, err := e.db.GetKlineCache(symbol, interval, startMs, endMs)
 		if err != nil {
-			return fmt.Errorf("failed to load klines for %s: %w", symbol, err)
+			log.Printf("[Backtest %s] ⚠️ 读取缓存失败: %v, 将从API获取", e.backtestID, err)
+		}
+
+		var klines []market.Kline
+
+		if found && len(cachedKlines) > 0 {
+			// 缓存命中
+			klines = cachedKlines
+			cacheHits++
+			log.Printf("[Backtest %s] ✅ 缓存命中: %s, 共 %d 条K线", e.backtestID, symbol, len(klines))
+		} else {
+			// 缓存未命中，从API加载
+			cacheMisses++
+			log.Printf("[Backtest %s] 🌐 缓存未命中，从API加载: %s", e.backtestID, symbol)
+
+			klines, err = e.apiClient.GetKlinesRange(symbol, interval, startMs, endMs)
+			if err != nil {
+				return fmt.Errorf("failed to load klines for %s: %w", symbol, err)
+			}
+
+			// 保存到缓存供下次使用
+			if err := e.db.SaveKlineCache(symbol, interval, startMs, endMs, klines); err != nil {
+				log.Printf("[Backtest %s] ⚠️ 保存缓存失败: %v", e.backtestID, err)
+			}
+
+			log.Printf("[Backtest %s] Loaded %d klines for %s from API", e.backtestID, len(klines), symbol)
 		}
 
 		e.klineCache[symbol] = klines
-		log.Printf("[Backtest %s] Loaded %d klines for %s", e.backtestID, len(klines), symbol)
 	}
+
+	log.Printf("[Backtest %s] 📊 数据加载完成: 缓存命中 %d, 缓存未命中 %d (命中率: %.1f%%)",
+		e.backtestID, cacheHits, cacheMisses,
+		float64(cacheHits)/float64(cacheHits+cacheMisses)*100)
 
 	return nil
 }
@@ -209,6 +368,88 @@ func (e *Engine) getRecentKlines(klines []market.Kline, targetMs int64, count in
 	return result
 }
 
+// getMockDecisions 生成Mock决策(总是做多)
+func (e *Engine) getMockDecisions(marketDataMap map[string]*market.Data) ([]decision.Decision, error) {
+	var decisions []decision.Decision
+	equity := e.positionManager.GetEquity()
+	availableBalance := e.positionManager.GetAvailableBalance()
+
+	for symbol, data := range marketDataMap {
+		pos, hasPos := e.positionManager.GetPosition(symbol)
+		currentPrice := data.CurrentPrice
+
+		if !hasPos {
+			// Open Long
+			// Calculate reasonable SL/TP for 1:3 risk/reward
+			stopLoss := currentPrice * 0.95   // 5% risk
+			takeProfit := currentPrice * 1.15 // 15% reward
+
+			// Position size: 10% of equity
+			positionSize := equity * 0.1
+			if positionSize > availableBalance {
+				positionSize = availableBalance * 0.9
+			}
+
+			// Ensure minimum position size
+			if positionSize < 20 {
+				continue // Skip if balance too low
+			}
+
+			// Add some indicator info to reasoning to verify data calculation
+			indicators := fmt.Sprintf("Price: %.2f", currentPrice)
+			if tfData, ok := data.TimeframeData["3m"]; ok && len(tfData.MidPrices) > 0 {
+				indicators += fmt.Sprintf(", LastClose: %.2f", tfData.MidPrices[len(tfData.MidPrices)-1])
+			}
+
+			decisions = append(decisions, decision.Decision{
+				Symbol:          symbol,
+				Action:          "open_long",
+				Leverage:        1,
+				PositionSizeUSD: positionSize,
+				StopLoss:        stopLoss,
+				TakeProfit:      takeProfit,
+				Confidence:      100,
+				Reasoning:       fmt.Sprintf("Mock Mode: Opening Long. %s", indicators),
+			})
+		} else if pos.Side == "short" {
+			// Close Short
+			decisions = append(decisions, decision.Decision{
+				Symbol:     symbol,
+				Action:     "close_short",
+				Confidence: 100,
+				Reasoning:  fmt.Sprintf("Mock Mode: Closing Short at %.2f", currentPrice),
+			})
+		} else if pos.Side == "long" {
+			// Check if we should close the long position
+			// Close if profit > 8% or loss > 4%
+			if pos.UnrealizedPnLPct > 8.0 {
+				decisions = append(decisions, decision.Decision{
+					Symbol:     symbol,
+					Action:     "close_long",
+					Confidence: 100,
+					Reasoning:  fmt.Sprintf("Mock Mode: Take Profit - Closing Long. PnL: %.2f%%", pos.UnrealizedPnLPct),
+				})
+			} else if pos.UnrealizedPnLPct < -4.0 {
+				decisions = append(decisions, decision.Decision{
+					Symbol:     symbol,
+					Action:     "close_long",
+					Confidence: 100,
+					Reasoning:  fmt.Sprintf("Mock Mode: Stop Loss - Closing Long. PnL: %.2f%%", pos.UnrealizedPnLPct),
+				})
+			} else {
+				// Hold Long
+				decisions = append(decisions, decision.Decision{
+					Symbol:     symbol,
+					Action:     "hold",
+					Confidence: 100,
+					Reasoning:  fmt.Sprintf("Mock Mode: Holding Long. PnL: %.2f%%", pos.UnrealizedPnLPct),
+				})
+			}
+		}
+	}
+	return decisions, nil
+}
+
 // calculateMarketData 计算市场数据(复用market.Get逻辑)
 func (e *Engine) calculateMarketData(symbol string, klines []market.Kline) (*market.Data, error) {
 	// 简化版本:直接使用K线数据计算基本指标
@@ -251,6 +492,11 @@ func (e *Engine) calculateMarketData(symbol string, klines []market.Kline) (*mar
 
 // getDecisions 获取AI决策
 func (e *Engine) getDecisions(marketDataMap map[string]*market.Data) ([]decision.Decision, error) {
+	// 如果开启了Mock模式，直接返回Mock决策
+	if e.config.MockMode {
+		return e.getMockDecisions(marketDataMap)
+	}
+
 	// 构建决策上下文
 	ctx := &decision.Context{
 		Account: decision.AccountInfo{
@@ -261,7 +507,7 @@ func (e *Engine) getDecisions(marketDataMap map[string]*market.Data) ([]decision
 		CandidateCoins:  []decision.CandidateCoin{},
 		MarketDataMap:   marketDataMap,
 		BTCETHLeverage:  e.config.BTCETHLeverage,
-		AltcoinLeverage: e.config.AltcoinLeverage,
+		AltcoinLeverage: int(e.config.AltcoinLeverage),
 		IndicatorConfig: e.config.IndicatorConfig,
 	}
 
@@ -323,6 +569,11 @@ func (e *Engine) executeDecisions(
 ) error {
 	for _, dec := range decisions {
 		symbol := dec.Symbol
+		// Skip special symbols or actions
+		if symbol == "ALL" || strings.ToLower(dec.Action) == "wait" {
+			continue
+		}
+		
 		marketData, exists := marketDataMap[symbol]
 		if !exists {
 			log.Printf("[Backtest %s] No market data for %s", e.backtestID, symbol)
@@ -440,6 +691,59 @@ func (e *Engine) executeClosePosition(dec decision.Decision, marketPrice float64
 		e.backtestID, pos.Side, symbol, executionPrice, trade.PnL, trade.PnLPct)
 
 	return nil
+}
+
+// closeAllOpenPositions 强制平掉所有未平仓的持仓（回测结束时调用）
+func (e *Engine) closeAllOpenPositions() {
+	// 获取所有持仓
+	positions := e.positionManager.GetAllPositions()
+	if len(positions) == 0 {
+		return
+	}
+
+	log.Printf("[Backtest %s] Closing %d open positions at backtest end", e.backtestID, len(positions))
+
+	// 获取最后时刻的市场数据作为平仓价格
+	endTime := e.config.EndTime
+	marketDataMap, err := e.getMarketDataAtTime(endTime)
+	if err != nil {
+		log.Printf("[Backtest %s] Failed to get market data for final close: %v", e.backtestID, err)
+		return
+	}
+
+	// 逐个平仓
+	for _, pos := range positions {
+		symbol := pos.Symbol
+		data, exists := marketDataMap[symbol]
+		if !exists {
+			log.Printf("[Backtest %s] No market data for %s, skipping final close", e.backtestID, symbol)
+			continue
+		}
+
+		// 再次确认持仓存在(虽然是从GetAllPositions获取的)
+		_, hasPos := e.positionManager.GetPosition(symbol)
+		if !hasPos {
+			continue
+		}
+
+		// 使用最后的市场价格作为平仓价
+		closePrice := data.CurrentPrice
+
+		// 平仓
+		trade, err := e.positionManager.ClosePosition(symbol, closePrice)
+		if err != nil {
+			log.Printf("[Backtest %s] Failed to close position %s: %v", e.backtestID, symbol, err)
+			continue
+		}
+
+		// 记录交易
+		trade.ExitTime = endTime
+		trade.Fee = trade.Quantity * closePrice * 0.0004 // 0.04% fee
+		e.trades = append(e.trades, *trade)
+
+		log.Printf("[Backtest %s] Force closed %s position: %s @ %.2f (PnL: %.2f, %.2f%%)",
+			e.backtestID, pos.Side, symbol, closePrice, trade.PnL, trade.PnLPct)
+	}
 }
 
 // updateUnrealizedPnL 更新未实现盈亏
@@ -564,6 +868,90 @@ func (e *Engine) saveResult(result *Result) error {
 		return fmt.Errorf("failed to save trades: %w", err)
 	}
 
+	// 保存决策记录
+	if len(e.decisions) > 0 {
+		if err := e.db.SaveBacktestDecisions(e.backtestID, e.decisions); err != nil {
+			return fmt.Errorf("failed to save decisions: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// saveIntermediateResults 保存中间结果
+func (e *Engine) saveIntermediateResults() error {
+	// 1. 计算当前统计数据
+	result := e.calculateResult()
+
+	// 2. 更新回测统计信息
+	backtestRun := &config.BacktestRun{
+		FinalEquity: result.FinalEquity,
+		TotalPnL:    result.TotalPnL,
+		TotalPnLPct: result.TotalPnLPct,
+		MaxDrawdown: result.MaxDrawdown,
+		SharpeRatio: result.SharpeRatio,
+		WinRate:     result.WinRate,
+		TotalTrades: result.TotalTrades,
+	}
+	if err := e.db.UpdateBacktestStats(e.backtestID, backtestRun); err != nil {
+		return fmt.Errorf("failed to update backtest stats: %w", err)
+	}
+
+	// 3. 增量保存净值快照
+	if len(e.equitySnapshots) > e.lastSavedSnapshotIdx {
+		newSnapshots := e.equitySnapshots[e.lastSavedSnapshotIdx:]
+		dbSnapshots := make([]config.BacktestEquitySnapshot, len(newSnapshots))
+		for i, s := range newSnapshots {
+			dbSnapshots[i] = config.BacktestEquitySnapshot{
+				BacktestID: e.backtestID,
+				Time:       s.Time,
+				Equity:     s.Equity,
+				PnL:        s.PnL,
+				PnLPct:     s.PnLPct,
+			}
+		}
+		if err := e.db.SaveEquitySnapshots(e.backtestID, dbSnapshots); err != nil {
+			return fmt.Errorf("failed to save equity snapshots: %w", err)
+		}
+		e.lastSavedSnapshotIdx = len(e.equitySnapshots)
+	}
+
+	// 4. 增量保存交易记录
+	if len(e.trades) > e.lastSavedTradeIdx {
+		newTrades := e.trades[e.lastSavedTradeIdx:]
+		dbTrades := make([]config.BacktestTrade, len(newTrades))
+		for i, t := range newTrades {
+			dbTrades[i] = config.BacktestTrade{
+				BacktestID: e.backtestID,
+				Symbol:     t.Symbol,
+				Side:       t.Side,
+				Action:     t.Action,
+				EntryPrice: &t.EntryPrice,
+				ExitPrice:  &t.ExitPrice,
+				Quantity:   t.Quantity,
+				Leverage:   t.Leverage,
+				PnL:        t.PnL,
+				PnLPct:     t.PnLPct,
+				Fee:        t.Fee,
+				EntryTime:  &t.EntryTime,
+				ExitTime:   &t.ExitTime,
+			}
+		}
+		if err := e.db.SaveBacktestTrades(e.backtestID, dbTrades); err != nil {
+			return fmt.Errorf("failed to save trades: %w", err)
+		}
+		e.lastSavedTradeIdx = len(e.trades)
+	}
+
+	// 5. 增量保存决策记录
+	if len(e.decisions) > e.lastSavedDecisionIdx {
+		newDecisions := e.decisions[e.lastSavedDecisionIdx:]
+		if err := e.db.SaveBacktestDecisions(e.backtestID, newDecisions); err != nil {
+			return fmt.Errorf("failed to save decisions: %w", err)
+		}
+		e.lastSavedDecisionIdx = len(e.decisions)
+	}
+
 	return nil
 }
 
@@ -584,7 +972,7 @@ func (e *Engine) getLeverageForSymbol(symbol string) int {
 
 	// 山寨币使用较高杠杆
 	if e.config.AltcoinLeverage > 0 {
-		return e.config.AltcoinLeverage
+		return int(e.config.AltcoinLeverage)
 	}
 	return 20
 }

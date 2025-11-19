@@ -23,7 +23,8 @@ type Config struct {
 	OverrideBasePrompt   bool                    // 是否覆盖基础提示词
 	SystemPromptTemplate string                  // 系统提示词模板
 	BTCETHLeverage       int                     // BTC/ETH杠杆
-	AltcoinLeverage      int                     // 山寨币杠杆
+	AltcoinLeverage      float64 `json:"altcoin_leverage"`
+	MockMode             bool    `json:"mock_mode"` // If true, AI always returns LONG                     // 山寨币杠杆
 }
 
 // Result 回测结果
@@ -66,12 +67,15 @@ type Trade struct {
 
 // Position 持仓
 type Position struct {
-	Symbol        string
-	Side          string // long/short
-	EntryPrice    float64
-	Quantity      float64
-	Leverage      int
-	MarginUsed    float64
-	UnrealizedPnL float64
-	EntryTime     time.Time
+	Symbol           string
+	Side             string // "long" or "short"
+	EntryPrice       float64
+	MarkPrice        float64 // Current market price
+	Quantity         float64
+	Leverage         int
+	UnrealizedPnL    float64
+	UnrealizedPnLPct float64
+	LiquidationPrice float64
+	MarginUsed       float64
+	EntryTime        time.Time // Use time.Time for clarity
 }

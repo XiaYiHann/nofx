@@ -537,17 +537,27 @@ read_env_vars() {
         NOFX_BACKEND_PORT=8080
     fi
 
-    # 检查端口是否被占用，如果被占用则寻找可用端口
+    # 检查端口是否被占用，如果被占用则强制清理
     if is_port_in_use $NOFX_FRONTEND_PORT; then
-        local free_port=$(find_free_port $NOFX_FRONTEND_PORT)
-        print_warning "端口 $NOFX_FRONTEND_PORT 被占用，使用端口 $free_port"
-        NOFX_FRONTEND_PORT=$free_port
+        print_warning "端口 $NOFX_FRONTEND_PORT 被占用，正在清理..."
+        lsof -ti:$NOFX_FRONTEND_PORT | xargs kill -9 2>/dev/null || true
+        sleep 1
+        if is_port_in_use $NOFX_FRONTEND_PORT; then
+             print_error "无法清理端口 $NOFX_FRONTEND_PORT"
+             exit 1
+        fi
+        print_success "端口 $NOFX_FRONTEND_PORT 已清理"
     fi
 
     if is_port_in_use $NOFX_BACKEND_PORT; then
-        local free_port=$(find_free_port $NOFX_BACKEND_PORT)
-        print_warning "端口 $NOFX_BACKEND_PORT 被占用，使用端口 $free_port"
-        NOFX_BACKEND_PORT=$free_port
+        print_warning "端口 $NOFX_BACKEND_PORT 被占用，正在清理..."
+        lsof -ti:$NOFX_BACKEND_PORT | xargs kill -9 2>/dev/null || true
+        sleep 1
+        if is_port_in_use $NOFX_BACKEND_PORT; then
+             print_error "无法清理端口 $NOFX_BACKEND_PORT"
+             exit 1
+        fi
+        print_success "端口 $NOFX_BACKEND_PORT 已清理"
     fi
 }
 
@@ -563,7 +573,7 @@ setup_frontend() {
         npm install
     else
         print_info "前端依赖已安装，检查更新..."
-        npm ci --silent
+        npm install --silent
     fi
 
     cd ..
@@ -612,8 +622,13 @@ start() {
     # 设置开发模式环境变量
     if [ "$1" == "--dev" ]; then
         export DISABLE_OTP=true
-        print_info "🚫 开发模式：已禁用2FA验证"
+        export NOFX_DEV_MODE=true
+        print_info "🚫 开发模式：已禁用2FA验证，已开启详细日志"
     fi
+
+    # 导出端口配置，确保后端能获取到动态分配的端口
+    export NOFX_BACKEND_PORT
+    export NOFX_FRONTEND_PORT
 
     # 清理旧的PID文件
     rm -f nofx.pid frontend.pid

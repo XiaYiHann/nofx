@@ -390,6 +390,7 @@ export const api = {
     end_time: string
     initial_balance: number
     use_trader_config?: boolean
+    mock_mode?: boolean
   }): Promise<any> {
     const res = await httpClient.post(
       `${API_BASE}/backtest`,
@@ -398,14 +399,6 @@ export const api = {
     )
     if (!res.ok) throw new Error('创建回测失败')
     return res.json()
-  },
-
-  async deleteBacktest(backtestId: string): Promise<void> {
-    const res = await httpClient.delete(
-      `${API_BASE}/backtest/${backtestId}`,
-      getAuthHeaders()
-    )
-    if (!res.ok) throw new Error('删除回测失败')
   },
 
   async getBacktestEquityHistory(backtestId: string): Promise<any[]> {
@@ -424,5 +417,22 @@ export const api = {
     )
     if (!res.ok) throw new Error('获取回测交易记录失败')
     return res.json()
+  },
+
+  async getBacktestDecisions(backtestId: string): Promise<any[]> {
+    const res = await httpClient.get(
+      `${API_BASE}/backtest/${backtestId}/decisions`,
+      getAuthHeaders()
+    )
+    if (!res.ok) throw new Error('获取回测决策记录失败')
+    return res.json()
+  },
+
+  async deleteBacktest(backtestId: string): Promise<void> {
+    const res = await httpClient.delete(
+      `${API_BASE}/backtest/${backtestId}`,
+      getAuthHeaders()
+    )
+    if (!res.ok) throw new Error('删除回测失败')
   },
 }

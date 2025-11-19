@@ -154,7 +154,7 @@ function App() {
   // 手动刷新账户余额
   const handleRefreshAccount = async () => {
     if (!selectedTraderId || isRefreshingAccount) return
-    
+
     setIsRefreshingAccount(true)
     try {
       await refreshAccount()
@@ -268,24 +268,24 @@ function App() {
   if (route === '/reset-password') {
     return <ResetPasswordPage />
   }
-  
+
   // Backtest routes
   if (route.startsWith('/backtest')) {
     if (!user || !token) {
       window.location.href = '/login'
       return null
     }
-    
+
     const backtestId = route.split('/')[2] // /backtest/:id
-    
+
     return (
       <div
         className="min-h-screen"
-        style={{ background: '#0B0E11', color: '#EAECEF' }}
+        style={{ background: '#000000', color: '#EAECEF' }}
       >
         <HeaderBar
           isLoggedIn={!!user}
-          currentPage="trader"
+          currentPage="backtest"
           language={language}
           onLanguageChange={setLanguage}
           user={user}
@@ -304,11 +304,11 @@ function App() {
               window.history.pushState({}, '', '/faq')
               setRoute('/faq')
             } else if (page === 'strategies') {
+              window.history.pushState({}, '', '/strategies')
+              setRoute('/strategies')
             } else if (page === 'backtest') {
               window.history.pushState({}, '', '/backtest')
               setRoute('/backtest')
-              window.history.pushState({}, '', '/strategies')
-              setRoute('/strategies')
             }
           }}
         />
@@ -322,7 +322,7 @@ function App() {
       </div>
     )
   }
-  
+
   if (route === '/strategies') {
     return (
       <div
@@ -349,12 +349,6 @@ function App() {
             } else if (page === 'faq') {
               window.history.pushState({}, '', '/faq')
               setRoute('/faq')
-            } else if (page === 'strategies') {
-            } else if (page === 'backtest') {
-              window.history.pushState({}, '', '/backtest')
-              setRoute('/backtest')
-              window.history.pushState({}, '', '/strategies')
-              setRoute('/strategies')
             } else if (page === 'backtest') {
               window.history.pushState({}, '', '/backtest')
               setRoute('/backtest')
@@ -931,7 +925,7 @@ function TraderDetailsPage({
             >
               {getModelDisplayName(
                 selectedTrader.ai_model.split('_').pop() ||
-                  selectedTrader.ai_model
+                selectedTrader.ai_model
               )}
             </span>
           </span>
@@ -1103,13 +1097,13 @@ function TraderDetailsPage({
                             style={
                               pos.side === 'long'
                                 ? {
-                                    background: 'rgba(14, 203, 129, 0.1)',
-                                    color: '#0ECB81',
-                                  }
+                                  background: 'rgba(14, 203, 129, 0.1)',
+                                  color: '#0ECB81',
+                                }
                                 : {
-                                    background: 'rgba(246, 70, 93, 0.1)',
-                                    color: '#F6465D',
-                                  }
+                                  background: 'rgba(246, 70, 93, 0.1)',
+                                  color: '#F6465D',
+                                }
                             }
                           >
                             {t(
@@ -1426,13 +1420,13 @@ function DecisionCard({
                 style={
                   action.action.includes('open')
                     ? {
-                        background: 'rgba(96, 165, 250, 0.1)',
-                        color: '#60a5fa',
-                      }
+                      background: 'rgba(96, 165, 250, 0.1)',
+                      color: '#60a5fa',
+                    }
                     : {
-                        background: 'rgba(240, 185, 11, 0.1)',
-                        color: '#F0B90B',
-                      }
+                      background: 'rgba(240, 185, 11, 0.1)',
+                      color: '#F0B90B',
+                    }
                 }
               >
                 {action.action}
@@ -1481,7 +1475,7 @@ function DecisionCard({
             style={{
               color:
                 decision.candidate_coins &&
-                decision.candidate_coins.length === 0
+                  decision.candidate_coins.length === 0
                   ? '#F6465D'
                   : '#848E9C',
             }}

@@ -34,7 +34,7 @@
 - 点击顶部导航栏的 **"回测"** 按钮
 
 **方式2: 直接访问URL**
-- 浏览器访问: `http://localhost:5173/backtest`
+- 浏览器访问: `http://localhost:3000/backtest`
 
 ### 3. 创建回测
 

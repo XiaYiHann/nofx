@@ -175,8 +175,13 @@ func (s *Server) setupRoutes() {
 			protected.GET("/backtest/:id", s.handleGetBacktest)
 			protected.GET("/backtest/:id/equity-history", s.handleGetBacktestEquityHistory)
 			protected.GET("/backtest/:id/trades", s.handleGetBacktestTrades)
+			protected.GET("/backtest/:id/decisions", s.handleGetBacktestDecisions)
 			protected.GET("/backtests", s.handleListBacktests)
 			protected.DELETE("/backtest/:id", s.handleDeleteBacktest)
+
+			// 缓存管理
+			protected.GET("/backtest/cache/stats", s.handleGetCacheStats)
+			protected.DELETE("/backtest/cache/clear", s.handleClearCache)
 		}
 	}
 }

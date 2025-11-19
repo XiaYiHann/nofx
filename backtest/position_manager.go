@@ -128,6 +128,15 @@ func (pm *PositionManager) GetPosition(symbol string) (*Position, bool) {
 	return position, exists
 }
 
+// GetAllPositions 获取所有持仓
+func (pm *PositionManager) GetAllPositions() []*Position {
+	positions := make([]*Position, 0, len(pm.positions))
+	for _, pos := range pm.positions {
+		positions = append(positions, pos)
+	}
+	return positions
+}
+
 // HasPosition 检查是否有持仓
 func (pm *PositionManager) HasPosition(symbol string) bool {
 	_, exists := pm.positions[symbol]

@@ -225,6 +225,12 @@ func (client *Client) callOnce(systemPrompt, userPrompt string) (string, error) 
 		"content": userPrompt,
 	})
 
+	// 开发模式下打印输入
+	if os.Getenv("NOFX_DEV_MODE") == "true" {
+		log.Printf("🐛 [DEV] AI Input System Prompt:\n%s", systemPrompt)
+		log.Printf("🐛 [DEV] AI Input User Prompt:\n%s", userPrompt)
+	}
+
 	// 构建请求体
 	requestBody := map[string]interface{}{
 		"model":       client.Model,
@@ -308,7 +314,13 @@ func (client *Client) callOnce(systemPrompt, userPrompt string) (string, error) 
 		return "", fmt.Errorf("API返回空响应")
 	}
 
-	return result.Choices[0].Message.Content, nil
+	content := result.Choices[0].Message.Content
+	// 开发模式下打印输出
+	if os.Getenv("NOFX_DEV_MODE") == "true" {
+		log.Printf("🐛 [DEV] AI Output:\n%s", content)
+	}
+
+	return content, nil
 }
 
 // isRetryableError 判断错误是否可重试

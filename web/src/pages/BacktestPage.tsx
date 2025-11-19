@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../lib/api'
-import { Plus, TrendingUp, TrendingDown, Activity, Trash2, Eye } from 'lucide-react'
+import { Plus, TrendingUp, TrendingDown, Play, Activity, Calendar, Eye, Trash2 } from 'lucide-react'
 import type { TraderInfo } from '../types'
 
 interface BacktestRun {
@@ -23,7 +23,7 @@ export default function BacktestPage() {
   const [traders, setTraders] = useState<TraderInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
-  
+
   // 表单状态
   const [selectedTrader, setSelectedTrader] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -59,6 +59,22 @@ export default function BacktestPage() {
     }
   }
 
+  const setTimeRange = (hours: number) => {
+    const end = new Date()
+    const start = new Date(end.getTime() - hours * 60 * 60 * 1000)
+    
+    // Format for datetime-local: YYYY-MM-DDThh:mm
+    // Note: We need to handle timezone offset to ensure local time is displayed correctly
+    const toLocalISOString = (date: Date) => {
+      const offset = date.getTimezoneOffset() * 60000 // offset in milliseconds
+      const localDate = new Date(date.getTime() - offset)
+      return localDate.toISOString().slice(0, 16)
+    }
+
+    setStartDate(toLocalISOString(start))
+    setEndDate(toLocalISOString(end))
+  }
+
   const handleCreateBacktest = async (e: React.FormEvent) => {
     e.preventDefault()
     setCreating(true)
@@ -75,7 +91,7 @@ export default function BacktestPage() {
       console.log('Backtest created:', data)
       setShowCreateForm(false)
       loadBacktests()
-      
+
       // 重置表单
       setSelectedTrader('')
       setStartDate('')
@@ -104,6 +120,79 @@ export default function BacktestPage() {
   const handleViewDetails = (id: string) => {
     window.history.pushState({}, '', `/backtest/${id}`)
     window.dispatchEvent(new PopStateEvent('popstate'))
+  }
+
+  const handleMockTest = async () => {
+    let traderId = ''
+
+    if (traders.length > 0) {
+      traderId = traders[0].trader_id
+    } else {
+      // 尝试自动创建一个 Mock 交易员
+      try {
+        // 1. 获取可用的模型和交易所配置
+        const [models, exchanges] = await Promise.all([
+          api.getModelConfigs(),
+          api.getExchangeConfigs()
+        ])
+
+        // 查找已启用的配置
+        // 注意：这里假设返回的是数组。如果API返回对象，可能需要调整。
+        // 根据 AITradersPage 的逻辑，这里应该是数组。
+        const enabledModel = Array.isArray(models) ? models.find((m: any) => m.enabled) : null
+        const enabledExchange = Array.isArray(exchanges) ? exchanges.find((e: any) => e.enabled) : null
+
+        if (!enabledModel || !enabledExchange) {
+          alert('Mock 测试需要至少配置一个启用的 AI 模型和交易所。\n请前往 "AI 交易员" 页面配置 API Key。')
+          return
+        }
+
+        // 2. 创建 Mock 交易员
+        const newTrader = await api.createTrader({
+          name: 'Mock Trader',
+          ai_model_id: enabledModel.id,
+          exchange_id: enabledExchange.id,
+          initial_balance: 10000,
+          scan_interval_minutes: 5,
+          btc_eth_leverage: 1,
+          altcoin_leverage: 1,
+          trading_symbols: 'BTCUSDT',
+          use_coin_pool: false,
+          use_oi_top: false
+        })
+
+        traderId = newTrader.trader_id
+        // 刷新交易员列表
+        loadTraders()
+      } catch (err) {
+        console.error('Failed to auto-create mock trader:', err)
+        alert('无法自动创建 Mock 交易员，请手动创建一个交易员后再试。')
+        return
+      }
+    }
+
+    const now = new Date()
+    const endTime = now.toISOString()
+    const startTime = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days ago
+
+    try {
+      await api.createBacktest({
+        trader_id: traderId,
+        start_time: startTime,
+        end_time: endTime,
+        initial_balance: 10000,
+        use_trader_config: true,
+        mock_mode: true,
+      })
+
+      // Refresh list
+      const res = await api.getBacktests()
+      setBacktests(res)
+      alert('Mock 测试已启动')
+    } catch (err) {
+      console.error(err)
+      alert('启动 Mock 测试失败')
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -149,18 +238,33 @@ export default function BacktestPage() {
           <h1 className="text-3xl font-bold text-white mb-2">策略回测</h1>
           <p className="text-gray-400">使用历史数据验证交易策略的有效性</p>
         </div>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          新建回测
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleMockTest}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <Play className="w-4 h-4" />
+            Mock 测试
+          </button>
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            新建回测
+          </button>
+        </div>
       </div>
 
       {/* 创建表单 */}
       {showCreateForm && (
-        <div className="bg-gray-900 rounded-lg p-6 mb-6 border border-gray-800">
+        <div
+          className="rounded-lg p-6 mb-6"
+          style={{
+            background: 'var(--panel-bg)',
+            border: '1px solid var(--panel-border)'
+          }}
+        >
           <h2 className="text-xl font-bold text-white mb-4">创建新回测</h2>
           <form onSubmit={handleCreateBacktest} className="space-y-4">
             <div>
@@ -181,6 +285,30 @@ export default function BacktestPage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => setTimeRange(4)}
+                className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded transition-colors"
+              >
+                过去4小时
+              </button>
+              <button
+                type="button"
+                onClick={() => setTimeRange(24)}
+                className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded transition-colors"
+              >
+                过去24小时
+              </button>
+              <button
+                type="button"
+                onClick={() => setTimeRange(24 * 3)}
+                className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded transition-colors"
+              >
+                过去3天
+              </button>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -264,7 +392,13 @@ export default function BacktestPage() {
       {/* 回测列表 */}
       <div className="space-y-4">
         {backtests.length === 0 ? (
-          <div className="text-center py-12 bg-gray-900 rounded-lg border border-gray-800">
+          <div
+            className="text-center py-12 rounded-lg"
+            style={{
+              background: 'var(--panel-bg)',
+              border: '1px solid var(--panel-border)'
+            }}
+          >
             <Activity className="w-12 h-12 text-gray-600 mx-auto mb-3" />
             <p className="text-gray-400">暂无回测记录</p>
             <p className="text-gray-500 text-sm mt-1">点击"新建回测"开始</p>
@@ -273,7 +407,11 @@ export default function BacktestPage() {
           backtests.map((backtest) => (
             <div
               key={backtest.id}
-              className="bg-gray-900 rounded-lg p-5 border border-gray-800 hover:border-gray-700 transition-colors"
+              className="rounded-lg p-5 transition-colors"
+              style={{
+                background: 'var(--panel-bg)',
+                border: '1px solid var(--panel-border)'
+              }}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -287,7 +425,7 @@ export default function BacktestPage() {
                       </span>
                     )}
                   </div>
-                  
+
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
                       <div className="text-gray-400 mb-1">时间范围</div>
@@ -307,11 +445,10 @@ export default function BacktestPage() {
                         <div>
                           <div className="text-gray-400 mb-1">总收益</div>
                           <div
-                            className={`font-medium ${
-                              backtest.total_pnl_pct >= 0
-                                ? 'text-green-500'
-                                : 'text-red-500'
-                            }`}
+                            className={`font-medium ${backtest.total_pnl_pct >= 0
+                              ? 'text-green-500'
+                              : 'text-red-500'
+                              }`}
                           >
                             {backtest.total_pnl_pct >= 0 ? <TrendingUp className="inline w-4 h-4" /> : <TrendingDown className="inline w-4 h-4" />}
                             {' '}{backtest.total_pnl_pct.toFixed(2)}%
@@ -324,14 +461,14 @@ export default function BacktestPage() {
                       </>
                     )}
                   </div>
-                  
+
                   <div className="text-xs text-gray-500 mt-3">
                     创建于 {new Date(backtest.created_at).toLocaleString()}
                   </div>
                 </div>
 
                 <div className="flex gap-2">
-                  {backtest.status === 'completed' && (
+                  {(backtest.status === 'completed' || backtest.status === 'running') && (
                     <button
                       onClick={() => handleViewDetails(backtest.id)}
                       className="border border-gray-700 text-gray-300 hover:bg-gray-800 p-2 rounded-lg"

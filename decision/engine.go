@@ -127,8 +127,12 @@ func GetFullDecision(ctx *Context, mcpClient *mcp.Client) (*FullDecision, error)
 // GetFullDecisionWithCustomPrompt 获取AI的完整交易决策（支持自定义prompt和模板选择）
 func GetFullDecisionWithCustomPrompt(ctx *Context, mcpClient *mcp.Client, customPrompt string, overrideBase bool, templateName string) (*FullDecision, error) {
 	// 1. 为所有币种获取市场数据
-	if err := fetchMarketDataForContext(ctx); err != nil {
-		return nil, fmt.Errorf("获取市场数据失败: %w", err)
+	// 如果上下文并未提供市场数据（实盘模式），则从API获取
+	// 如果上下文已提供市场数据（回测模式），则直接使用，跳过API调用
+	if len(ctx.MarketDataMap) == 0 {
+		if err := fetchMarketDataForContext(ctx); err != nil {
+			return nil, fmt.Errorf("获取市场数据失败: %w", err)
+		}
 	}
 
 	// 2. 构建 System Prompt（固定规则）和 User Prompt（动态数据）
@@ -548,6 +552,7 @@ func extractDecisions(response string) ([]Decision, error) {
 	if jsonContent == "" {
 		// 🔧 安全回退 (Safe Fallback)：当AI只输出思维链没有JSON时，生成保底决策（避免系统崩溃）
 		log.Printf("⚠️  [SafeFallback] AI未输出JSON决策，进入安全等待模式 (AI response without JSON, entering safe wait mode)")
+		log.Printf("🔍 [DEBUG] 原始响应内容 (前500字符): %s", truncateString(response, 500))
 
 		// 提取思维链摘要（最多 240 字符）
 		cotSummary := jsonPart
@@ -825,4 +830,12 @@ func validateDecision(d *Decision, accountEquity float64, btcEthLeverage, altcoi
 	}
 
 	return nil
+}
+
+// truncateString 截断字符串
+func truncateString(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "..."
 }

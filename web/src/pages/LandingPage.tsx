@@ -42,6 +42,9 @@ export function LandingPage() {
           } else if (page === 'strategies') {
             window.history.pushState(null, '', '/strategies')
             window.dispatchEvent(new PopStateEvent('popstate'))
+          } else if (page === 'backtest') {
+            window.history.pushState(null, '', '/backtest')
+            window.dispatchEvent(new PopStateEvent('popstate'))
           }
         }}
       />
