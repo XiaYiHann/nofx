@@ -10,7 +10,6 @@ import (
 	"nofx/logger"
 	"nofx/market"
 	"nofx/mcp"
-	"os"
 	"strings"
 	"time"
 )
@@ -180,7 +179,7 @@ func (e *Engine) Run(ctx context.Context) error {
 				if data, ok := marketDataMap[dec.Symbol]; ok {
 					price = data.CurrentPrice
 				}
-				
+
 				// 1. 添加到文件记录
 				record.Decisions = append(record.Decisions, logger.DecisionAction{
 					Action:     dec.Action,
@@ -202,7 +201,7 @@ func (e *Engine) Run(ctx context.Context) error {
 					reasoningShort = reasoningShort[:100] + "..."
 				}
 				log.Printf("[Backtest %s] Step %d | Time: %s | AI Decision: %s %s | Conf: %d%% | Reason: %s",
-					e.backtestID, stepCount, currentTime.Format("15:04:05"), 
+					e.backtestID, stepCount, currentTime.Format("15:04:05"),
 					strings.ToUpper(dec.Action), dec.Symbol, dec.Confidence, reasoningShort)
 			}
 		}
@@ -220,11 +219,8 @@ func (e *Engine) Run(ctx context.Context) error {
 		// 记录净值快照
 		e.recordEquitySnapshot(currentTime)
 
-		// 6. 增量保存中间结果 (每10个周期保存一次，开发模式下每1个周期保存一次)
-		saveInterval := 10
-		if os.Getenv("NOFX_DEV_MODE") == "true" {
-			saveInterval = 1
-		}
+		// 6. 增量保存中间结果 (每1个周期保存一次，确保前端能实时看到进度)
+		saveInterval := 1
 		if stepCount%saveInterval == 0 {
 			if err := e.saveIntermediateResults(); err != nil {
 				log.Printf("[Backtest %s] Failed to save intermediate results: %v", e.backtestID, err)
@@ -573,7 +569,7 @@ func (e *Engine) executeDecisions(
 		if symbol == "ALL" || strings.ToLower(dec.Action) == "wait" {
 			continue
 		}
-		
+
 		marketData, exists := marketDataMap[symbol]
 		if !exists {
 			log.Printf("[Backtest %s] No market data for %s", e.backtestID, symbol)

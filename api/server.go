@@ -2109,6 +2109,9 @@ func (s *Server) Start() error {
 	log.Printf("  • GET  /api/decisions/latest?trader_id=xxx - 指定trader的最新决策")
 	log.Printf("  • GET  /api/statistics?trader_id=xxx - 指定trader的统计信息")
 	log.Printf("  • GET  /api/performance?trader_id=xxx - 指定trader的AI学习表现分析")
+	log.Printf("  • POST /api/backtest         - 创建回测")
+	log.Printf("  • GET  /api/backtest/:id     - 获取回测详情")
+	log.Printf("  • GET  /api/backtest/:id/decisions - 获取回测决策")
 	log.Println()
 
 	// 创建 http.Server 以支持 graceful shutdown

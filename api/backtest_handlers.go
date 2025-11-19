@@ -226,38 +226,50 @@ func (s *Server) handleGetBacktestDecisions(c *gin.Context) {
 		return
 	}
 
-	// 1. 尝试从文件系统读取实时日志（优先）
+	// 1. 优先尝试从日志文件读取 (实时性更好)
 	// 这种方式可以获取到最新的决策，包括"wait"等不会写入数据库的中间状态
 	// 并且格式与实盘交易一致
 	logDir := fmt.Sprintf("decision_logs/backtest_%s", backtestID)
 	decisionLogger := logger.NewDecisionLogger(logDir)
 	fileRecords, err := decisionLogger.GetLatestRecords(100) // 获取最近100条
 	if err == nil && len(fileRecords) > 0 {
-		// 将文件记录转换为前端需要的格式
-		var decisions []config.BacktestDecision
-		for _, record := range fileRecords {
-			for _, action := range record.Decisions {
-				decisions = append(decisions, config.BacktestDecision{
-					BacktestID: backtestID,
-					Symbol:     action.Symbol,
-					Action:     action.Action,
-					Price:      action.Price,
-					Quantity:   action.Quantity,
-					Leverage:   action.Leverage,
-					Confidence: action.Confidence,
-					Reasoning:  action.Reasoning,
-					Timestamp:  action.Timestamp,
-				})
-			}
-		}
-		// 如果成功从文件读取到数据，直接返回
-		if len(decisions) > 0 {
-			c.JSON(http.StatusOK, decisions)
-			return
-		}
+		// 直接返回文件记录，保持与实盘一致的丰富格式(包含CoT、Prompt等)
+		c.JSON(http.StatusOK, fileRecords)
+		return
 	}
 
 	// 2. 如果文件读取失败或为空，回退到数据库读取
+	decisions, err := s.database.GetBacktestDecisions(backtestID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get backtest decisions: " + err.Error()})
+		return
+	}
+
+	// 将数据库记录转换为 DecisionRecord 格式，以保持前端接口一致
+	var records []logger.DecisionRecord
+	for i, d := range decisions {
+		records = append(records, logger.DecisionRecord{
+			Timestamp:   d.Timestamp,
+			CycleNumber: i + 1, // 估算周期号
+			Success:     true,
+			Decisions: []logger.DecisionAction{
+				{
+					Action:     d.Action,
+					Symbol:     d.Symbol,
+					Price:      d.Price,
+					Quantity:   d.Quantity,
+					Leverage:   d.Leverage,
+					Confidence: d.Confidence,
+					Reasoning:  d.Reasoning,
+					Timestamp:  d.Timestamp,
+					Success:    true,
+				},
+			},
+		})
+	}
+
+	c.JSON(http.StatusOK, records)
+}	// 2. 如果文件读取失败或为空，回退到数据库读取
 	decisions, err := s.database.GetBacktestDecisions(backtestID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get backtest decisions: " + err.Error()})
