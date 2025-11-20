@@ -448,9 +448,6 @@ func (e *Engine) getMockDecisions(marketDataMap map[string]*market.Data) ([]deci
 
 // calculateMarketData 计算市场数据(复用market.Get逻辑)
 func (e *Engine) calculateMarketData(symbol string, klines []market.Kline) (*market.Data, error) {
-	// 简化版本:直接使用K线数据计算基本指标
-	// 在实际实现中,应该复用market.Get()的完整逻辑
-
 	if len(klines) == 0 {
 		return nil, fmt.Errorf("no klines available")
 	}
@@ -464,24 +461,23 @@ func (e *Engine) calculateMarketData(symbol string, klines []market.Kline) (*mar
 		TimeframeData: make(map[string]*market.TimeframeData),
 	}
 
-	// 提取价格和成交量序列
-	prices := make([]float64, len(klines))
-	volumes := make([]float64, len(klines))
-	for i, k := range klines {
-		prices[i] = k.Close
-		volumes[i] = k.Volume
-	}
+	// 使用market包计算完整指标
+	// 使用100个数据点以提供足够的上下文给AI
+	tfData := market.CalculateTimeframeData(klines, "3m", 100)
+	if tfData != nil {
+		data.TimeframeData["3m"] = tfData
 
-	// 创建3m时间框架数据
-	data.TimeframeData["3m"] = &market.TimeframeData{
-		Timeframe:  "3m",
-		DataPoints: len(klines),
-		MidPrices:  prices,
-		Volume:     volumes,
+		// 填充当前指标值 (使用最新一个点的数据)
+		if len(tfData.EMA20Values) > 0 {
+			data.CurrentEMA20 = tfData.EMA20Values[len(tfData.EMA20Values)-1]
+		}
+		if len(tfData.MACDValues) > 0 {
+			data.CurrentMACD = tfData.MACDValues[len(tfData.MACDValues)-1]
+		}
+		if len(tfData.RSI7Values) > 0 {
+			data.CurrentRSI7 = tfData.RSI7Values[len(tfData.RSI7Values)-1]
+		}
 	}
-
-	// TODO: 如果需要完整指标,应该调用market包的计算函数
-	// 这里为了简化,只提供基本数据
 
 	return data, nil
 }
@@ -548,6 +544,7 @@ func (e *Engine) getDecisions(marketDataMap map[string]*market.Data) ([]decision
 		e.config.CustomPrompt,
 		e.config.OverrideBasePrompt,
 		e.config.SystemPromptTemplate,
+		3.0, // 回测默认使用 3.0 风险回报比
 	)
 
 	if err != nil {

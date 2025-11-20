@@ -1,5 +1,4 @@
-Always use Chinese to Response
-
+# 永远用中文回答
 <!-- OPENSPEC:START -->
 
 # OpenSpec Instructions

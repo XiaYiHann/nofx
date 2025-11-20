@@ -31,7 +31,7 @@ func TestPaperTradingBaseURL(t *testing.T) {
 	}
 
 	// 验证 BaseURL 已设置为 Testnet
-	expectedURL := "https://testnet.binance.vision"
+	expectedURL := "https://testnet.binancefuture.com"
 	if futuresTrader.client.BaseURL != expectedURL {
 		t.Errorf("BaseURL 配置错误: 期望 '%s', 实际 '%s'", expectedURL, futuresTrader.client.BaseURL)
 	}

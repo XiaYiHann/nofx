@@ -247,6 +247,9 @@ func (client *Client) callOnce(systemPrompt, userPrompt string) (string, error) 
 		return "", fmt.Errorf("序列化请求失败: %w", err)
 	}
 
+	// 打印完整请求体 (Debug)
+	log.Printf("📤 [MCP] Request Payload:\n%s", string(jsonData))
+
 	// 创建HTTP请求
 	var url string
 	if client.UseFullURL {
@@ -292,6 +295,9 @@ func (client *Client) callOnce(systemPrompt, userPrompt string) (string, error) 
 	if err != nil {
 		return "", fmt.Errorf("读取响应失败: %w", err)
 	}
+
+	// 打印完整响应体 (Debug)
+	log.Printf("📥 [MCP] Response Payload:\n%s", string(body))
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("API返回错误 (status %d): %s", resp.StatusCode, string(body))

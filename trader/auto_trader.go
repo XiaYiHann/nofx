@@ -82,6 +82,9 @@ type AutoTraderConfig struct {
 	IndicatorConfig *market.IndicatorConfig // 市场指标配置（从数据库获取）
 }
 
+// MarketDataProvider defines a function to get market data
+type MarketDataProvider func(symbol string, config ...*market.IndicatorConfig) (*market.Data, error)
+
 // AutoTrader 自动交易器
 type AutoTrader struct {
 	id                    string // Trader唯一标识
@@ -112,6 +115,8 @@ type AutoTrader struct {
 	lastBalanceSyncTime   time.Time          // 上次余额同步时间
 	database              interface{}        // 数据库引用（用于自动更新余额）
 	userID                string             // 用户ID
+	marketDataProvider    MarketDataProvider // 市场数据提供者
+	riskManager           *RiskManager       // 风险管理器
 }
 
 // NewAutoTrader 创建自动交易器
@@ -256,6 +261,8 @@ func NewAutoTrader(config AutoTraderConfig, database interface{}, userID string)
 		lastBalanceSyncTime:   time.Now(), // 初始化为当前时间
 		database:              database,
 		userID:                userID,
+		marketDataProvider:    market.Get, // 默认使用market.Get
+		riskManager:           NewRiskManager(config.BTCETHLeverage, config.AltcoinLeverage),
 	}, nil
 }
 
@@ -463,6 +470,14 @@ func (at *AutoTrader) runCycle() error {
 		return fmt.Errorf("构建交易上下文失败: %w", err)
 	}
 
+	// 获取市场数据
+	if err := at.fetchMarketData(ctx); err != nil {
+		record.Success = false
+		record.ErrorMessage = fmt.Sprintf("获取市场数据失败: %v", err)
+		at.decisionLogger.LogDecision(record)
+		return fmt.Errorf("获取市场数据失败: %w", err)
+	}
+
 	// 保存账户状态快照
 	record.AccountState = logger.AccountSnapshot{
 		TotalBalance:          ctx.Account.TotalEquity - ctx.Account.UnrealizedPnL,
@@ -471,6 +486,11 @@ func (at *AutoTrader) runCycle() error {
 		PositionCount:         ctx.Account.PositionCount,
 		MarginUsedPct:         ctx.Account.MarginUsedPct,
 		InitialBalance:        at.initialBalance, // 记录当时的初始余额基准
+	}
+
+	// 4.5 预先获取市场数据（使用注入的provider，支持测试mock）
+	if err := at.fetchMarketData(ctx); err != nil {
+		log.Printf("⚠️ [%s] 预获取市场数据部分失败: %v", at.name, err)
 	}
 
 	// 保存持仓快照
@@ -497,7 +517,14 @@ func (at *AutoTrader) runCycle() error {
 
 	// 5. 调用AI获取完整决策
 	log.Printf("🤖 正在请求AI分析并决策... [模板: %s]", at.systemPromptTemplate)
-	decision, err := decision.GetFullDecisionWithCustomPrompt(ctx, at.mcpClient, at.customPrompt, at.overrideBasePrompt, at.systemPromptTemplate)
+
+	// 传递 RiskManager 中的 MinRiskRewardRatio 配置
+	minRiskRewardRatio := 3.0 // 默认值
+	if at.riskManager != nil && at.riskManager.MinRiskRewardRatio > 0 {
+		minRiskRewardRatio = at.riskManager.MinRiskRewardRatio
+	}
+
+	decision, err := decision.GetFullDecisionWithCustomPrompt(ctx, at.mcpClient, at.customPrompt, at.overrideBasePrompt, at.systemPromptTemplate, minRiskRewardRatio)
 
 	// 即使有错误，也保存思维链、决策和输入prompt（用于debug）
 	if decision != nil {
@@ -803,7 +830,7 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *decision.Decision, act
 	}
 
 	// 获取当前价格（传递指标配置）
-	marketData, err := market.Get(decision.Symbol, at.config.IndicatorConfig)
+	marketData, err := at.marketDataProvider(decision.Symbol, at.config.IndicatorConfig)
 	if err != nil {
 		return err
 	}
@@ -883,7 +910,7 @@ func (at *AutoTrader) executeOpenShortWithRecord(decision *decision.Decision, ac
 	}
 
 	// 获取当前价格（传递指标配置）
-	marketData, err := market.Get(decision.Symbol, at.config.IndicatorConfig)
+	marketData, err := at.marketDataProvider(decision.Symbol, at.config.IndicatorConfig)
 	if err != nil {
 		return err
 	}
@@ -953,7 +980,7 @@ func (at *AutoTrader) executeCloseLongWithRecord(decision *decision.Decision, ac
 	log.Printf("  🔄 平多仓: %s", decision.Symbol)
 
 	// 获取当前价格（传递指标配置）
-	marketData, err := market.Get(decision.Symbol, at.config.IndicatorConfig)
+	marketData, err := at.marketDataProvider(decision.Symbol, at.config.IndicatorConfig)
 	if err != nil {
 		return err
 	}
@@ -979,7 +1006,7 @@ func (at *AutoTrader) executeCloseShortWithRecord(decision *decision.Decision, a
 	log.Printf("  🔄 平空仓: %s", decision.Symbol)
 
 	// 获取当前价格（传递指标配置）
-	marketData, err := market.Get(decision.Symbol, at.config.IndicatorConfig)
+	marketData, err := at.marketDataProvider(decision.Symbol, at.config.IndicatorConfig)
 	if err != nil {
 		return err
 	}
@@ -1005,7 +1032,7 @@ func (at *AutoTrader) executeUpdateStopLossWithRecord(decision *decision.Decisio
 	log.Printf("  🎯 调整止损: %s → %.2f", decision.Symbol, decision.NewStopLoss)
 
 	// 获取当前价格（传递指标配置）
-	marketData, err := market.Get(decision.Symbol, at.config.IndicatorConfig)
+	marketData, err := at.marketDataProvider(decision.Symbol, at.config.IndicatorConfig)
 	if err != nil {
 		return err
 	}
@@ -1089,7 +1116,7 @@ func (at *AutoTrader) executeUpdateTakeProfitWithRecord(decision *decision.Decis
 	log.Printf("  🎯 调整止盈: %s → %.2f", decision.Symbol, decision.NewTakeProfit)
 
 	// 获取当前价格（传递指标配置）
-	marketData, err := market.Get(decision.Symbol, at.config.IndicatorConfig)
+	marketData, err := at.marketDataProvider(decision.Symbol, at.config.IndicatorConfig)
 	if err != nil {
 		return err
 	}
@@ -1178,7 +1205,7 @@ func (at *AutoTrader) executePartialCloseWithRecord(decision *decision.Decision,
 	}
 
 	// 获取当前价格（传递指标配置）
-	marketData, err := market.Get(decision.Symbol, at.config.IndicatorConfig)
+	marketData, err := at.marketDataProvider(decision.Symbol, at.config.IndicatorConfig)
 	if err != nil {
 		return err
 	}
@@ -1675,7 +1702,7 @@ func (at *AutoTrader) checkPositionDrawdown() {
 
 		var currentPnLPct float64
 		if side == "long" {
-			currentPnLPct = ((markPrice - entryPrice) / entryPrice) * float64(leverage) * 100
+			currentPnLPct = ((markPrice - entryPrice) / entryPrice) * float64(leverage) *  100
 		} else {
 			currentPnLPct = ((entryPrice - markPrice) / entryPrice) * float64(leverage) * 100
 		}
@@ -1692,6 +1719,7 @@ func (at *AutoTrader) checkPositionDrawdown() {
 			// 如果没有历史最高记录，使用当前盈亏作为初始值
 			peakPnLPct = currentPnLPct
 			at.UpdatePeakPnL(symbol, side, currentPnLPct)
+		
 		} else {
 			// 更新峰值缓存
 			at.UpdatePeakPnL(symbol, side, currentPnLPct)
@@ -1783,4 +1811,34 @@ func (at *AutoTrader) ClearPeakPnLCache(symbol, side string) {
 
 	posKey := symbol + "_" + side
 	delete(at.peakPnLCache, posKey)
+}
+
+// fetchMarketData 使用注入的provider获取市场数据
+func (at *AutoTrader) fetchMarketData(ctx *decision.Context) error {
+	ctx.MarketDataMap = make(map[string]*market.Data)
+
+	// 收集所有需要获取数据的币种
+	symbolSet := make(map[string]bool)
+
+	// 1. 优先获取持仓币种的数据
+	for _, pos := range ctx.Positions {
+		symbolSet[pos.Symbol] = true
+	}
+
+	// 2. 候选币种
+	for _, coin := range ctx.CandidateCoins {
+		symbolSet[coin.Symbol] = true
+	}
+
+	// 获取数据
+	for symbol := range symbolSet {
+		data, err := at.marketDataProvider(symbol, at.config.IndicatorConfig)
+		if err != nil {
+			log.Printf("⚠️ [%s] 获取市场数据失败: %v", symbol, err)
+			continue
+		}
+		ctx.MarketDataMap[symbol] = data
+	}
+
+	return nil
 }

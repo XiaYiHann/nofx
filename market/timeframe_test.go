@@ -140,10 +140,10 @@ func TestCalculateTimeframeData_BasicFunctionality(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := calculateTimeframeData(klines, tt.timeframe, tt.dataPoints)
+			result := CalculateTimeframeData(klines, tt.timeframe, tt.dataPoints)
 
 			if result == nil {
-				t.Fatal("calculateTimeframeData returned nil")
+				t.Fatal("CalculateTimeframeData returned nil")
 			}
 
 			if result.DataPoints != tt.expectedPoints {
@@ -158,19 +158,19 @@ func TestCalculateTimeframeData_BasicFunctionality(t *testing.T) {
 }
 
 func TestCalculateTimeframeData_EmptyKlines(t *testing.T) {
-	result := calculateTimeframeData([]Kline{}, "3m", 40)
+	result := CalculateTimeframeData([]Kline{}, "3m", 40)
 
 	if result != nil {
-		t.Errorf("calculateTimeframeData with empty klines should return nil, got %v", result)
+		t.Errorf("CalculateTimeframeData with empty klines should return nil, got %v", result)
 	}
 }
 
 func TestCalculateTimeframeData_IndicatorArrays(t *testing.T) {
 	klines := generateTestKlines(100)
-	result := calculateTimeframeData(klines, "3m", 40)
+	result := CalculateTimeframeData(klines, "3m", 40)
 
 	if result == nil {
-		t.Fatal("calculateTimeframeData returned nil")
+		t.Fatal("CalculateTimeframeData returned nil")
 	}
 
 	// 验证所有数组长度一致
@@ -208,10 +208,10 @@ func TestCalculateTimeframeData_MidPriceCalculation(t *testing.T) {
 		{High: 115.0, Low: 105.0, Close: 110.0}, // Mid = 110
 	}
 
-	result := calculateTimeframeData(klines, "3m", 3)
+	result := CalculateTimeframeData(klines, "3m", 3)
 
 	if result == nil {
-		t.Fatal("calculateTimeframeData returned nil")
+		t.Fatal("CalculateTimeframeData returned nil")
 	}
 
 	expectedMidPrices := []float64{100.0, 110.0, 110.0}
@@ -225,10 +225,10 @@ func TestCalculateTimeframeData_MidPriceCalculation(t *testing.T) {
 
 func TestCalculateTimeframeData_ATR14(t *testing.T) {
 	klines := generateTestKlines(50)
-	result := calculateTimeframeData(klines, "3m", 30)
+	result := CalculateTimeframeData(klines, "3m", 30)
 
 	if result == nil {
-		t.Fatal("calculateTimeframeData returned nil")
+		t.Fatal("CalculateTimeframeData returned nil")
 	}
 
 	// ATR14应该有值(只要K线数>=14)
@@ -240,10 +240,10 @@ func TestCalculateTimeframeData_ATR14(t *testing.T) {
 func TestCalculateTimeframeData_InsufficientDataForIndicators(t *testing.T) {
 	// 只有5个K线,不足以计算某些指标
 	klines := generateTestKlines(5)
-	result := calculateTimeframeData(klines, "3m", 5)
+	result := CalculateTimeframeData(klines, "3m", 5)
 
 	if result == nil {
-		t.Fatal("calculateTimeframeData returned nil")
+		t.Fatal("CalculateTimeframeData returned nil")
 	}
 
 	// EMA20需要20个数据点,前面的值应该为0
@@ -263,10 +263,10 @@ func TestCalculateTimeframeData_InsufficientDataForIndicators(t *testing.T) {
 
 func TestTimeframeDataSerialization(t *testing.T) {
 	klines := generateTestKlines(50)
-	tfData := calculateTimeframeData(klines, "3m", 30)
+	tfData := CalculateTimeframeData(klines, "3m", 30)
 
 	if tfData == nil {
-		t.Fatal("calculateTimeframeData returned nil")
+		t.Fatal("CalculateTimeframeData returned nil")
 	}
 
 	// 验证JSON序列化字段
@@ -326,7 +326,7 @@ func BenchmarkCalculateTimeframeData_40Points(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		calculateTimeframeData(klines, "3m", 40)
+		CalculateTimeframeData(klines, "3m", 40)
 	}
 }
 
@@ -335,7 +335,7 @@ func BenchmarkCalculateTimeframeData_100Points(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		calculateTimeframeData(klines, "3m", 100)
+		CalculateTimeframeData(klines, "3m", 100)
 	}
 }
 

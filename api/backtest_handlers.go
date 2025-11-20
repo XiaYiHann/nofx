@@ -269,14 +269,6 @@ func (s *Server) handleGetBacktestDecisions(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, records)
-}	// 2. 如果文件读取失败或为空，回退到数据库读取
-	decisions, err := s.database.GetBacktestDecisions(backtestID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get backtest decisions: " + err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, decisions)
 }
 
 // runBacktest 异步执行回测

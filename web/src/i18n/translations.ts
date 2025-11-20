@@ -860,6 +860,7 @@ export const translations = {
     realtimeNav: '实时',
     configNav: '配置',
     dashboardNav: '看板',
+    backtestNav: '回测',
     faqNav: '常见问题',
 
     // Footer

@@ -1,0 +1,40 @@
+{
+  "timestamp": "2025-11-20T15:08:16.507059+08:00",
+  "cycle_number": 1,
+  "system_prompt": "你是专业的加密货币交易AI。请根据市场数据做出交易决策。\n\n# 硬约束（风险控制）\n\n1. 风险回报比: 必须 ≥ 1:3（冒1%风险，赚3%+收益）\n2. 最多持仓: 3个币种（质量\u003e数量）\n3. 单币仓位: 山寨8000-15000 U | BTC/ETH 50000-100000 U\n4. 杠杆限制: **山寨币最大5x杠杆** | **BTC/ETH最大5x杠杆** (⚠️ 严格执行，不可超过)\n5. 保证金: 总使用率 ≤ 90%\n6. 开仓金额: 建议 **≥12 USDT** (交易所最小名义价值 10 USDT + 安全边际)\n\n# 输出格式 (严格遵守)\n\n**必须使用XML标签 \u003creasoning\u003e 和 \u003cdecision\u003e 标签分隔思维链和决策JSON，避免解析错误**\n\n## 格式要求\n\n\u003creasoning\u003e\n你的思维链分析...\n- 简洁分析你的思考过程 \n\u003c/reasoning\u003e\n\n\u003cdecision\u003e\n```json\n[\n  {\"symbol\": \"BTCUSDT\", \"action\": \"open_short\", \"leverage\": 5, \"position_size_usd\": 50000, \"stop_loss\": 97000, \"take_profit\": 91000, \"confidence\": 85, \"risk_usd\": 300, \"reasoning\": \"下跌趋势+MACD死叉\"},\n  {\"symbol\": \"ETHUSDT\", \"action\": \"close_long\", \"reasoning\": \"止盈离场\"}\n]\n```\n\u003c/decision\u003e\n\n## 字段说明\n\n- `action`: open_long | open_short | close_long | close_short | hold | wait\n- `confidence`: 0-100（开仓建议≥75）\n- 开仓时必填: leverage, position_size_usd, stop_loss, take_profit, confidence, risk_usd, reasoning\n\n\n\n# 📌 个性化交易策略\n\ntest prompt\n\n注意: 以上个性化策略是对基础规则的补充，不能违背基础风险控制原则。\n",
+  "input_prompt": "时间: 2025-11-20 15:08:15 | 周期: #1 | 运行: 0分钟\n\nBTC: 50000.00 (1h: +0.00%, 4h: +0.00%) | MACD: 0.0000 | RSI: 0.00\n\n账户: 净值10000.00 | 余额10000.00 (100.0%) | 盈亏+0.00% | 保证金0.0% | 持仓0个\n\n当前持仓: 无\n\n## 候选币种 (1个)\n\n### 1. BTCUSDT\n\ncurrent_price = 50000.00, current_ema20 = 0.000, current_macd = 0.000, current_rsi (7 period) = 0.000\n\nIn addition, here is the latest BTCUSDT open interest and funding rate for perps:\n\nFunding Rate: 0.00e+00\n\n\n\n## 📊 夏普比率: 0.00\n\n---\n\n现在请分析并输出决策（思维链 + JSON）\n",
+  "cot_trace": "```json",
+  "decision_json": "[\n  {\n    \"symbol\": \"BTCUSDT\",\n    \"action\": \"open_long\",\n    \"leverage\": 5,\n    \"position_size_usd\": 1000,\n    \"stop_loss\": 49000,\n    \"take_profit\": 55000,\n    \"reasoning\": \"Test\"\n  }\n]",
+  "account_state": {
+    "total_balance": 10000,
+    "available_balance": 10000,
+    "total_unrealized_profit": 0,
+    "position_count": 0,
+    "margin_used_pct": 0,
+    "initial_balance": 10000
+  },
+  "positions": null,
+  "candidate_coins": [
+    "BTCUSDT"
+  ],
+  "decisions": [
+    {
+      "action": "open_long",
+      "symbol": "BTCUSDT",
+      "quantity": 0.02,
+      "leverage": 5,
+      "price": 50000,
+      "order_id": 12345,
+      "confidence": 0,
+      "reasoning": "",
+      "timestamp": "2025-11-20T15:08:15.505863+08:00",
+      "success": true,
+      "error": ""
+    }
+  ],
+  "execution_log": [
+    "✓ BTCUSDT open_long 成功"
+  ],
+  "success": true,
+  "error_message": ""
+}
