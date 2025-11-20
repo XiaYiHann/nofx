@@ -887,10 +887,7 @@ export function ExchangeConfigModal({
                         }}
                         required
                       />
-                      <div
-                        className="text-xs mt-1"
-                        style={{ color: '#848E9C' }}
-                      >
+                      <div className="text-xs mt-1" style={{ color: '#848E9C' }}>
                         {t('lighterWalletAddressDesc', language)}
                       </div>
                     </div>
@@ -924,10 +921,7 @@ export function ExchangeConfigModal({
                         }}
                         required
                       />
-                      <div
-                        className="text-xs mt-1"
-                        style={{ color: '#848E9C' }}
-                      >
+                      <div className="text-xs mt-1" style={{ color: '#848E9C' }}>
                         {t('lighterPrivateKeyDesc', language)}
                       </div>
                     </div>
@@ -943,13 +937,8 @@ export function ExchangeConfigModal({
                       <input
                         type="password"
                         value={lighterApiKeyPrivateKey}
-                        onChange={(e) =>
-                          setLighterApiKeyPrivateKey(e.target.value)
-                        }
-                        placeholder={t(
-                          'enterLighterApiKeyPrivateKey',
-                          language
-                        )}
+                        onChange={(e) => setLighterApiKeyPrivateKey(e.target.value)}
+                        placeholder={t('enterLighterApiKeyPrivateKey', language)}
                         className="w-full px-3 py-2 rounded font-mono text-sm"
                         style={{
                           background: '#0B0E11',
@@ -957,57 +946,35 @@ export function ExchangeConfigModal({
                           color: '#EAECEF',
                         }}
                       />
-                      <div
-                        className="text-xs mt-1"
-                        style={{ color: '#848E9C' }}
-                      >
+                      <div className="text-xs mt-1" style={{ color: '#848E9C' }}>
                         {t('lighterApiKeyPrivateKeyDesc', language)}
                       </div>
-                      <div
-                        className="text-xs mt-2 p-2 rounded"
-                        style={{
-                          background: '#1E2329',
-                          border: '1px solid #2B3139',
-                          color: '#F0B90B',
-                        }}
-                      >
+                      <div className="text-xs mt-2 p-2 rounded" style={{
+                        background: '#1E2329',
+                        border: '1px solid #2B3139',
+                        color: '#F0B90B'
+                      }}>
                         💡 {t('lighterApiKeyOptionalNote', language)}
                       </div>
                     </div>
 
                     {/* V1/V2 Status Display */}
-                    <div
-                      className="mb-4 p-3 rounded"
-                      style={{
-                        background: lighterApiKeyPrivateKey
-                          ? '#0F3F2E'
-                          : '#3F2E0F',
-                        border:
-                          '1px solid ' +
-                          (lighterApiKeyPrivateKey ? '#10B981' : '#F59E0B'),
-                      }}
-                    >
+                    <div className="mb-4 p-3 rounded" style={{
+                      background: lighterApiKeyPrivateKey ? '#0F3F2E' : '#3F2E0F',
+                      border: '1px solid ' + (lighterApiKeyPrivateKey ? '#10B981' : '#F59E0B')
+                    }}>
                       <div className="flex items-center gap-2">
-                        <div
-                          className="text-sm font-semibold"
-                          style={{
-                            color: lighterApiKeyPrivateKey
-                              ? '#10B981'
-                              : '#F59E0B',
-                          }}
-                        >
-                          {lighterApiKeyPrivateKey
-                            ? '✅ LIGHTER V2'
-                            : '⚠️ LIGHTER V1'}
+                        <div className="text-sm font-semibold" style={{
+                          color: lighterApiKeyPrivateKey ? '#10B981' : '#F59E0B'
+                        }}>
+                          {lighterApiKeyPrivateKey ? '✅ LIGHTER V2' : '⚠️ LIGHTER V1'}
                         </div>
                       </div>
-                      <div
-                        className="text-xs mt-1"
-                        style={{ color: '#848E9C' }}
-                      >
+                      <div className="text-xs mt-1" style={{ color: '#848E9C' }}>
                         {lighterApiKeyPrivateKey
                           ? t('lighterV2Description', language)
-                          : t('lighterV1Description', language)}
+                          : t('lighterV1Description', language)
+                        }
                       </div>
                     </div>
                   </>

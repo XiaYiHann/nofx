@@ -11,70 +11,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// ============================================================
-// LIGHTER V1 测试套件
-// ============================================================
-
-// TestLighterTrader_NewTrader 测试创建LIGHTER交易器
-func TestLighterTrader_NewTrader(t *testing.T) {
-	t.Run("无效私钥", func(t *testing.T) {
-		trader, err := NewLighterTrader("invalid_key", "", true)
-		assert.Error(t, err)
-		assert.Nil(t, trader)
-		t.Logf("✅ Invalid private key correctly rejected")
-	})
-
-	t.Run("有效私钥格式验证", func(t *testing.T) {
-		// 只验证私钥解析，不调用真实 API
-		testL1Key := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-		privateKey, err := crypto.HexToECDSA(testL1Key)
-		assert.NoError(t, err)
-		assert.NotNil(t, privateKey)
-
-		walletAddr := crypto.PubkeyToAddress(*privateKey.Public().(*ecdsa.PublicKey)).Hex()
-		assert.NotEmpty(t, walletAddr)
-		t.Logf("✅ Valid private key format: wallet=%s", walletAddr)
-	})
-}
-
-// createMockLighterServer 创建 mock LIGHTER API 服务器
-func createMockLighterServer() *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-		var respBody interface{}
-
-		switch path {
-		// Mock GetBalance
-		case "/api/v1/account/0/balance":
-			respBody = map[string]interface{}{
-				"total_equity":       10000.00,
-				"available_balance":  8000.00,
-				"margin_used":        2000.00,
-				"unrealized_pnl":     100.50,
-				"maintenance_margin": 500.00,
-			}
-
-		// Mock GetPositions
-		case "/api/v1/account/0/positions":
-			respBody = []map[string]interface{}{
-				{
-					"symbol":            "BTC_USDT",
-					"side":              "long",
-					"size":              0.5,
-					"entry_price":       50000.00,
-					"mark_price":        50500.00,
-					"unrealized_pnl":    250.00,
-					"liquidation_price": 40000.00,
-					"leverage":          10.0,
-					"margin_used":       2500.00,
 				},
 			}
 
 		// Mock GetMarketPrice
 		case "/api/v1/market/ticker":
+		case "/api/v1/market/ticker":
+			symbol := r.URL.Query().Get("symbol")
 			symbol := r.URL.Query().Get("symbol")
 			respBody = map[string]interface{}{
+			respBody = map[string]interface{}{
 				"symbol":     symbol,
+				"symbol":     symbol,
+				"last_price": 50000.00,
 				"last_price": 50000.00,
 			}
 

@@ -387,12 +387,12 @@ export function useTraderActions({
           allModels?.map((m) =>
             m.id === modelId
               ? {
-                  ...m,
-                  apiKey,
-                  customApiUrl: customApiUrl || '',
-                  customModelName: customModelName || '',
-                  enabled: true,
-                }
+                ...m,
+                apiKey,
+                customApiUrl: customApiUrl || '',
+                customModelName: customModelName || '',
+                enabled: true,
+              }
               : m
           ) || []
       } else {
@@ -522,19 +522,19 @@ export function useTraderActions({
           allExchanges?.map((e) =>
             e.id === exchangeId
               ? {
-                  ...e,
-                  apiKey,
-                  secretKey,
-                  testnet,
-                  hyperliquidWalletAddr,
-                  asterUser,
-                  asterSigner,
-                  asterPrivateKey,
-                  lighterWalletAddr,
-                  lighterPrivateKey,
-                  lighterApiKeyPrivateKey,
-                  enabled: true,
-                }
+                ...e,
+                apiKey,
+                secretKey,
+                testnet,
+                hyperliquidWalletAddr,
+                asterUser,
+                asterSigner,
+                asterPrivateKey,
+                lighterWalletAddr,
+                lighterPrivateKey,
+                lighterApiKeyPrivateKey,
+                enabled: true,
+              }
               : e
           ) || []
       } else {
@@ -571,8 +571,7 @@ export function useTraderActions({
               aster_private_key: exchange.asterPrivateKey || '',
               lighter_wallet_addr: exchange.lighterWalletAddr || '',
               lighter_private_key: exchange.lighterPrivateKey || '',
-              lighter_api_key_private_key:
-                exchange.lighterApiKeyPrivateKey || '',
+              lighter_api_key_private_key: exchange.lighterApiKeyPrivateKey || '',
             },
           ])
         ),
