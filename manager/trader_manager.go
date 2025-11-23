@@ -269,11 +269,15 @@ func (tm *TraderManager) addTraderFromDB(traderCfg *config.TraderRecord, aiModel
 	if exchangeCfg.ID == "binance" {
 		traderConfig.BinanceAPIKey = exchangeCfg.APIKey
 		traderConfig.BinanceSecretKey = exchangeCfg.SecretKey
+<<<<<<< HEAD
 	} else if exchangeCfg.ID == "paper_trading" {
 		// Paper Trading 使用 Binance Testnet API
 		traderConfig.BinanceAPIKey = exchangeCfg.APIKey
 		traderConfig.BinanceSecretKey = exchangeCfg.SecretKey
 		log.Printf("🧪 交易员 %s 使用 Paper Trading (Testnet API)", traderCfg.Name)
+	} else if exchangeCfg.ID == "bybit" {
+		traderConfig.BybitAPIKey = exchangeCfg.APIKey
+		traderConfig.BybitSecretKey = exchangeCfg.SecretKey
 	} else if exchangeCfg.ID == "hyperliquid" {
 		traderConfig.HyperliquidPrivateKey = exchangeCfg.APIKey // hyperliquid用APIKey存储private key
 		traderConfig.HyperliquidWalletAddr = exchangeCfg.HyperliquidWalletAddr
@@ -404,11 +408,15 @@ func (tm *TraderManager) AddTraderFromDB(traderCfg *config.TraderRecord, aiModel
 	if exchangeCfg.ID == "binance" {
 		traderConfig.BinanceAPIKey = exchangeCfg.APIKey
 		traderConfig.BinanceSecretKey = exchangeCfg.SecretKey
+<<<<<<< HEAD
 	} else if exchangeCfg.ID == "paper_trading" {
 		// Paper Trading 使用 Binance Testnet API
 		traderConfig.BinanceAPIKey = exchangeCfg.APIKey
 		traderConfig.BinanceSecretKey = exchangeCfg.SecretKey
 		log.Printf("🧪 交易员 %s 使用 Paper Trading (Testnet API)", traderCfg.Name)
+	} else if exchangeCfg.ID == "bybit" {
+		traderConfig.BybitAPIKey = exchangeCfg.APIKey
+		traderConfig.BybitSecretKey = exchangeCfg.SecretKey
 	} else if exchangeCfg.ID == "hyperliquid" {
 		traderConfig.HyperliquidPrivateKey = exchangeCfg.APIKey // hyperliquid用APIKey存储private key
 		traderConfig.HyperliquidWalletAddr = exchangeCfg.HyperliquidWalletAddr
@@ -1131,11 +1139,15 @@ func (tm *TraderManager) loadSingleTrader(traderCfg *config.TraderRecord, aiMode
 	if exchangeCfg.ID == "binance" {
 		traderConfig.BinanceAPIKey = exchangeCfg.APIKey
 		traderConfig.BinanceSecretKey = exchangeCfg.SecretKey
+<<<<<<< HEAD
 	} else if exchangeCfg.ID == "paper_trading" {
 		// Paper Trading 使用 Binance Testnet API
 		traderConfig.BinanceAPIKey = exchangeCfg.APIKey
 		traderConfig.BinanceSecretKey = exchangeCfg.SecretKey
 		log.Printf("🧪 交易员 %s 使用 Paper Trading (Testnet API)", traderCfg.Name)
+	} else if exchangeCfg.ID == "bybit" {
+		traderConfig.BybitAPIKey = exchangeCfg.APIKey
+		traderConfig.BybitSecretKey = exchangeCfg.SecretKey
 	} else if exchangeCfg.ID == "hyperliquid" {
 		traderConfig.HyperliquidPrivateKey = exchangeCfg.APIKey // hyperliquid用APIKey存储private key
 		traderConfig.HyperliquidWalletAddr = exchangeCfg.HyperliquidWalletAddr

@@ -49,7 +49,6 @@ func NewBybitTrader(apiKey, secretKey string) *BybitTrader {
 			refererID: src,
 		}
 	}
-
 	trader := &BybitTrader{
 		client:        client,
 		cacheDuration: 15 * time.Second,
@@ -70,7 +69,6 @@ func (h *headerRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 	req.Header.Set("Referer", h.refererID)
 	return h.base.RoundTrip(req)
 }
-
 // GetBalance 获取账户余额
 func (t *BybitTrader) GetBalance() (map[string]interface{}, error) {
 	// 检查缓存
