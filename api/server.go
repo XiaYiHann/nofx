@@ -121,8 +121,7 @@ func (s *Server) setupRoutes() {
 		api.POST("/register", s.handleRegister)
 		api.POST("/login", s.handleLogin)
 		api.POST("/complete-registration", s.handleCompleteRegistration) // OTP完成注册
-		api.POST("/verify-otp", s.handleVerifyOTP)                      // OTP登录验证
-
+		api.POST("/verify-otp", s.handleVerifyOTP)                       // OTP登录验证
 
 		// 需要认证的路由
 		protected := api.Group("/", s.authMiddleware())
@@ -2575,7 +2574,6 @@ func (s *Server) handleGetPublicTraderConfig(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
-
 
 // handleGetIndicatorConfig 获取交易员指标配置
 func (s *Server) handleGetIndicatorConfig(c *gin.Context) {
