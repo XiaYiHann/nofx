@@ -7,8 +7,8 @@ import (
 
 // RiskManager handles risk validation for trades
 type RiskManager struct {
-	MaxLeverageBTCETH int
-	MaxLeverageAlt    int
+	MaxLeverageBTCETH     int
+	MaxLeverageAlt        int
 	MaxPositionSizeBTCETH float64 // Multiplier of equity (e.g., 10.0)
 	MaxPositionSizeAlt    float64 // Multiplier of equity (e.g., 1.5)
 	MinRiskRewardRatio    float64

@@ -54,13 +54,16 @@ export function EquityChart({ traderId, backtestId, initialBalance: propsInitial
         if (!backtestData || !Array.isArray(backtestData)) {
           return []
         }
-        return backtestData.map((point: any, index: number) => ({
-          timestamp: point.time,
-          total_equity: point.equity,
-          pnl: point.pnl,
-          pnl_pct: point.pnl_pct,
-          cycle_number: index + 1,
-        }))
+        return backtestData.map((point: any, index: number) => {
+          if (!point || !point.time) return null
+          return {
+            timestamp: point.time,
+            total_equity: point.equity || 0,
+            pnl: point.pnl || 0,
+            pnl_pct: point.pnl_pct || 0,
+            cycle_number: index + 1,
+          }
+        }).filter(Boolean) as EquityPoint[]
       }
       // 实时交易模式：使用原有API
       return api.getEquityHistory(traderId)

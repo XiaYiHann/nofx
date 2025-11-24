@@ -9,7 +9,7 @@ import (
 
 func TestPasswordHashing(t *testing.T) {
 	password := "mysecretpassword"
-	
+
 	// Test HashPassword
 	hash, err := HashPassword(password)
 	assert.NoError(t, err)
@@ -27,7 +27,7 @@ func TestPasswordHashing(t *testing.T) {
 
 func TestTokenBlacklist(t *testing.T) {
 	token := "test-token-123"
-	
+
 	// Initially not blacklisted
 	assert.False(t, IsTokenBlacklisted(token))
 
@@ -40,7 +40,7 @@ func TestTokenBlacklist(t *testing.T) {
 	expiredToken := "expired-token-456"
 	pastExp := time.Now().Add(-1 * time.Hour)
 	BlacklistToken(expiredToken, pastExp)
-	
+
 	// Should return false because it's expired (and be removed)
 	assert.False(t, IsTokenBlacklisted(expiredToken), "Expired token should not be considered blacklisted")
 }

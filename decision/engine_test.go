@@ -8,53 +8,53 @@ import (
 
 func TestExtractDecisions(t *testing.T) {
 	tests := []struct {
-		name          string
-		input         string
-		expectedLen   int
+		name           string
+		input          string
+		expectedLen    int
 		expectedAction string
-		expectError   bool
+		expectError    bool
 	}{
 		{
-			name: "Standard JSON block",
-			input: "Here is the decision:\n```json\n[{\"symbol\": \"BTCUSDT\", \"action\": \"open_long\", \"reasoning\": \"test\"}]\n```",
-			expectedLen: 1,
+			name:           "Standard JSON block",
+			input:          "Here is the decision:\n```json\n[{\"symbol\": \"BTCUSDT\", \"action\": \"open_long\", \"reasoning\": \"test\"}]\n```",
+			expectedLen:    1,
 			expectedAction: "open_long",
-			expectError: false,
+			expectError:    false,
 		},
 		{
-			name: "JSON without block",
-			input: "Some reasoning...\n[{\"symbol\": \"ETHUSDT\", \"action\": \"close_short\", \"reasoning\": \"test\"}]",
-			expectedLen: 1,
+			name:           "JSON without block",
+			input:          "Some reasoning...\n[{\"symbol\": \"ETHUSDT\", \"action\": \"close_short\", \"reasoning\": \"test\"}]",
+			expectedLen:    1,
 			expectedAction: "close_short",
-			expectError: false,
+			expectError:    false,
 		},
 		{
-			name: "XML tags",
-			input: "<reasoning>Thinking...</reasoning>\n<decision>\n```json\n[{\"symbol\": \"SOLUSDT\", \"action\": \"hold\", \"reasoning\": \"wait\"}]\n```\n</decision>",
-			expectedLen: 1,
+			name:           "XML tags",
+			input:          "<reasoning>Thinking...</reasoning>\n<decision>\n```json\n[{\"symbol\": \"SOLUSDT\", \"action\": \"hold\", \"reasoning\": \"wait\"}]\n```\n</decision>",
+			expectedLen:    1,
 			expectedAction: "hold",
-			expectError: false,
+			expectError:    false,
 		},
 		{
-			name: "Full-width characters fix",
-			input: "［｛＂symbol＂： ＂BTCUSDT＂， ＂action＂： ＂wait＂， ＂reasoning＂： ＂test＂｝］",
-			expectedLen: 1,
+			name:           "Full-width characters fix",
+			input:          "［｛＂symbol＂： ＂BTCUSDT＂， ＂action＂： ＂wait＂， ＂reasoning＂： ＂test＂｝］",
+			expectedLen:    1,
 			expectedAction: "wait",
-			expectError: false,
+			expectError:    false,
 		},
 		{
-			name: "Malformed JSON fallback",
-			input: "I cannot decide.",
-			expectedLen: 1,
+			name:           "Malformed JSON fallback",
+			input:          "I cannot decide.",
+			expectedLen:    1,
 			expectedAction: "wait", // Should fallback to wait
-			expectError: false,
+			expectError:    false,
 		},
 		{
-			name: "Empty input fallback",
-			input: "",
-			expectedLen: 1,
+			name:           "Empty input fallback",
+			input:          "",
+			expectedLen:    1,
 			expectedAction: "wait",
-			expectError: false,
+			expectError:    false,
 		},
 	}
 

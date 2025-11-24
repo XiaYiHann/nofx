@@ -17,10 +17,10 @@ func TestPromptManager(t *testing.T) {
 	// 2. Create dummy prompt files
 	prompt1Content := "This is prompt 1 content"
 	prompt2Content := "This is prompt 2 content"
-	
+
 	err = os.WriteFile(filepath.Join(tempDir, "prompt1.txt"), []byte(prompt1Content), 0644)
 	assert.NoError(t, err)
-	
+
 	err = os.WriteFile(filepath.Join(tempDir, "prompt2.txt"), []byte(prompt2Content), 0644)
 	assert.NoError(t, err)
 

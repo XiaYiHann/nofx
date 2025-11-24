@@ -35,8 +35,8 @@ type Client struct {
 }
 
 func New() *Client {
-	// 从环境变量读取 MaxTokens，默认 2000
-	maxTokens := 2000
+	// 从环境变量读取 MaxTokens，默认 8192 (8k) 以支持思维链和长上下文
+	maxTokens := 8192
 	if envMaxTokens := os.Getenv("AI_MAX_TOKENS"); envMaxTokens != "" {
 		if parsed, err := strconv.Atoi(envMaxTokens); err == nil && parsed > 0 {
 			maxTokens = parsed
@@ -51,7 +51,7 @@ func New() *Client {
 		Provider:  ProviderDeepSeek,
 		BaseURL:   "https://api.deepseek.com/v1",
 		Model:     "deepseek-chat",
-		Timeout:   120 * time.Second, // 增加到120秒，因为AI需要分析大量数据
+		Timeout:   300 * time.Second, // 增加到300秒，因为AI生成长文本需要更多时间
 		MaxTokens: maxTokens,
 	}
 }
@@ -145,7 +145,7 @@ func (client *Client) SetCustomAPI(apiURL, apiKey, modelName string) {
 	}
 
 	client.Model = modelName
-	client.Timeout = 120 * time.Second
+	client.Timeout = 300 * time.Second
 }
 
 // SetClient 设置完整的AI配置（高级用户）
@@ -257,7 +257,9 @@ func (client *Client) callOnce(systemPrompt, userPrompt string) (string, error) 
 		url = client.BaseURL
 	} else {
 		// 默认行为：添加/chat/completions
-		url = fmt.Sprintf("%s/chat/completions", client.BaseURL)
+		// 🔧 修复：去除 BaseURL 末尾可能存在的斜杠，防止生成 "//chat/completions"
+		baseURL := strings.TrimSuffix(client.BaseURL, "/")
+		url = fmt.Sprintf("%s/chat/completions", baseURL)
 	}
 	log.Printf("📡 [MCP] 请求 URL: %s", url)
 

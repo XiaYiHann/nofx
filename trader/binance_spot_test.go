@@ -56,13 +56,13 @@ func TestBinanceSpotAPI(t *testing.T) {
 	t.Run("Account Info", func(t *testing.T) {
 		res, err := client.NewGetAccountService().Do(ctx)
 		require.NoError(t, err, "Get Account failed")
-		
+
 		t.Logf("Can Trade: %v", res.CanTrade)
 		t.Logf("Account Type: %s", res.AccountType)
-		
+
 		// Print non-zero balances
 		for _, bal := range res.Balances {
-			free, _ :=  fmt.Sscanf(bal.Free, "%f", new(float64))
+			free, _ := fmt.Sscanf(bal.Free, "%f", new(float64))
 			locked, _ := fmt.Sscanf(bal.Locked, "%f", new(float64))
 			if free > 0 || locked > 0 {
 				t.Logf("Balance %s: Free=%s, Locked=%s", bal.Asset, bal.Free, bal.Locked)
@@ -73,7 +73,7 @@ func TestBinanceSpotAPI(t *testing.T) {
 	// 5. Order Operations
 	t.Run("Order Operations", func(t *testing.T) {
 		symbol := "BTCUSDT"
-		
+
 		// 5.1 Test Order (Validation only, no execution)
 		err := client.NewCreateOrderService().
 			Symbol(symbol).
@@ -88,7 +88,7 @@ func TestBinanceSpotAPI(t *testing.T) {
 
 		// 5.2 Place Real Order (Limit Buy at low price to avoid execution)
 		// Note: On Testnet, prices might be different. Using a safe low price.
-		price := "40000" 
+		price := "40000"
 		quantity := "0.001"
 
 		order, err := client.NewCreateOrderService().
@@ -99,20 +99,20 @@ func TestBinanceSpotAPI(t *testing.T) {
 			Quantity(quantity).
 			Price(price).
 			Do(ctx)
-		
+
 		require.NoError(t, err, "Place Order failed")
-		t.Logf("Order Placed: ID=%d, Symbol=%s, Price=%s, Qty=%s, Status=%s", 
+		t.Logf("Order Placed: ID=%d, Symbol=%s, Price=%s, Qty=%s, Status=%s",
 			order.OrderID, order.Symbol, order.Price, order.OrigQuantity, order.Status)
 
 		// 5.3 Query Order
 		// Wait a bit to ensure propagation
 		time.Sleep(1 * time.Second)
-		
+
 		queryOrder, err := client.NewGetOrderService().
 			Symbol(symbol).
 			OrderID(order.OrderID).
 			Do(ctx)
-		
+
 		assert.NoError(t, err, "Query Order failed")
 		if err == nil {
 			assert.Equal(t, order.OrderID, queryOrder.OrderID)
@@ -128,7 +128,7 @@ func TestBinanceSpotAPI(t *testing.T) {
 			Symbol(symbol).
 			OrderID(order.OrderID).
 			Do(ctx)
-		
+
 		assert.NoError(t, err, "Cancel Order failed")
 		if err == nil {
 			t.Logf("Order Cancelled: ID=%d, Status=%s", cancelRes.OrderID, cancelRes.Status)
@@ -140,7 +140,7 @@ func TestBinanceSpotAPI(t *testing.T) {
 			Symbol(symbol).
 			OrderID(order.OrderID).
 			Do(ctx)
-		
+
 		assert.NoError(t, err, "Query Final Order failed")
 		if err == nil {
 			assert.Equal(t, binance.OrderStatusTypeCanceled, finalOrder.Status)

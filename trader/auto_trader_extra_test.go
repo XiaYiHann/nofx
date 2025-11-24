@@ -101,7 +101,7 @@ func (m *MockTraderTestify) FormatQuantity(symbol string, quantity float64) (str
 
 func TestExecuteOpenLong(t *testing.T) {
 	mockTrader := new(MockTraderTestify)
-	
+
 	// Mock Market Data Provider
 	mockMarketData := func(symbol string, config ...*market.IndicatorConfig) (*market.Data, error) {
 		return &market.Data{
@@ -113,30 +113,30 @@ func TestExecuteOpenLong(t *testing.T) {
 	at := &AutoTrader{
 		trader: mockTrader,
 		config: AutoTraderConfig{
-			IsCrossMargin: false,
+			IsCrossMargin:   false,
 			IndicatorConfig: nil,
 		},
-		marketDataProvider: mockMarketData,
-		decisionLogger: logger.NewDecisionLogger("test_logs"),
+		marketDataProvider:    mockMarketData,
+		decisionLogger:        logger.NewDecisionLogger("test_logs"),
 		positionFirstSeenTime: make(map[string]int64),
 	}
-	
+
 	// Mock GetPositions (called before open)
 	mockTrader.On("GetPositions").Return([]map[string]interface{}{}, nil)
-	
+
 	// Mock GetBalance
 	mockTrader.On("GetBalance").Return(map[string]interface{}{
 		"availableBalance": 10000.0,
 	}, nil)
-	
+
 	// Mock SetMarginMode
 	mockTrader.On("SetMarginMode", "BTCUSDT", false).Return(nil)
-	
+
 	// Mock OpenLong
 	mockTrader.On("OpenLong", "BTCUSDT", mock.Anything, 5).Return(map[string]interface{}{
 		"orderId": int64(12345),
 	}, nil)
-	
+
 	// Mock SetStopLoss/TakeProfit
 	mockTrader.On("SetStopLoss", "BTCUSDT", "LONG", mock.Anything, 49000.0).Return(nil)
 	mockTrader.On("SetTakeProfit", "BTCUSDT", "LONG", mock.Anything, 55000.0).Return(nil)
@@ -150,14 +150,14 @@ func TestExecuteOpenLong(t *testing.T) {
 		StopLoss:        49000.0,
 		TakeProfit:      55000.0,
 	}
-	
+
 	actionRecord := &logger.DecisionAction{}
-	
+
 	err := at.executeOpenLongWithRecord(dec, actionRecord)
 	if err != nil {
 		t.Errorf("executeOpenLongWithRecord failed: %v", err)
 	}
-	
+
 	mockTrader.AssertExpectations(t)
 }
 
@@ -179,7 +179,7 @@ func TestAnalyzeAndTrade(t *testing.T) {
 	defer ts.Close()
 
 	mockTrader := new(MockTraderTestify)
-	
+
 	// Mock Market Data Provider
 	mockMarketData := func(symbol string, config ...*market.IndicatorConfig) (*market.Data, error) {
 		return &market.Data{
@@ -192,34 +192,34 @@ func TestAnalyzeAndTrade(t *testing.T) {
 	mcpClient.SetCustomAPI(ts.URL, "test-key", "test-model")
 
 	at := &AutoTrader{
-		id: "test-trader",
+		id:     "test-trader",
 		trader: mockTrader,
 		config: AutoTraderConfig{
-			IsCrossMargin: false,
+			IsCrossMargin:   false,
 			IndicatorConfig: nil,
-			BTCETHLeverage: 5,
+			BTCETHLeverage:  5,
 			AltcoinLeverage: 5,
 		},
-		marketDataProvider: mockMarketData,
-		decisionLogger: logger.NewDecisionLogger("test_logs"),
-		mcpClient: mcpClient,
-		tradingCoins: []string{"BTCUSDT"}, // Avoid pool API
-		initialBalance: 10000.0,
-		startTime: time.Now(),
-		systemPromptTemplate: "default",
-		aiModel: "custom",
-		customPrompt: "test prompt",
+		marketDataProvider:    mockMarketData,
+		decisionLogger:        logger.NewDecisionLogger("test_logs"),
+		mcpClient:             mcpClient,
+		tradingCoins:          []string{"BTCUSDT"}, // Avoid pool API
+		initialBalance:        10000.0,
+		startTime:             time.Now(),
+		systemPromptTemplate:  "default",
+		aiModel:               "custom",
+		customPrompt:          "test prompt",
 		positionFirstSeenTime: make(map[string]int64),
 	}
-	
+
 	// Mock calls for getContext
 	mockTrader.On("GetBalance").Return(map[string]interface{}{
-		"totalWalletBalance": 10000.0,
+		"totalWalletBalance":    10000.0,
 		"totalUnrealizedProfit": 0.0,
-		"availableBalance": 10000.0,
+		"availableBalance":      10000.0,
 	}, nil)
 	mockTrader.On("GetPositions").Return([]map[string]interface{}{}, nil)
-	
+
 	// Mock calls for execution (same as TestExecuteOpenLong)
 	mockTrader.On("SetMarginMode", "BTCUSDT", false).Return(nil)
 	mockTrader.On("OpenLong", "BTCUSDT", mock.Anything, 5).Return(map[string]interface{}{
@@ -233,6 +233,6 @@ func TestAnalyzeAndTrade(t *testing.T) {
 	if err != nil {
 		t.Errorf("runCycle failed: %v", err)
 	}
-	
+
 	mockTrader.AssertExpectations(t)
 }

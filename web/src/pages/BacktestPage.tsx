@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../lib/api'
-import { Plus, TrendingUp, TrendingDown, Play, Activity, Calendar, Eye, Trash2 } from 'lucide-react'
+import { Plus, TrendingUp, TrendingDown, Play, Activity, Eye, Trash2 } from 'lucide-react'
 import type { TraderInfo } from '../types'
 
 interface BacktestRun {

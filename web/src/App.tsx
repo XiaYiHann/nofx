@@ -28,7 +28,7 @@ import type {
   TraderInfo,
 } from './types'
 
-type Page = 'competition' | 'traders' | 'trader' | 'strategies' | 'backtest'
+type Page = 'competition' | 'traders' | 'trader' | 'strategies' | 'backtest' | 'faq'
 
 // 获取友好的AI模型名称
 function getModelDisplayName(modelId: string): string {
@@ -59,6 +59,8 @@ function App() {
     if (path === '/dashboard' || hash === 'trader' || hash === 'details')
       return 'trader'
     if (path === '/strategies' || hash === 'strategies') return 'strategies'
+    if (path.startsWith('/backtest')) return 'backtest'
+    if (path === '/faq') return 'faq'
     return 'competition' // 默认为竞赛页面
   }
 
@@ -233,6 +235,8 @@ function App() {
       setCurrentPage('strategies')
     } else if (route.startsWith('/backtest')) {
       setCurrentPage('backtest')
+    } else if (route === '/faq') {
+      setCurrentPage('faq')
     }
   }, [route])
 
@@ -240,16 +244,54 @@ function App() {
   if (isLoading || configLoading) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
+        className="min-h-screen"
         style={{ background: '#0B0E11' }}
       >
-        <div className="text-center">
-          <img
-            src="/icons/nofx.svg"
-            alt="NoFx Logo"
-            className="w-16 h-16 mx-auto mb-4 animate-pulse"
-          />
-          <p style={{ color: '#EAECEF' }}>{t('loading', language)}</p>
+        {/* 添加 HeaderBar,即使在 loading 期间也显示导航栏 */}
+        <HeaderBar
+          isLoggedIn={!!user}
+          currentPage={currentPage}
+          language={language}
+          onLanguageChange={setLanguage}
+          user={user}
+          onLogout={logout}
+          onPageChange={(page) => {
+            // 在 loading 期间也支持页面切换
+            if (page === 'competition') {
+              window.history.pushState({}, '', '/competition')
+              setRoute('/competition')
+            } else if (page === 'traders') {
+              window.history.pushState({}, '', '/traders')
+              setRoute('/traders')
+            } else if (page === 'trader') {
+              window.history.pushState({}, '', '/dashboard')
+              setRoute('/dashboard')
+            } else if (page === 'faq') {
+              window.history.pushState({}, '', '/faq')
+              setRoute('/faq')
+            } else if (page === 'strategies') {
+              window.history.pushState({}, '', '/strategies')
+              setRoute('/strategies')
+            } else if (page === 'backtest') {
+              window.history.pushState({}, '', '/backtest')
+              setRoute('/backtest')
+            }
+          }}
+        />
+
+        {/* Loading spinner */}
+        <div
+          className="flex items-center justify-center"
+          style={{ minHeight: 'calc(100vh - 64px)' }}
+        >
+          <div className="text-center">
+            <img
+              src="/icons/nofx.svg"
+              alt="NoFx Logo"
+              className="w-16 h-16 mx-auto mb-4 animate-pulse"
+            />
+            <p style={{ color: '#EAECEF' }}>{t('loading', language)}</p>
+          </div>
         </div>
       </div>
     )
@@ -263,7 +305,45 @@ function App() {
     return <RegisterPage />
   }
   if (route === '/faq') {
-    return <FAQPage />
+    return (
+      <div
+        className="min-h-screen"
+        style={{ background: '#000000', color: '#EAECEF' }}
+      >
+        <HeaderBar
+          isLoggedIn={!!user}
+          currentPage="faq"
+          language={language}
+          onLanguageChange={setLanguage}
+          user={user}
+          onLogout={logout}
+          onPageChange={(page) => {
+            if (page === 'competition') {
+              window.history.pushState({}, '', '/competition')
+              setRoute('/competition')
+            } else if (page === 'traders') {
+              window.history.pushState({}, '', '/traders')
+              setRoute('/traders')
+            } else if (page === 'trader') {
+              window.history.pushState({}, '', '/dashboard')
+              setRoute('/dashboard')
+            } else if (page === 'faq') {
+              window.history.pushState({}, '', '/faq')
+              setRoute('/faq')
+            } else if (page === 'strategies') {
+              window.history.pushState({}, '', '/strategies')
+              setRoute('/strategies')
+            } else if (page === 'backtest') {
+              window.history.pushState({}, '', '/backtest')
+              setRoute('/backtest')
+            }
+          }}
+        />
+        <main className="max-w-[1920px] mx-auto px-6 py-6 pt-24">
+          <FAQPage />
+        </main>
+      </div>
+    )
   }
   if (route === '/reset-password') {
     return <ResetPasswordPage />
@@ -276,7 +356,8 @@ function App() {
       return null
     }
 
-    const backtestId = route.split('/')[2] // /backtest/:id
+    const parts = route.split('/')
+    const backtestId = parts.length > 2 ? parts[2] : undefined
 
     return (
       <div

@@ -70,8 +70,8 @@ DATA_ENCRYPTION_KEY=$(openssl rand -hex 32)
 JWT_SECRET=$(openssl rand -hex 32)
 
 # Proxy Configuration (Optional - Uncomment if needed)
-# HTTP_PROXY=http://host.docker.internal:7890
-# HTTPS_PROXY=http://host.docker.internal:7890
+HTTP_PROXY=http://host.docker.internal:7890
+HTTPS_PROXY=http://host.docker.internal:7890
 EOF
         fi
         print_success "✓ 已创建 .env 文件"
@@ -164,7 +164,7 @@ build() {
     check_docker
     check_config
     print_info "🔨 正在构建 Docker 镜像..."
-    $DOCKER_COMPOSE_CMD build
+    $DOCKER_COMPOSE_CMD build --no-cache
     print_success "✅ 构建完成"
 }
 

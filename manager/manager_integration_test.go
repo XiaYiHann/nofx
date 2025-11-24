@@ -65,37 +65,37 @@ func TestAddTraderFromDB(t *testing.T) {
 	// Setup test data
 	userID := "user1"
 	traderID := "trader1"
-	
+
 	traderCfg := &config.TraderRecord{
-		ID: traderID,
-		UserID: userID,
-		Name: "Test Trader",
-		ExchangeID: "binance1",
-		AIModelID: "deepseek1",
-		IsRunning: false,
-		InitialBalance: 1000.0,
-		BTCETHLeverage: 5,
+		ID:              traderID,
+		UserID:          userID,
+		Name:            "Test Trader",
+		ExchangeID:      "binance1",
+		AIModelID:       "deepseek1",
+		IsRunning:       false,
+		InitialBalance:  1000.0,
+		BTCETHLeverage:  5,
 		AltcoinLeverage: 5,
 	}
-	
+
 	aiModelCfg := &config.AIModelConfig{
-		ID: "deepseek1",
+		ID:       "deepseek1",
 		Provider: "deepseek",
-		APIKey: "sk-test",
+		APIKey:   "sk-test",
 	}
-	
+
 	exchangeCfg := &config.ExchangeConfig{
-		ID: "binance1",
-		Type: "binance",
-		APIKey: "apikey",
+		ID:        "binance",
+		Type:      "binance",
+		APIKey:    "apikey",
 		SecretKey: "secret",
 	}
-	
+
 	err := tm.AddTraderFromDB(traderCfg, aiModelCfg, exchangeCfg, "http://pool", "http://oi", 10.0, 20.0, 60, []string{"BTCUSDT"}, db, userID)
 	if err != nil {
 		t.Fatalf("AddTraderFromDB failed: %v", err)
 	}
-	
+
 	// Verify trader exists
 	trader, err := tm.GetTrader(traderID)
 	if err != nil {

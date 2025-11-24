@@ -467,6 +467,9 @@ func calculateATR(klines []Kline, period int) float64 {
 	}
 
 	trs := make([]float64, len(klines))
+	// First TR is High - Low
+	trs[0] = klines[0].High - klines[0].Low
+
 	for i := 1; i < len(klines); i++ {
 		high := klines[i].High
 		low := klines[i].Low
@@ -481,13 +484,13 @@ func calculateATR(klines []Kline, period int) float64 {
 
 	// 计算初始ATR
 	sum := 0.0
-	for i := 1; i <= period; i++ {
+	for i := 0; i < period; i++ {
 		sum += trs[i]
 	}
 	atr := sum / float64(period)
 
 	// Wilder平滑
-	for i := period + 1; i < len(klines); i++ {
+	for i := period; i < len(klines); i++ {
 		atr = (atr*float64(period-1) + trs[i]) / float64(period)
 	}
 

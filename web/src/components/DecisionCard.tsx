@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { t, type Language } from '../i18n/translations'
 import type { DecisionRecord } from '../types'

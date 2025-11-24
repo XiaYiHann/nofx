@@ -63,7 +63,7 @@ func TestCalculateIntradaySeries_VolumeCollection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			klines := generateTestKlines(tt.klineCount)
-			data := calculateIntradaySeries(klines)
+			data := calculateIntradaySeries(klines, tt.expectedVolLen)
 
 			if data == nil {
 				t.Fatal("calculateIntradaySeries returned nil")

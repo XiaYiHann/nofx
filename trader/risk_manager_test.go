@@ -72,9 +72,9 @@ func TestCheckRiskReward(t *testing.T) {
 		side       string
 		wantErr    bool
 	}{
-		{"Long Valid R:R 2.0", 100, 90, 120, "long", false}, // Risk 10, Reward 20 -> 2.0
-		{"Long Invalid R:R 1.5", 100, 90, 115, "long", true}, // Risk 10, Reward 15 -> 1.5
-		{"Short Valid R:R 2.0", 100, 110, 80, "short", false}, // Risk 10, Reward 20 -> 2.0
+		{"Long Valid R:R 2.0", 100, 90, 120, "long", false},    // Risk 10, Reward 20 -> 2.0
+		{"Long Invalid R:R 1.5", 100, 90, 115, "long", true},   // Risk 10, Reward 15 -> 1.5
+		{"Short Valid R:R 2.0", 100, 110, 80, "short", false},  // Risk 10, Reward 20 -> 2.0
 		{"Short Invalid R:R 1.0", 100, 110, 90, "short", true}, // Risk 10, Reward 10 -> 1.0
 		{"Invalid Side", 100, 90, 120, "invalid", true},
 		{"Long Invalid StopLoss", 100, 110, 120, "long", true}, // SL > Entry

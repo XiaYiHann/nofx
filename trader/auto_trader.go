@@ -1702,7 +1702,7 @@ func (at *AutoTrader) checkPositionDrawdown() {
 
 		var currentPnLPct float64
 		if side == "long" {
-			currentPnLPct = ((markPrice - entryPrice) / entryPrice) * float64(leverage) *  100
+			currentPnLPct = ((markPrice - entryPrice) / entryPrice) * float64(leverage) * 100
 		} else {
 			currentPnLPct = ((entryPrice - markPrice) / entryPrice) * float64(leverage) * 100
 		}
@@ -1719,7 +1719,7 @@ func (at *AutoTrader) checkPositionDrawdown() {
 			// 如果没有历史最高记录，使用当前盈亏作为初始值
 			peakPnLPct = currentPnLPct
 			at.UpdatePeakPnL(symbol, side, currentPnLPct)
-		
+
 		} else {
 			// 更新峰值缓存
 			at.UpdatePeakPnL(symbol, side, currentPnLPct)

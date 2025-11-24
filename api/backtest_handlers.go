@@ -324,15 +324,18 @@ func (s *Server) runBacktest(backtestID string, backtestRun *config.BacktestRun,
 
 	// 创建MCP客户端
 	mcpClient := mcp.New()
-	switch aiModel.Provider {
+	provider := strings.ToLower(strings.TrimSpace(aiModel.Provider))
+	switch provider {
 	case "openai", "custom":
 		mcpClient.SetCustomAPI(aiModel.CustomAPIURL, aiModel.APIKey, aiModel.CustomModelName)
 	case "qwen":
 		mcpClient.SetQwenAPIKey(aiModel.APIKey, aiModel.CustomAPIURL, aiModel.CustomModelName)
+	case "glm":
+		mcpClient.SetGLMAPIKey(aiModel.APIKey, aiModel.CustomAPIURL, aiModel.CustomModelName)
 	case "deepseek":
 		mcpClient.SetDeepSeekAPIKey(aiModel.APIKey, aiModel.CustomAPIURL, aiModel.CustomModelName)
 	default:
-		log.Printf("[Backtest %s] Unknown AI model provider: %s", backtestID, aiModel.Provider)
+		log.Printf("[Backtest %s] Unknown AI model provider: '%s' (normalized: '%s')", backtestID, aiModel.Provider, provider)
 		s.database.UpdateBacktestStatus(backtestID, "failed", 0)
 		return
 	}

@@ -3,64 +3,13 @@ import { useAuth } from '../contexts/AuthContext'
 import { api } from '../lib/api'
 import { ArrowLeft, TrendingUp, TrendingDown, BarChart3, Target } from 'lucide-react'
 import { EquityChart } from '../components/EquityChart'
-
-interface BacktestDetail {
-  id: string
-  trader_id: string
-  start_time: string
-  end_time: string
-  initial_balance: number
-  final_equity: number
-  total_pnl: number
-  total_pnl_pct: number
-  max_drawdown: number
-  sharpe_ratio: number
-  win_rate: number
-  total_trades: number
-  status: string
-  created_at: string
-  completed_at: string
-}
-
-interface EquitySnapshot {
-  time: string
-  equity: number
-  pnl: number
-  pnl_pct: number
-}
-
-interface Trade {
-  id: number
-  symbol: string
-  side: string
-  action: string
-  entry_price: number
-  exit_price: number
-  quantity: number
-  leverage: number
-  pnl: number
-  pnl_pct: number
-  fee: number
-  entry_time: string
-  exit_time: string
-}
-
-interface Decision {
-  id: number
-  timestamp: string
-  symbol: string
-  action: string
-  confidence: number
-  reasoning: string
-  price: number
-}
+import type { Backtest, BacktestTrade, DecisionRecord } from '../types'
 
 export default function BacktestDetailPage({ backtestId }: { backtestId: string }) {
   const { token } = useAuth()
-  const [backtest, setBacktest] = useState<BacktestDetail | null>(null)
-  const [equityHistory, setEquityHistory] = useState<EquitySnapshot[]>([])
-  const [trades, setTrades] = useState<Trade[]>([])
-  const [decisions, setDecisions] = useState<Decision[]>([])
+  const [backtest, setBacktest] = useState<Backtest | null>(null)
+  const [trades, setTrades] = useState<BacktestTrade[]>([])
+  const [decisions, setDecisions] = useState<DecisionRecord[]>([])
   const [loading, setLoading] = useState(true)
 
   const loadBacktestData = useCallback(async () => {
@@ -70,7 +19,7 @@ export default function BacktestDetailPage({ backtestId }: { backtestId: string 
       setBacktest(backtestData)
 
       // 2. 并行获取其他数据（非关键数据，允许失败）
-      const [equityData, tradesData, decisionsData] = await Promise.all([
+      const [, tradesData, decisionsData] = await Promise.all([
         api.getBacktestEquityHistory(backtestId).catch(err => {
           console.warn('Failed to load equity history:', err)
           return []
@@ -85,7 +34,6 @@ export default function BacktestDetailPage({ backtestId }: { backtestId: string 
         }),
       ])
 
-      setEquityHistory(equityData || [])
       setTrades(tradesData || [])
       setDecisions(decisionsData || [])
     } catch (error) {
@@ -149,21 +97,11 @@ export default function BacktestDetailPage({ backtestId }: { backtestId: string 
     )
   }
 
-  // 准备图表数据
-  const chartData = equityHistory.map((snapshot) => ({
-    time: new Date(snapshot.time).toLocaleString('zh-CN', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }),
-    equity: snapshot.equity,
-    pnl_pct: snapshot.pnl_pct,
-  }))
-
+  
   // 计算统计信息
   const winningTrades = trades.filter((t) => t.pnl > 0).length
   const losingTrades = trades.filter((t) => t.pnl < 0).length
+  const totalDecisions = decisions.reduce((acc, record) => acc + (record.decisions?.length || 0), 0)
 
   return (
     <div className="max-w-7xl mx-auto p-6 animate-fade-in" style={{ background: '#0B0E11', minHeight: '100vh' }}>
@@ -248,13 +186,13 @@ export default function BacktestDetailPage({ backtestId }: { backtestId: string 
             </div>
             <div
               className="text-2xl sm:text-3xl font-bold mono mb-1"
-              style={{ color: backtest.total_pnl_pct >= 0 ? '#0ECB81' : '#F6465D' }}
+              style={{ color: (backtest.total_pnl_pct || 0) >= 0 ? '#0ECB81' : '#F6465D' }}
             >
-              {backtest.total_pnl_pct >= 0 ? '+' : ''}
-              {backtest.total_pnl_pct.toFixed(2)}%
+              {(backtest.total_pnl_pct || 0) >= 0 ? '+' : ''}
+              {(backtest.total_pnl_pct || 0).toFixed(2)}%
             </div>
             <div className="text-xs" style={{ color: '#848E9C' }}>
-              {backtest.total_pnl >= 0 ? '+' : ''}${backtest.total_pnl.toFixed(2)} USDT
+              {(backtest.total_pnl || 0) >= 0 ? '+' : ''}${(backtest.total_pnl || 0).toFixed(2)} USDT
             </div>
           </div>
         </div>
@@ -283,7 +221,7 @@ export default function BacktestDetailPage({ backtestId }: { backtestId: string 
               </div>
             </div>
             <div className="text-2xl sm:text-3xl font-bold mono" style={{ color: '#F6465D' }}>
-              {backtest.max_drawdown.toFixed(2)}%
+              {(backtest.max_drawdown || 0).toFixed(2)}%
             </div>
           </div>
         </div>
@@ -312,7 +250,7 @@ export default function BacktestDetailPage({ backtestId }: { backtestId: string 
               </div>
             </div>
             <div className="text-2xl sm:text-3xl font-bold mono" style={{ color: '#EAECEF' }}>
-              {backtest.sharpe_ratio.toFixed(2)}
+              {(backtest.sharpe_ratio || 0).toFixed(2)}
             </div>
           </div>
         </div>
@@ -341,7 +279,7 @@ export default function BacktestDetailPage({ backtestId }: { backtestId: string 
               </div>
             </div>
             <div className="text-2xl sm:text-3xl font-bold mono" style={{ color: '#F0B90B' }}>
-              {backtest.win_rate.toFixed(1)}%
+              {(backtest.win_rate || 0).toFixed(1)}%
             </div>
             <div className="text-xs" style={{ color: '#848E9C' }}>
               {winningTrades}胜 / {losingTrades}负
@@ -439,27 +377,27 @@ export default function BacktestDetailPage({ backtestId }: { backtestId: string 
                     </span>
                   </td>
                   <td className="py-3 px-2 sm:px-4 text-right font-mono" style={{ color: '#EAECEF' }}>
-                    ${trade.entry_price.toFixed(4)}
+                    ${(trade.entry_price || 0).toFixed(4)}
                   </td>
                   <td className="py-3 px-2 sm:px-4 text-right font-mono" style={{ color: '#EAECEF' }}>
-                    ${trade.exit_price.toFixed(4)}
+                    ${(trade.exit_price || 0).toFixed(4)}
                   </td>
                   <td className="py-3 px-2 sm:px-4 text-right font-mono" style={{ color: '#848E9C' }}>
-                    {trade.quantity.toFixed(4)}
+                    {(trade.quantity || 0).toFixed(4)}
                   </td>
                   <td className="py-3 px-2 sm:px-4 text-right font-mono font-bold" style={{ color: '#F0B90B' }}>
                     {trade.leverage}x
                   </td>
                   <td className="py-3 px-2 sm:px-4 text-right">
-                    <div className="font-mono font-bold" style={{ color: trade.pnl >= 0 ? '#0ECB81' : '#F6465D' }}>
-                      {trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(2)}
+                    <div className="font-mono font-bold" style={{ color: (trade.pnl || 0) >= 0 ? '#0ECB81' : '#F6465D' }}>
+                      {(trade.pnl || 0) >= 0 ? '+' : ''}${(trade.pnl || 0).toFixed(2)}
                     </div>
-                    <div className="text-xs font-mono" style={{ color: trade.pnl >= 0 ? '#0ECB81' : '#F6465D', opacity: 0.7 }}>
-                      ({trade.pnl_pct >= 0 ? '+' : ''}{trade.pnl_pct.toFixed(2)}%)
+                    <div className="text-xs font-mono" style={{ color: (trade.pnl || 0) >= 0 ? '#0ECB81' : '#F6465D', opacity: 0.7 }}>
+                      ({(trade.pnl_pct || 0) >= 0 ? '+' : ''}{(trade.pnl_pct || 0).toFixed(2)}%)
                     </div>
                   </td>
                   <td className="py-3 px-2 sm:px-4 text-right font-mono" style={{ color: '#848E9C' }}>
-                    ${trade.fee.toFixed(2)}
+                    ${(trade.fee || 0).toFixed(2)}
                   </td>
                   <td className="py-3 px-2 sm:px-4 font-mono text-xs" style={{ color: '#848E9C' }}>
                     {new Date(trade.entry_time).toLocaleString('zh-CN', {
@@ -509,7 +447,7 @@ export default function BacktestDetailPage({ backtestId }: { backtestId: string 
                 AI 决策记录
               </h2>
               <div className="text-xs sm:text-sm" style={{ color: '#848E9C' }}>
-                共 {decisions.length} 条决策
+                共 {totalDecisions} 条决策
               </div>
             </div>
           </div>
@@ -528,56 +466,58 @@ export default function BacktestDetailPage({ backtestId }: { backtestId: string 
               </tr>
             </thead>
             <tbody>
-              {decisions.map((decision, index) => (
-                <tr 
-                  key={decision.id} 
-                  className="transition-all hover:scale-[1.01]"
-                  style={{ 
-                    borderBottom: '1px solid #2B3139',
-                    background: index % 2 === 0 ? 'transparent' : 'rgba(124, 58, 237, 0.02)',
-                  }}
-                >
-                  <td className="py-3 px-2 sm:px-4 font-mono text-xs" style={{ color: '#848E9C' }}>
-                    {new Date(decision.timestamp).toLocaleString('zh-CN', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </td>
-                  <td className="py-3 px-2 sm:px-4 font-mono font-bold" style={{ color: '#EAECEF' }}>
-                    {decision.symbol}
-                  </td>
-                  <td className="py-3 px-2 sm:px-4">
-                    <span
-                      className="px-2 py-1 rounded text-xs font-bold"
-                      style={{
-                        background: decision.action === 'buy' || decision.action === 'long' ? 'rgba(14, 203, 129, 0.1)' : 
-                                   decision.action === 'sell' || decision.action === 'short' ? 'rgba(246, 70, 93, 0.1)' : 'rgba(132, 142, 156, 0.1)',
-                        color: decision.action === 'buy' || decision.action === 'long' ? '#0ECB81' : 
-                               decision.action === 'sell' || decision.action === 'short' ? '#F6465D' : '#848E9C',
-                        border: `1px solid ${decision.action === 'buy' || decision.action === 'long' ? 'rgba(14, 203, 129, 0.2)' : 
-                                            decision.action === 'sell' || decision.action === 'short' ? 'rgba(246, 70, 93, 0.2)' : 'rgba(132, 142, 156, 0.2)'}`,
-                      }}
-                    >
-                      {decision.action === 'buy' ? '买入' : 
-                       decision.action === 'sell' ? '卖出' : 
-                       decision.action === 'long' ? '做多' : 
-                       decision.action === 'short' ? '做空' : 
-                       decision.action === 'hold' ? '持有' : decision.action}
-                    </span>
-                  </td>
-                  <td className="py-3 px-2 sm:px-4 text-right font-mono" style={{ color: '#EAECEF' }}>
-                    {decision.confidence}%
-                  </td>
-                  <td className="py-3 px-2 sm:px-4 text-right font-mono" style={{ color: '#EAECEF' }}>
-                    ${decision.price.toFixed(4)}
-                  </td>
-                  <td className="py-3 px-2 sm:px-4 text-xs" style={{ color: '#EAECEF', maxWidth: '300px' }}>
-                    {decision.reasoning}
-                  </td>
-                </tr>
-              ))}
+              {decisions.flatMap((record, recordIndex) => 
+                (record.decisions || []).map((action, actionIndex) => (
+                  <tr 
+                    key={`${recordIndex}-${actionIndex}`}
+                    className="transition-all hover:scale-[1.01]"
+                    style={{ 
+                      borderBottom: '1px solid #2B3139',
+                      background: recordIndex % 2 === 0 ? 'transparent' : 'rgba(124, 58, 237, 0.02)',
+                    }}
+                  >
+                    <td className="py-3 px-2 sm:px-4 font-mono text-xs" style={{ color: '#848E9C' }}>
+                      {new Date(record.timestamp).toLocaleString('zh-CN', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </td>
+                    <td className="py-3 px-2 sm:px-4 font-mono font-bold" style={{ color: '#EAECEF' }}>
+                      {action.symbol}
+                    </td>
+                    <td className="py-3 px-2 sm:px-4">
+                      <span
+                        className="px-2 py-1 rounded text-xs font-bold"
+                        style={{
+                          background: action.action === 'buy' || action.action === 'long' ? 'rgba(14, 203, 129, 0.1)' : 
+                                     action.action === 'sell' || action.action === 'short' ? 'rgba(246, 70, 93, 0.1)' : 'rgba(132, 142, 156, 0.1)',
+                          color: action.action === 'buy' || action.action === 'long' ? '#0ECB81' : 
+                                 action.action === 'sell' || action.action === 'short' ? '#F6465D' : '#848E9C',
+                          border: `1px solid ${action.action === 'buy' || action.action === 'long' ? 'rgba(14, 203, 129, 0.2)' : 
+                                              action.action === 'sell' || action.action === 'short' ? 'rgba(246, 70, 93, 0.2)' : 'rgba(132, 142, 156, 0.2)'}`,
+                        }}
+                      >
+                        {action.action === 'buy' ? '买入' : 
+                         action.action === 'sell' ? '卖出' : 
+                         action.action === 'long' ? '做多' : 
+                         action.action === 'short' ? '做空' : 
+                         action.action === 'hold' ? '持有' : action.action}
+                      </span>
+                    </td>
+                    <td className="py-3 px-2 sm:px-4 text-right font-mono" style={{ color: '#EAECEF' }}>
+                      {action.confidence}%
+                    </td>
+                    <td className="py-3 px-2 sm:px-4 text-right font-mono" style={{ color: '#EAECEF' }}>
+                      ${(action.price || 0).toFixed(4)}
+                    </td>
+                    <td className="py-3 px-2 sm:px-4 text-xs" style={{ color: '#EAECEF', maxWidth: '300px' }}>
+                      {action.reasoning}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

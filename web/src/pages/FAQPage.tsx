@@ -1,7 +1,5 @@
-import HeaderBar from '../components/landing/HeaderBar'
 import { FAQLayout } from '../components/faq/FAQLayout'
 import { useLanguage } from '../contexts/LanguageContext'
-import { useAuth } from '../contexts/AuthContext'
 import { useSystemConfig } from '../hooks/useSystemConfig'
 import { t } from '../i18n/translations'
 
@@ -22,45 +20,11 @@ import { t } from '../i18n/translations'
  * FAQ 数据配置在 data/faqData.ts
  */
 export function FAQPage() {
-  const { language, setLanguage } = useLanguage()
-  const { user, logout } = useAuth()
+  const { language } = useLanguage()
   useSystemConfig() // Load system config but don't use it
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: '#000000', color: '#EAECEF' }}
-    >
-      <HeaderBar
-        isLoggedIn={!!user}
-        currentPage="faq"
-        language={language}
-        onLanguageChange={setLanguage}
-        user={user}
-        onLogout={logout}
-        onPageChange={(page) => {
-          if (page === 'competition') {
-            window.history.pushState({}, '', '/competition')
-            window.location.href = '/competition'
-          } else if (page === 'traders') {
-            window.history.pushState({}, '', '/traders')
-            window.location.href = '/traders'
-          } else if (page === 'trader') {
-            window.history.pushState({}, '', '/dashboard')
-            window.location.href = '/dashboard'
-          } else if (page === 'faq') {
-            window.history.pushState({}, '', '/faq')
-            window.location.href = '/faq'
-          } else if (page === 'strategies') {
-            window.history.pushState({}, '', '/strategies')
-            window.location.href = '/strategies'
-          } else if (page === 'backtest') {
-            window.history.pushState({}, '', '/backtest')
-            window.location.href = '/backtest'
-          }
-        }}
-      />
-
+    <>
       <FAQLayout language={language} />
 
       {/* Footer */}
@@ -76,6 +40,6 @@ export function FAQPage() {
           <p className="mt-1">{t('footerWarning', language)}</p>
         </div>
       </footer>
-    </div>
+    </>
   )
 }

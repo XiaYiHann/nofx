@@ -19,6 +19,7 @@ Welcome to the NOFX documentation! This page helps you find the right documentat
 | [Docker Deployment (中文)](getting-started/docker-deploy.zh-CN.md) | Docker 部署指南（中文） | Docker deployment guide |
 | [PM2 Deployment (EN)](getting-started/pm2-deploy.en.md) | Deploy with PM2 process manager | PM2 进程管理器部署 |
 | [PM2 Deployment (中文)](getting-started/pm2-deploy.md) | PM2 部署指南（中文） | PM2 deployment guide |
+| [Local Dev (中文)](../LOCAL_DEV.md) | Run backend + frontend without Docker | 本地开发模式(start_local.sh) |
 | [Custom API (EN)](getting-started/custom-api.en.md) | Connect custom AI API providers | 连接自定义 AI API |
 | [Custom API (中文)](getting-started/custom-api.md) | 连接自定义 AI API 提供商 | Custom AI provider guide |
 
@@ -40,6 +41,7 @@ Welcome to the NOFX documentation! This page helps you find the right documentat
 | [User Guides Index (中文)](guides/README.zh-CN.md) | 所有使用指南和技巧 | All usage guides and tips |
 | [FAQ (English)](guides/faq.en.md) | Frequently asked questions | 常见问题解答 |
 | [FAQ (中文)](guides/faq.zh-CN.md) | 常见问题解答 | Frequently asked questions |
+| OTP Login Flow *(coming soon)* | Two-factor auth & OTP endpoints | 双因素认证与 OTP 接口说明 |
 | Troubleshooting *(coming soon)* | Common issues and solutions | 故障排查 |
 | Configuration Guide *(coming soon)* | Advanced configuration options | 高级配置选项 |
 | Trading Strategies *(coming soon)* | AI trading strategy examples | AI 交易策略示例 |
@@ -86,6 +88,7 @@ Welcome to the NOFX documentation! This page helps you find the right documentat
 |----------|-------------|------|
 | [Architecture Overview (EN)](architecture/README.md) | System architecture, modules, and design | 系统架构、模块和设计 |
 | [Architecture Overview (中文)](architecture/README.zh-CN.md) | 系统架构、模块和设计 | System architecture overview |
+| Test Modules Script *(EN)* | `scripts/test_modules.sh` matrix runner | go test 模块矩阵脚本 |
 | API Reference *(coming soon)* | HTTP API documentation | HTTP API 文档 |
 | Database Schema *(coming soon)* | SQLite database structure | SQLite 数据库结构 |
 | Testing Guide *(coming soon)* | How to write tests | 如何编写测试 |
