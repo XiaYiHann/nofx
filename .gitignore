@@ -57,6 +57,7 @@ configbak.json
 
 # 决策日志
 decision_logs/
+trader/test_logs/
 coin_pool_cache/
 nofx_test
 

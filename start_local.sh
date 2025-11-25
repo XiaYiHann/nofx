@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # ═══════════════════════════════════════════════════════════════
-# NOFX AI Trading System - Local Development Start Script
-# 本地开发启动脚本（不使用 Docker）
-# Usage: ./start_local.sh [start|stop|restart|status|logs] [--dev]
+# NOFX AI Trading System - Local Development Startup Script
+# 本地开发模式启动脚本（不使用 Docker）
+# Usage: ./start_local.sh [command]
 # ═══════════════════════════════════════════════════════════════
 
 set -e
@@ -15,7 +15,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m'
+NC='\033[0m' # No Color
 
 # ------------------------------------------------------------------------
 # Utility Functions
@@ -26,360 +26,351 @@ print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # ------------------------------------------------------------------------
-# Environment Setup
+# PID 文件路径
 # ------------------------------------------------------------------------
-setup_environment() {
-    print_info "检查运行环境..."
-    
-    # 检查必要工具
-    if ! command -v node &> /dev/null; then
-        print_error "Node.js 未安装！请先安装 Node.js 18+"
-        exit 1
-    fi
-    
+BACKEND_PID_FILE=".backend.pid"
+FRONTEND_PID_FILE=".frontend.pid"
+
+# ------------------------------------------------------------------------
+# 检查依赖
+# ------------------------------------------------------------------------
+check_dependencies() {
+    # 检查 Go
     if ! command -v go &> /dev/null; then
-        print_error "Go 未安装！请先安装 Go 1.21+"
+        print_error "Go 未安装！请先安装 Go: https://golang.org/dl/"
         exit 1
     fi
-    
-    # 检查 .env 文件
-    if [ ! -f ".env" ]; then
-        print_warning ".env 不存在，从模板复制..."
-        if [ -f ".env.example" ]; then
-            cp .env.example .env
-        else
-            cat > .env << EOF
-NOFX_FRONTEND_PORT=3000
-NOFX_BACKEND_PORT=8080
-DATA_ENCRYPTION_KEY=your_data_encryption_key_here_change_me
-JWT_SECRET=your_jwt_secret_here_change_me
-NODE_ENV=development
-GO_ENV=development
-EOF
-        fi
-        print_info "已创建 .env 文件"
+
+    # 检查 Node.js
+    if ! command -v node &> /dev/null; then
+        print_error "Node.js 未安装！请先安装 Node.js: https://nodejs.org/"
+        exit 1
     fi
-    
-    # 检查加密环境
-    if [ ! -f "secrets/rsa_key" ] || ! grep -q "^DATA_ENCRYPTION_KEY=" .env; then
-        print_warning "加密环境未配置，正在自动设置..."
-        if [ -f "scripts/setup_encryption.sh" ]; then
-            echo -e "Y\nn\nn" | bash scripts/setup_encryption.sh
-            print_success "加密环境设置完成"
-        fi
+
+    # 检查 npm
+    if ! command -v npm &> /dev/null; then
+        print_error "npm 未安装！请先安装 npm"
+        exit 1
     fi
-    
+}
+
+# ------------------------------------------------------------------------
+# 配置检查
+# ------------------------------------------------------------------------
+check_config() {
     # 检查 config.json
     if [ ! -f "config.json" ]; then
-        if [ -f "config.json.example" ]; then
-            cp config.json.example config.json
-            print_info "已从示例复制 config.json"
+        print_warning "config.json 不存在，创建默认配置..."
+        cat > config.json <<EOF
+{
+  "system": {
+    "lever_rate": 10,
+    "leverage_enabled": true,
+    "admin_mode": false
+  },
+  "models": {},
+  "exchanges": {}
+}
+EOF
+        print_success "✓ 已创建 config.json"
+    fi
+
+    # 检查 secrets 目录
+    if [ ! -d "secrets" ]; then
+        mkdir -p secrets
+        chmod 700 secrets
+    fi
+
+    if [ ! -f "secrets/rsa_key" ] || [ ! -f "secrets/rsa_key.pub" ]; then
+        print_warning "RSA密钥对不存在，正在生成..."
+        openssl genrsa -out secrets/rsa_key 2048 2>/dev/null
+        openssl rsa -in secrets/rsa_key -pubout -out secrets/rsa_key.pub 2>/dev/null
+        chmod 600 secrets/rsa_key
+        print_success "✓ 已生成 RSA 密钥对"
+    fi
+
+    # 检查数据库文件
+    if [ ! -f "config.db" ]; then
+        print_info "创建空数据库文件..."
+        touch config.db
+        chmod 600 config.db
+    fi
+
+    # 检查其他必要文件
+    if [ ! -f "beta_codes.txt" ]; then
+        touch beta_codes.txt
+    fi
+
+    # 创建必要目录
+    mkdir -p decision_logs prompts
+}
+
+# ------------------------------------------------------------------------
+# 安装前端依赖
+# ------------------------------------------------------------------------
+install_frontend_deps() {
+    if [ ! -d "web/node_modules" ]; then
+        print_info "📦 安装前端依赖..."
+        cd web
+        npm install
+        cd ..
+        print_success "✓ 前端依赖安装完成"
+    fi
+}
+
+# ------------------------------------------------------------------------
+# 启动后端
+# ------------------------------------------------------------------------
+start_backend() {
+    if [ -f "$BACKEND_PID_FILE" ]; then
+        local pid=$(cat "$BACKEND_PID_FILE")
+        if ps -p "$pid" > /dev/null 2>&1; then
+            print_warning "后端已在运行 (PID: $pid)"
+            return
         fi
     fi
-    
-    # 确保目录存在
-    mkdir -p secrets logs decision_logs temp database_backups
-    chmod 700 secrets
-    
-    print_success "环境检查完成"
-}
 
-# ------------------------------------------------------------------------
-# Database Management
-# ------------------------------------------------------------------------
-check_database() {
-    print_info "检查数据库..."
+    print_info "🚀 启动后端服务..."
     
-    # 如果数据库不存在，会在启动时自动创建并包含 paper_trading
-    if [ ! -f "config.db" ]; then
-        print_info "数据库不存在，首次启动时会自动创建"
-        print_info "将包含以下交易所: Binance, Hyperliquid, Aster, Paper Trading"
-    else
-        # 备份现有数据库
-        local backup_dir="database_backups"
-        local timestamp=$(date +%Y%m%d_%H%M%S)
-        local backup_file="$backup_dir/config.db.$timestamp"
-        
-        cp config.db "$backup_file"
-        chmod 600 "$backup_file"
-        print_success "数据库已备份: $backup_file"
-        
-        # 清理旧备份（保留最近10个）
-        ls -t $backup_dir/config.db.* 2>/dev/null | tail -n +11 | xargs rm -f 2>/dev/null || true
-    fi
-}
-
-# ------------------------------------------------------------------------
-# Start Services
-# ------------------------------------------------------------------------
-start_services() {
-    local dev_mode=$1
+    # 设置环境变量
+    export DATA_ENCRYPTION_KEY=${DATA_ENCRYPTION_KEY:-$(openssl rand -hex 32)}
+    export JWT_SECRET=${JWT_SECRET:-$(openssl rand -hex 32)}
     
-    print_info "启动 NOFX AI Trading System (本地模式)..."
-    
-    # 检查端口
-    local backend_port=${NOFX_BACKEND_PORT:-8080}
-    local frontend_port=${NOFX_FRONTEND_PORT:-3000}
-    
-    if lsof -Pi :$backend_port -sTCP:LISTEN -t >/dev/null 2>&1; then
-        print_error "端口 $backend_port 已被占用"
-        exit 1
-    fi
-    
-    # 清理旧的PID文件
-    rm -f nofx.pid frontend.pid
-    
-    # 启动后端
-    print_info "启动后端服务..."
-    
-    if [ "$dev_mode" == "--dev" ]; then
-        export DISABLE_OTP=true
-        print_info "开发模式：已禁用2FA验证"
-    fi
-    
-    # 使用源码运行
-    nohup go run . > nofx.log 2>&1 &
-    BACKEND_PID=$!
-    echo $BACKEND_PID > nofx.pid
+    # 在后台启动 Go 服务
+    nohup go run . > backend.log 2>&1 &
+    local pid=$!
+    echo $pid > "$BACKEND_PID_FILE"
     
     # 等待后端启动
+    print_info "等待后端服务启动..."
+    for i in {1..30}; do
+        if curl -s http://localhost:8080/api/health > /dev/null 2>&1; then
+            print_success "✅ 后端服务已启动 (PID: $pid)"
+            return
+        fi
+        sleep 1
+    done
+    
+    print_error "后端服务启动超时，请检查 backend.log"
+}
+
+# ------------------------------------------------------------------------
+# 启动前端
+# ------------------------------------------------------------------------
+start_frontend() {
+    if [ -f "$FRONTEND_PID_FILE" ]; then
+        local pid=$(cat "$FRONTEND_PID_FILE")
+        if ps -p "$pid" > /dev/null 2>&1; then
+            print_warning "前端已在运行 (PID: $pid)"
+            return
+        fi
+    fi
+
+    print_info "🚀 启动前端开发服务器..."
+    
+    cd web
+    # 在后台启动前端开发服务器
+    nohup npm run dev > ../frontend.log 2>&1 &
+    local pid=$!
+    cd ..
+    echo $pid > "$FRONTEND_PID_FILE"
+    
+    # 等待前端启动
+    print_info "等待前端服务启动..."
     sleep 3
-    if ! kill -0 $BACKEND_PID 2>/dev/null; then
-        print_error "后端启动失败，查看日志: tail -f nofx.log"
-        rm -f nofx.pid
-        exit 1
-    fi
-    print_success "后端服务已启动 (PID: $BACKEND_PID, Port: $backend_port)"
     
-    # 启动前端
-    if [ "$dev_mode" == "--dev" ]; then
-        print_info "启动前端开发服务器..."
-        cd web
-        
-        if [ ! -d "node_modules" ]; then
-            print_info "安装前端依赖..."
-            npm install
-        fi
-        
-        export VITE_API_URL="http://localhost:$backend_port"
-        nohup npm run dev > ../frontend.log 2>&1 &
-        FRONTEND_PID=$!
-        echo $FRONTEND_PID > ../frontend.pid
-        cd ..
-        
-        sleep 5
-        if ! kill -0 $FRONTEND_PID 2>/dev/null; then
-            print_error "前端启动失败，查看日志: tail -f frontend.log"
-            kill $BACKEND_PID 2>/dev/null
-            rm -f nofx.pid frontend.pid
-            exit 1
-        fi
-        print_success "前端开发服务器已启动 (PID: $FRONTEND_PID, Port: $frontend_port)"
-    else
-        # 生产模式：构建前端
-        print_info "构建前端生产版本..."
-        cd web
-        
-        if [ ! -d "node_modules" ]; then
-            npm install
-        fi
-        
-        npm run build
-        cd ..
-        print_success "前端已构建（通过后端 :$backend_port 提供服务）"
-    fi
-    
-    # 显示启动信息
-    echo ""
-    print_success "🎯 NOFX AI Trading System 启动完成！"
-    echo ""
-    if [ "$dev_mode" == "--dev" ]; then
-        echo "📱 前端开发服务器: http://localhost:$frontend_port"
-    else
-        echo "📱 Web 界面: http://localhost:$backend_port"
-    fi
-    echo "🔗 API 端点: http://localhost:$backend_port"
-    echo ""
-    echo "📊 服务状态:"
-    echo "  ✅ 后端服务运行中 (PID: $BACKEND_PID)"
-    if [ "$dev_mode" == "--dev" ]; then
-        echo "  ✅ 前端开发服务器运行中 (PID: $FRONTEND_PID)"
-    fi
-    echo ""
-    echo "📋 常用命令:"
-    echo "  查看服务状态: ./start_local.sh status"
-    echo "  查看后端日志: tail -f nofx.log"
-    if [ "$dev_mode" == "--dev" ]; then
-        echo "  查看前端日志: tail -f frontend.log"
-    fi
-    echo "  停止服务: ./start_local.sh stop"
-    echo "  重启服务: ./start_local.sh restart $dev_mode"
-    echo ""
-    echo "💡 Paper Trading 已启用！"
-    echo "   登录后在交易所配置中可以看到 'Paper Trading (Binance Testnet)'"
-    echo ""
+    print_success "✅ 前端服务已启动 (PID: $pid)"
 }
 
 # ------------------------------------------------------------------------
-# Stop Services
+# 停止服务
 # ------------------------------------------------------------------------
-stop_services() {
-    print_info "停止服务..."
-    
-    local stopped=0
-    
-    # 停止前端
-    if [ -f "frontend.pid" ]; then
-        FRONTEND_PID=$(cat frontend.pid)
-        if kill -0 $FRONTEND_PID 2>/dev/null; then
-            kill $FRONTEND_PID
-            print_success "前端服务已停止"
-            stopped=1
+stop_backend() {
+    if [ -f "$BACKEND_PID_FILE" ]; then
+        local pid=$(cat "$BACKEND_PID_FILE")
+        if ps -p "$pid" > /dev/null 2>&1; then
+            print_info "停止后端服务 (PID: $pid)..."
+            kill $pid
+            rm "$BACKEND_PID_FILE"
+            print_success "✓ 后端服务已停止"
+        else
+            rm "$BACKEND_PID_FILE"
         fi
-        rm -f frontend.pid
-    fi
-    
-    # 停止后端
-    if [ -f "nofx.pid" ]; then
-        BACKEND_PID=$(cat nofx.pid)
-        if kill -0 $BACKEND_PID 2>/dev/null; then
-            kill $BACKEND_PID
-            print_success "后端服务已停止"
-            stopped=1
-        fi
-        rm -f nofx.pid
-    fi
-    
-    if [ $stopped -eq 0 ]; then
-        print_warning "没有运行中的服务"
     else
-        print_success "所有服务已停止"
+        print_warning "后端服务未运行"
+    fi
+}
+
+stop_frontend() {
+    if [ -f "$FRONTEND_PID_FILE" ]; then
+        local pid=$(cat "$FRONTEND_PID_FILE")
+        if ps -p "$pid" > /dev/null 2>&1; then
+            print_info "停止前端服务 (PID: $pid)..."
+            kill $pid
+            rm "$FRONTEND_PID_FILE"
+            print_success "✓ 前端服务已停止"
+        else
+            rm "$FRONTEND_PID_FILE"
+        fi
+    else
+        print_warning "前端服务未运行"
+    fi
+}
+
+stop() {
+    print_info "🛑 停止所有服务..."
+    stop_backend
+    stop_frontend
+}
+
+# ------------------------------------------------------------------------
+# 启动所有服务
+# ------------------------------------------------------------------------
+start() {
+    check_dependencies
+    check_config
+    install_frontend_deps
+    
+    start_backend
+    start_frontend
+    
+    print_success "✅ 所有服务已启动！"
+    show_access_info
+}
+
+# ------------------------------------------------------------------------
+# 重启服务
+# ------------------------------------------------------------------------
+restart() {
+    stop
+    sleep 2
+    start
+}
+
+# ------------------------------------------------------------------------
+# 查看日志
+# ------------------------------------------------------------------------
+logs() {
+    local service=$1
+    
+    if [ "$service" == "backend" ] || [ "$service" == "be" ]; then
+        if [ -f "backend.log" ]; then
+            tail -f backend.log
+        else
+            print_error "backend.log 不存在"
+        fi
+    elif [ "$service" == "frontend" ] || [ "$service" == "fe" ]; then
+        if [ -f "frontend.log" ]; then
+            tail -f frontend.log
+        else
+            print_error "frontend.log 不存在"
+        fi
+    else
+        print_info "同时查看前后端日志..."
+        if [ -f "backend.log" ] && [ -f "frontend.log" ]; then
+            tail -f backend.log frontend.log
+        else
+            print_error "日志文件不存在"
+        fi
     fi
 }
 
 # ------------------------------------------------------------------------
-# Status Check
+# 查看状态
 # ------------------------------------------------------------------------
-check_status() {
+status() {
     print_info "检查服务状态..."
     
-    local backend_running=0
-    local frontend_running=0
-    
     # 检查后端
-    if [ -f "nofx.pid" ]; then
-        BACKEND_PID=$(cat nofx.pid)
-        if kill -0 $BACKEND_PID 2>/dev/null; then
-            print_success "✅ 后端服务运行中 (PID: $BACKEND_PID)"
-            backend_running=1
+    if [ -f "$BACKEND_PID_FILE" ]; then
+        local pid=$(cat "$BACKEND_PID_FILE")
+        if ps -p "$pid" > /dev/null 2>&1; then
+            echo -e "${GREEN}✓${NC} 后端服务运行中 (PID: $pid)"
         else
-            print_warning "❌ 后端服务未运行 (PID文件存在但进程不存在)"
-            rm -f nofx.pid
+            echo -e "${RED}✗${NC} 后端服务未运行 (PID文件存在但进程不存在)"
         fi
     else
-        print_warning "❌ 后端服务未运行"
+        echo -e "${RED}✗${NC} 后端服务未运行"
     fi
     
     # 检查前端
-    if [ -f "frontend.pid" ]; then
-        FRONTEND_PID=$(cat frontend.pid)
-        if kill -0 $FRONTEND_PID 2>/dev/null; then
-            print_success "✅ 前端服务运行中 (PID: $FRONTEND_PID)"
-            frontend_running=1
+    if [ -f "$FRONTEND_PID_FILE" ]; then
+        local pid=$(cat "$FRONTEND_PID_FILE")
+        if ps -p "$pid" > /dev/null 2>&1; then
+            echo -e "${GREEN}✓${NC} 前端服务运行中 (PID: $pid)"
         else
-            print_warning "❌ 前端服务未运行 (PID文件存在但进程不存在)"
-            rm -f frontend.pid
+            echo -e "${RED}✗${NC} 前端服务未运行 (PID文件存在但进程不存在)"
         fi
+    else
+        echo -e "${RED}✗${NC} 前端服务未运行"
     fi
-    
-    if [ $backend_running -eq 0 ] && [ $frontend_running -eq 0 ]; then
-        print_warning "所有服务都未运行"
-        return 1
-    fi
-    
-    return 0
 }
 
 # ------------------------------------------------------------------------
-# View Logs
+# 显示访问信息
 # ------------------------------------------------------------------------
-view_logs() {
-    local service=${1:-all}
-    
-    case "$service" in
-        backend)
-            if [ -f "nofx.log" ]; then
-                tail -f nofx.log
-            else
-                print_error "后端日志文件不存在"
-            fi
-            ;;
-        frontend)
-            if [ -f "frontend.log" ]; then
-                tail -f frontend.log
-            else
-                print_error "前端日志文件不存在"
-            fi
-            ;;
-        all|*)
-            if [ -f "nofx.log" ] && [ -f "frontend.log" ]; then
-                tail -f nofx.log frontend.log
-            elif [ -f "nofx.log" ]; then
-                tail -f nofx.log
-            else
-                print_error "日志文件不存在"
-            fi
-            ;;
-    esac
+show_access_info() {
+    echo ""
+    echo "🌐 前端开发服务: http://localhost:3000"
+    echo "🔗 后端 API: http://localhost:8080"
+    echo ""
+    echo "常用命令:"
+    echo "  ./start_local.sh logs [backend|frontend]  查看日志"
+    echo "  ./start_local.sh stop                     停止服务"
+    echo "  ./start_local.sh restart                  重启服务"
+    echo "  ./start_local.sh status                   查看状态"
+    echo ""
+    echo "日志文件:"
+    echo "  backend.log   - 后端日志"
+    echo "  frontend.log  - 前端日志"
+}
+
+# ------------------------------------------------------------------------
+# 帮助信息
+# ------------------------------------------------------------------------
+show_help() {
+    echo "NOFX AI Trading System - 本地开发启动脚本"
+    echo ""
+    echo "用法: ./start_local.sh [command]"
+    echo ""
+    echo "命令:"
+    echo "  start                      启动所有服务 (默认)"
+    echo "  stop                       停止所有服务"
+    echo "  restart                    重启所有服务"
+    echo "  status                     查看服务状态"
+    echo "  logs [backend|frontend]    查看日志"
+    echo "  help                       显示此帮助"
+    echo ""
+    echo "服务说明:"
+    echo "  后端: Go 服务运行在 http://localhost:8080"
+    echo "  前端: Vite 开发服务器运行在 http://localhost:5173"
 }
 
 # ------------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------------
-main() {
-    local command=${1:-start}
-    local mode=${2}
-    
-    case "$command" in
-        start)
-            setup_environment
-            check_database
-            start_services "$mode"
-            ;;
-        stop)
-            stop_services
-            ;;
-        restart)
-            stop_services
-            sleep 2
-            setup_environment
-            check_database
-            start_services "$mode"
-            ;;
-        status)
-            check_status
-            ;;
-        logs)
-            view_logs "$mode"
-            ;;
-        *)
-            echo "Usage: $0 {start|stop|restart|status|logs} [--dev]"
-            echo ""
-            echo "Commands:"
-            echo "  start [--dev]   启动服务（默认生产模式，--dev 开发模式）"
-            echo "  stop            停止服务"
-            echo "  restart [--dev] 重启服务"
-            echo "  status          查看状态"
-            echo "  logs [service]  查看日志 (backend/frontend/all)"
-            echo ""
-            echo "Examples:"
-            echo "  $0 start --dev          # 开发模式启动"
-            echo "  $0 start                # 生产模式启动"
-            echo "  $0 logs backend         # 查看后端日志"
-            echo "  $0 status               # 查看状态"
-            exit 1
-            ;;
-    esac
-}
-
-main "$@"
+case "${1:-start}" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        restart
+        ;;
+    status)
+        status
+        ;;
+    logs)
+        logs $2
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        print_error "未知命令: $1"
+        show_help
+        exit 1
+        ;;
+esac

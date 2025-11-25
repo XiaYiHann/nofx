@@ -580,6 +580,13 @@ func (t *AsterTrader) OpenLong(symbol string, quantity float64, leverage int) (m
 		log.Printf("  ⚠ 取消挂单失败(继续开仓): %v", err)
 	}
 
+	// 🛡️ 交易限额保护 (BLOCKING FIX)
+	const MaxOrderValue = 100000.0 // 单笔最大10万U
+	currentPrice, _ := t.GetMarketPrice(symbol)
+	if currentPrice > 0 && currentPrice*quantity > MaxOrderValue {
+		return nil, fmt.Errorf("交易金额超过限制: %.2f > %.2f", currentPrice*quantity, MaxOrderValue)
+	}
+
 	// 先设置杠杆
 	if err := t.SetLeverage(symbol, leverage); err != nil {
 		return nil, fmt.Errorf("设置杠杆失败: %w", err)
@@ -645,6 +652,13 @@ func (t *AsterTrader) OpenShort(symbol string, quantity float64, leverage int) (
 	// 开仓前先取消所有挂单,防止残留挂单导致仓位叠加
 	if err := t.CancelAllOrders(symbol); err != nil {
 		log.Printf("  ⚠ 取消挂单失败(继续开仓): %v", err)
+	}
+
+	// 🛡️ 交易限额保护 (BLOCKING FIX)
+	const MaxOrderValue = 100000.0 // 单笔最大10万U
+	currentPrice, _ := t.GetMarketPrice(symbol)
+	if currentPrice > 0 && currentPrice*quantity > MaxOrderValue {
+		return nil, fmt.Errorf("交易金额超过限制: %.2f > %.2f", currentPrice*quantity, MaxOrderValue)
 	}
 
 	// 先设置杠杆

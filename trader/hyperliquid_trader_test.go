@@ -28,7 +28,8 @@ type HyperliquidTestSuite struct {
 // NewHyperliquidTestSuite 创建 Hyperliquid 测试套件
 func NewHyperliquidTestSuite(t *testing.T) *HyperliquidTestSuite {
 	// 创建测试用私钥
-	privateKey, err := crypto.HexToECDSA("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+	// 创建测试用私钥
+	privateKey, err := crypto.GenerateKey()
 	if err != nil {
 		t.Fatalf("创建测试私钥失败: %v", err)
 	}
@@ -318,7 +319,7 @@ func TestNewHyperliquidTrader(t *testing.T) {
 // TestNewHyperliquidTrader_Success 测试成功创建交易器（需要 mock HTTP）
 func TestNewHyperliquidTrader_Success(t *testing.T) {
 	// 创建测试用私钥
-	privateKey, _ := crypto.HexToECDSA("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+	privateKey, _ := crypto.GenerateKey()
 	agentAddr := crypto.PubkeyToAddress(privateKey.PublicKey).Hex()
 
 	// 创建 mock HTTP 服务器

@@ -19,6 +19,7 @@ type Provider string
 const (
 	ProviderDeepSeek Provider = "deepseek"
 	ProviderQwen     Provider = "qwen"
+	ProviderGLM      Provider = "glm"
 	ProviderCustom   Provider = "custom"
 )
 
@@ -34,8 +35,8 @@ type Client struct {
 }
 
 func New() *Client {
-	// 从环境变量读取 MaxTokens，默认 2000
-	maxTokens := 2000
+	// 从环境变量读取 MaxTokens，默认 8192 (8k) 以支持思维链和长上下文
+	maxTokens := 8192
 	if envMaxTokens := os.Getenv("AI_MAX_TOKENS"); envMaxTokens != "" {
 		if parsed, err := strconv.Atoi(envMaxTokens); err == nil && parsed > 0 {
 			maxTokens = parsed
@@ -50,7 +51,7 @@ func New() *Client {
 		Provider:  ProviderDeepSeek,
 		BaseURL:   "https://api.deepseek.com/v1",
 		Model:     "deepseek-chat",
-		Timeout:   120 * time.Second, // 增加到120秒，因为AI需要分析大量数据
+		Timeout:   300 * time.Second, // 增加到300秒，因为AI生成长文本需要更多时间
 		MaxTokens: maxTokens,
 	}
 }
@@ -77,6 +78,30 @@ func (client *Client) SetDeepSeekAPIKey(apiKey string, customURL string, customM
 	// 打印 API Key 的前后各4位用于验证
 	if len(apiKey) > 8 {
 		log.Printf("🔧 [MCP] DeepSeek API Key: %s...%s", apiKey[:4], apiKey[len(apiKey)-4:])
+	}
+}
+
+// SetGLMAPIKey 设置GLM (智谱) API密钥
+// customURL 为空时使用默认OpenAI兼容端点，customModel 为空时使用默认模型
+func (client *Client) SetGLMAPIKey(apiKey string, customURL string, customModel string) {
+	client.Provider = ProviderGLM
+	client.APIKey = apiKey
+	baseURL := customURL
+	if baseURL == "" {
+		baseURL = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+	}
+	client.BaseURL = baseURL
+	client.UseFullURL = strings.HasSuffix(baseURL, "/chat/completions")
+	if customModel != "" {
+		client.Model = customModel
+		log.Printf("🔧 [MCP] GLM 使用自定义 Model: %s", customModel)
+	} else {
+		client.Model = "glm-4-plus"
+		log.Printf("🔧 [MCP] GLM 使用默认 Model: %s", client.Model)
+	}
+	log.Printf("🔧 [MCP] GLM BaseURL: %s (UseFullURL=%v)", client.BaseURL, client.UseFullURL)
+	if len(apiKey) > 8 {
+		log.Printf("🔧 [MCP] GLM API Key: %s...%s", apiKey[:4], apiKey[len(apiKey)-4:])
 	}
 }
 
@@ -120,7 +145,7 @@ func (client *Client) SetCustomAPI(apiURL, apiKey, modelName string) {
 	}
 
 	client.Model = modelName
-	client.Timeout = 120 * time.Second
+	client.Timeout = 300 * time.Second
 }
 
 // SetClient 设置完整的AI配置（高级用户）
@@ -200,6 +225,12 @@ func (client *Client) callOnce(systemPrompt, userPrompt string) (string, error) 
 		"content": userPrompt,
 	})
 
+	// 开发模式下打印输入
+	if os.Getenv("NOFX_DEV_MODE") == "true" {
+		log.Printf("🐛 [DEV] AI Input System Prompt:\n%s", systemPrompt)
+		log.Printf("🐛 [DEV] AI Input User Prompt:\n%s", userPrompt)
+	}
+
 	// 构建请求体
 	requestBody := map[string]interface{}{
 		"model":       client.Model,
@@ -216,6 +247,9 @@ func (client *Client) callOnce(systemPrompt, userPrompt string) (string, error) 
 		return "", fmt.Errorf("序列化请求失败: %w", err)
 	}
 
+	// 打印完整请求体 (Debug)
+	log.Printf("📤 [MCP] Request Payload:\n%s", string(jsonData))
+
 	// 创建HTTP请求
 	var url string
 	if client.UseFullURL {
@@ -223,7 +257,9 @@ func (client *Client) callOnce(systemPrompt, userPrompt string) (string, error) 
 		url = client.BaseURL
 	} else {
 		// 默认行为：添加/chat/completions
-		url = fmt.Sprintf("%s/chat/completions", client.BaseURL)
+		// 🔧 修复：去除 BaseURL 末尾可能存在的斜杠，防止生成 "//chat/completions"
+		baseURL := strings.TrimSuffix(client.BaseURL, "/")
+		url = fmt.Sprintf("%s/chat/completions", baseURL)
 	}
 	log.Printf("📡 [MCP] 请求 URL: %s", url)
 
@@ -242,6 +278,8 @@ func (client *Client) callOnce(systemPrompt, userPrompt string) (string, error) 
 		// 阿里云Qwen使用API-Key认证
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", client.APIKey))
 		// 注意：如果使用的不是兼容模式，可能需要不同的认证方式
+	case ProviderGLM:
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", client.APIKey))
 	default:
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", client.APIKey))
 	}
@@ -259,6 +297,9 @@ func (client *Client) callOnce(systemPrompt, userPrompt string) (string, error) 
 	if err != nil {
 		return "", fmt.Errorf("读取响应失败: %w", err)
 	}
+
+	// 打印完整响应体 (Debug)
+	log.Printf("📥 [MCP] Response Payload:\n%s", string(body))
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("API返回错误 (status %d): %s", resp.StatusCode, string(body))
@@ -281,7 +322,13 @@ func (client *Client) callOnce(systemPrompt, userPrompt string) (string, error) 
 		return "", fmt.Errorf("API返回空响应")
 	}
 
-	return result.Choices[0].Message.Content, nil
+	content := result.Choices[0].Message.Content
+	// 开发模式下打印输出
+	if os.Getenv("NOFX_DEV_MODE") == "true" {
+		log.Printf("🐛 [DEV] AI Output:\n%s", content)
+	}
+
+	return content, nil
 }
 
 // isRetryableError 判断错误是否可重试

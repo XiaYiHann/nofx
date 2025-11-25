@@ -108,6 +108,12 @@ func (s *AutoTraderTestSuite) SetupTest() {
 		lastBalanceSyncTime:   time.Now(),
 		database:              s.mockDB,
 		userID:                "test_user",
+		marketDataProvider: func(symbol string, config ...*market.IndicatorConfig) (*market.Data, error) {
+			return &market.Data{
+				Symbol:       symbol,
+				CurrentPrice: 50000.0,
+			}, nil
+		},
 	}
 }
 
@@ -384,9 +390,9 @@ func (s *AutoTraderTestSuite) TestGetCandidateCoins() {
 
 func (s *AutoTraderTestSuite) TestBuildTradingContext() {
 	// Mock market.Get
-	s.patches.ApplyFunc(market.Get, func(symbol string) (*market.Data, error) {
+	s.autoTrader.marketDataProvider = func(symbol string, config ...*market.IndicatorConfig) (*market.Data, error) {
 		return &market.Data{Symbol: symbol, CurrentPrice: 50000.0}, nil
-	})
+	}
 
 	ctx, err := s.autoTrader.buildTradingContext()
 
@@ -476,9 +482,9 @@ func (s *AutoTraderTestSuite) TestExecuteOpenPosition() {
 	for _, tt := range tests {
 		time.Sleep(time.Millisecond)
 		s.Run(tt.name, func() {
-			s.patches.ApplyFunc(market.Get, func(symbol string) (*market.Data, error) {
+			s.autoTrader.marketDataProvider = func(symbol string, config ...*market.IndicatorConfig) (*market.Data, error) {
 				return &market.Data{Symbol: symbol, CurrentPrice: 50000.0}, nil
-			})
+			}
 
 			s.mockTrader.balance["availableBalance"] = tt.availBalance
 			if tt.existingSide != "" {
@@ -541,9 +547,9 @@ func (s *AutoTraderTestSuite) TestExecuteClosePosition() {
 	for _, tt := range tests {
 		time.Sleep(time.Millisecond)
 		s.Run(tt.name, func() {
-			s.patches.ApplyFunc(market.Get, func(symbol string) (*market.Data, error) {
+			s.autoTrader.marketDataProvider = func(symbol string, config ...*market.IndicatorConfig) (*market.Data, error) {
 				return &market.Data{Symbol: symbol, CurrentPrice: tt.currentPrice}, nil
-			})
+			}
 
 			decision := &decision.Decision{Action: tt.action, Symbol: "BTCUSDT"}
 			actionRecord := &logger.DecisionAction{Action: tt.action, Symbol: "BTCUSDT"}
@@ -561,13 +567,13 @@ func (s *AutoTraderTestSuite) TestExecuteClosePosition() {
 func (s *AutoTraderTestSuite) TestExecuteUpdateStopOrTakeProfit() {
 	// 使用指针变量来控制 market.Get 的返回值
 	var testPrice *float64
-	s.patches.ApplyFunc(market.Get, func(symbol string) (*market.Data, error) {
+	s.autoTrader.marketDataProvider = func(symbol string, config ...*market.IndicatorConfig) (*market.Data, error) {
 		price := 50000.0
 		if testPrice != nil {
 			price = *testPrice
 		}
 		return &market.Data{Symbol: symbol, CurrentPrice: price}, nil
-	})
+	}
 
 	tests := []struct {
 		name         string
@@ -732,12 +738,12 @@ func (s *AutoTraderTestSuite) TestExecutePartialCloseWithRecord() {
 		}
 
 		// Mock market.Get
-		s.patches.ApplyFunc(market.Get, func(symbol string) (*market.Data, error) {
+		s.autoTrader.marketDataProvider = func(symbol string, config ...*market.IndicatorConfig) (*market.Data, error) {
 			return &market.Data{
 				Symbol:       symbol,
 				CurrentPrice: 52000.0,
 			}, nil
-		})
+		}
 
 		decision := &decision.Decision{
 			Action:          "partial_close",
@@ -778,12 +784,12 @@ func (s *AutoTraderTestSuite) TestExecutePartialCloseWithRecord() {
 
 func (s *AutoTraderTestSuite) TestExecuteDecisionWithRecord() {
 	// Mock market.Get
-	s.patches.ApplyFunc(market.Get, func(symbol string) (*market.Data, error) {
+	s.autoTrader.marketDataProvider = func(symbol string, config ...*market.IndicatorConfig) (*market.Data, error) {
 		return &market.Data{
 			Symbol:       symbol,
 			CurrentPrice: 50000.0,
 		}, nil
-	})
+	}
 
 	s.Run("路由到open_long", func() {
 		decision := &decision.Decision{

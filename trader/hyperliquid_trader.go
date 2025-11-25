@@ -341,6 +341,13 @@ func (t *HyperliquidTrader) OpenLong(symbol string, quantity float64, leverage i
 		log.Printf("  ⚠ 取消旧委托单失败: %v", err)
 	}
 
+	// 🛡️ 交易限额保护 (BLOCKING FIX)
+	const MaxOrderValue = 100000.0 // 单笔最大10万U
+	currentPrice, _ := t.GetMarketPrice(symbol)
+	if currentPrice > 0 && currentPrice*quantity > MaxOrderValue {
+		return nil, fmt.Errorf("交易金额超过限制: %.2f > %.2f", currentPrice*quantity, MaxOrderValue)
+	}
+
 	// 设置杠杆
 	if err := t.SetLeverage(symbol, leverage); err != nil {
 		return nil, err
@@ -397,6 +404,13 @@ func (t *HyperliquidTrader) OpenShort(symbol string, quantity float64, leverage 
 	// 先取消该币种的所有委托单
 	if err := t.CancelAllOrders(symbol); err != nil {
 		log.Printf("  ⚠ 取消旧委托单失败: %v", err)
+	}
+
+	// 🛡️ 交易限额保护 (BLOCKING FIX)
+	const MaxOrderValue = 100000.0 // 单笔最大10万U
+	currentPrice, _ := t.GetMarketPrice(symbol)
+	if currentPrice > 0 && currentPrice*quantity > MaxOrderValue {
+		return nil, fmt.Errorf("交易金额超过限制: %.2f > %.2f", currentPrice*quantity, MaxOrderValue)
 	}
 
 	// 设置杠杆

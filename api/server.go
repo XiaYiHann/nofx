@@ -120,8 +120,8 @@ func (s *Server) setupRoutes() {
 		// 认证相关路由（无需认证）
 		api.POST("/register", s.handleRegister)
 		api.POST("/login", s.handleLogin)
-		api.POST("/verify-otp", s.handleVerifyOTP)
-		api.POST("/complete-registration", s.handleCompleteRegistration)
+		api.POST("/complete-registration", s.handleCompleteRegistration) // OTP完成注册
+		api.POST("/verify-otp", s.handleVerifyOTP)                       // OTP登录验证
 
 		// 需要认证的路由
 		protected := api.Group("/", s.authMiddleware())
@@ -171,6 +171,19 @@ func (s *Server) setupRoutes() {
 			protected.GET("/decisions/latest", s.handleLatestDecisions)
 			protected.GET("/statistics", s.handleStatistics)
 			protected.GET("/performance", s.handlePerformance)
+
+			// 回测管理
+			protected.POST("/backtest", s.handleCreateBacktest)
+			protected.GET("/backtest/:id", s.handleGetBacktest)
+			protected.GET("/backtest/:id/equity-history", s.handleGetBacktestEquityHistory)
+			protected.GET("/backtest/:id/trades", s.handleGetBacktestTrades)
+			protected.GET("/backtest/:id/decisions", s.handleGetBacktestDecisions)
+			protected.GET("/backtests", s.handleListBacktests)
+			protected.DELETE("/backtest/:id", s.handleDeleteBacktest)
+
+			// 缓存管理
+			protected.GET("/backtest/cache/stats", s.handleGetCacheStats)
+			protected.DELETE("/backtest/cache/clear", s.handleClearCache)
 		}
 	}
 }
@@ -2004,6 +2017,11 @@ func (s *Server) initUserDefaultConfigs(userID string) error {
 
 // handleGetSupportedModels 获取系统支持的AI模型列表
 func (s *Server) handleGetSupportedModels(c *gin.Context) {
+	if err := s.database.EnsureDefaultAIModels(); err != nil {
+		log.Printf("❌ 确保默认AI模型失败: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取支持的AI模型失败"})
+		return
+	}
 	// 返回系统支持的AI模型（从default用户获取）
 	models, err := s.database.GetAIModels("default")
 	if err != nil {
@@ -2070,6 +2088,9 @@ func (s *Server) Start() error {
 	log.Printf("  • GET  /api/decisions/latest?trader_id=xxx - 指定trader的最新决策")
 	log.Printf("  • GET  /api/statistics?trader_id=xxx - 指定trader的统计信息")
 	log.Printf("  • GET  /api/performance?trader_id=xxx - 指定trader的AI学习表现分析")
+	log.Printf("  • POST /api/backtest         - 创建回测")
+	log.Printf("  • GET  /api/backtest/:id     - 获取回测详情")
+	log.Printf("  • GET  /api/backtest/:id/decisions - 获取回测决策")
 	log.Println()
 
 	// 创建 http.Server 以支持 graceful shutdown
@@ -2240,14 +2261,15 @@ func (s *Server) handleUpdateStrategy(c *gin.Context) {
 // handleDeleteStrategy 删除用户自定义策略
 func (s *Server) handleDeleteStrategy(c *gin.Context) {
 	// 获取认证用户ID（必需）
-	userID, exists := c.Get("user_id")
-	if !exists || userID == "" {
+	userIDValue, exists := c.Get("user_id")
+	userID, ok := userIDValue.(string)
+	if !exists || !ok || userID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未授权"})
 		return
 	}
 
 	strategyName := c.Param("name")
-	log.Printf("删除策略请求：strategyName=%s, userID=%v", strategyName, userID)
+	log.Printf("删除策略请求：strategyName=%s, userID=%s", strategyName, userID)
 
 	// 查找策略文件的两种可能方式：
 	// 1. 直接在prompts目录查找所有文件
@@ -2263,12 +2285,25 @@ func (s *Server) handleDeleteStrategy(c *gin.Context) {
 	var targetFilePath string
 	// 查找匹配的策略文件
 	for _, file := range files {
-		if !file.IsDir() && strings.Contains(file.Name(), strategyName) {
-			// 检查是否是该用户的策略文件（文件名包含userID）
-			if strings.Contains(file.Name(), fmt.Sprintf("user_%v_", userID)) {
+		if !file.IsDir() && strings.HasSuffix(file.Name(), "_"+strategyName+".txt") {
+			// 1. 首选: 当前用户自己的策略文件
+			if strings.Contains(file.Name(), fmt.Sprintf("user_%s_", userID)) {
 				targetFilePath = filepath.Join(promptsDir, file.Name())
 				log.Printf("找到匹配的策略文件: %s", targetFilePath)
 				break
+			}
+
+			// 2. 仅当为 admin 用户时,才允许清理孤儿文件
+			if targetFilePath == "" && userID == "admin" {
+				parts := strings.Split(file.Name(), "_")
+				if len(parts) >= 3 && parts[0] == "user" {
+					fileUserID := parts[1]
+					if _, err := s.database.GetUserByID(fileUserID); err != nil {
+						// 用户不存在,视为孤儿文件,仅由 admin 清理
+						log.Printf("[admin] 清理孤儿策略文件(原用户 %s 不存在): %s", fileUserID, file.Name())
+						targetFilePath = filepath.Join(promptsDir, file.Name())
+					}
+				}
 			}
 		}
 	}
@@ -2515,99 +2550,6 @@ func (s *Server) handleGetPublicTraderConfig(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, result)
-}
-
-// handleCompleteRegistration 完成注册（验证OTP）
-func (s *Server) handleCompleteRegistration(c *gin.Context) {
-	var req struct {
-		UserID  string `json:"user_id" binding:"required"`
-		OTPCode string `json:"otp_code" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// 获取用户信息
-	user, err := s.database.GetUserByID(req.UserID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
-		return
-	}
-
-	// 验证OTP
-	if !auth.VerifyOTP(user.OTPSecret, req.OTPCode) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "OTP验证码错误"})
-		return
-	}
-
-	// 更新用户OTP验证状态
-	err = s.database.UpdateUserOTPVerified(req.UserID, true)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新用户状态失败"})
-		return
-	}
-
-	// 生成JWT token
-	token, err := auth.GenerateJWT(user.ID, user.Email)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "生成token失败"})
-		return
-	}
-
-	// 初始化用户的默认模型和交易所配置
-	err = s.initUserDefaultConfigs(user.ID)
-	if err != nil {
-		log.Printf("初始化用户默认配置失败: %v", err)
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"token":   token,
-		"user_id": user.ID,
-		"email":   user.Email,
-		"message": "注册完成",
-	})
-}
-
-// handleVerifyOTP 验证OTP并完成登录
-func (s *Server) handleVerifyOTP(c *gin.Context) {
-	var req struct {
-		UserID  string `json:"user_id" binding:"required"`
-		OTPCode string `json:"otp_code" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// 获取用户信息
-	user, err := s.database.GetUserByID(req.UserID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
-		return
-	}
-
-	// 验证OTP
-	if !auth.VerifyOTP(user.OTPSecret, req.OTPCode) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "验证码错误"})
-		return
-	}
-
-	// 生成JWT token
-	token, err := auth.GenerateJWT(user.ID, user.Email)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "生成token失败"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"token":   token,
-		"user_id": user.ID,
-		"email":   user.Email,
-		"message": "登录成功",
-	})
 }
 
 // handleGetIndicatorConfig 获取交易员指标配置

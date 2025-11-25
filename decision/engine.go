@@ -25,7 +25,8 @@ var (
 
 	// 新增：XML标签提取（支持思维链中包含任何字符）
 	reReasoningTag = regexp.MustCompile(`(?s)<reasoning>(.*?)</reasoning>`)
-	reDecisionTag  = regexp.MustCompile(`(?s)<decision>(.*?)</decision>`)
+	// 允许缺少闭合标签（LLM有时会忘记闭合，或者在代码块后直接结束）
+	reDecisionTag = regexp.MustCompile(`(?s)<decision>(.*?)(?:</decision>|$)`)
 )
 
 // PositionInfo 持仓信息
@@ -120,15 +121,19 @@ type FullDecision struct {
 }
 
 // GetFullDecision 获取AI的完整交易决策（批量分析所有币种和持仓）
-func GetFullDecision(ctx *Context, mcpClient *mcp.Client) (*FullDecision, error) {
-	return GetFullDecisionWithCustomPrompt(ctx, mcpClient, "", false, "")
+func GetFullDecision(ctx *Context, mcpClient *mcp.Client, minRiskRewardRatio float64) (*FullDecision, error) {
+	return GetFullDecisionWithCustomPrompt(ctx, mcpClient, "", false, "", minRiskRewardRatio)
 }
 
 // GetFullDecisionWithCustomPrompt 获取AI的完整交易决策（支持自定义prompt和模板选择）
-func GetFullDecisionWithCustomPrompt(ctx *Context, mcpClient *mcp.Client, customPrompt string, overrideBase bool, templateName string) (*FullDecision, error) {
+func GetFullDecisionWithCustomPrompt(ctx *Context, mcpClient *mcp.Client, customPrompt string, overrideBase bool, templateName string, minRiskRewardRatio float64) (*FullDecision, error) {
 	// 1. 为所有币种获取市场数据
-	if err := fetchMarketDataForContext(ctx); err != nil {
-		return nil, fmt.Errorf("获取市场数据失败: %w", err)
+	// 如果上下文并未提供市场数据（实盘模式），则从API获取
+	// 如果上下文已提供市场数据（回测模式），则直接使用，跳过API调用
+	if len(ctx.MarketDataMap) == 0 {
+		if err := fetchMarketDataForContext(ctx); err != nil {
+			return nil, fmt.Errorf("获取市场数据失败: %w", err)
+		}
 	}
 
 	// 2. 构建 System Prompt（固定规则）和 User Prompt（动态数据）
@@ -138,11 +143,12 @@ func GetFullDecisionWithCustomPrompt(ctx *Context, mcpClient *mcp.Client, custom
 	// 3. 调用AI API（使用 system + user prompt）
 	aiResponse, err := mcpClient.CallWithMessages(systemPrompt, userPrompt)
 	if err != nil {
-		return nil, fmt.Errorf("调用AI API失败: %w", err)
+		log.Printf("⚠️  AI 调用失败，降级为安全等待决策: %v", err)
+		return buildWaitFallbackDecision(systemPrompt, userPrompt, err), nil
 	}
 
 	// 4. 解析AI响应
-	decision, err := parseFullDecisionResponse(aiResponse, ctx.Account.TotalEquity, ctx.BTCETHLeverage, ctx.AltcoinLeverage)
+	decision, err := parseFullDecisionResponse(aiResponse, ctx.Account.TotalEquity, ctx.BTCETHLeverage, ctx.AltcoinLeverage, minRiskRewardRatio)
 	if err != nil {
 		return decision, fmt.Errorf("解析AI响应失败: %w", err)
 	}
@@ -451,7 +457,7 @@ func buildUserPrompt(ctx *Context) string {
 }
 
 // parseFullDecisionResponse 解析AI的完整决策响应
-func parseFullDecisionResponse(aiResponse string, accountEquity float64, btcEthLeverage, altcoinLeverage int) (*FullDecision, error) {
+func parseFullDecisionResponse(aiResponse string, accountEquity float64, btcEthLeverage, altcoinLeverage int, minRiskRewardRatio float64) (*FullDecision, error) {
 	// 1. 提取思维链
 	cotTrace := extractCoTTrace(aiResponse)
 
@@ -465,7 +471,7 @@ func parseFullDecisionResponse(aiResponse string, accountEquity float64, btcEthL
 	}
 
 	// 3. 验证决策
-	if err := validateDecisions(decisions, accountEquity, btcEthLeverage, altcoinLeverage); err != nil {
+	if err := validateDecisions(decisions, accountEquity, btcEthLeverage, altcoinLeverage, minRiskRewardRatio); err != nil {
 		return &FullDecision{
 			CoTTrace:  cotTrace,
 			Decisions: decisions,
@@ -478,10 +484,32 @@ func parseFullDecisionResponse(aiResponse string, accountEquity float64, btcEthL
 	}, nil
 }
 
+// buildWaitFallbackDecision 在 AI 不可用时生成安全等待决策，确保系统不会抛出未处理错误
+func buildWaitFallbackDecision(systemPrompt, userPrompt string, cause error) *FullDecision {
+	reason := "AI调用失败"
+	if cause != nil {
+		reason = fmt.Sprintf("AI调用失败: %v", cause)
+	}
+
+	return &FullDecision{
+		SystemPrompt: systemPrompt,
+		UserPrompt:   userPrompt,
+		CoTTrace:     fmt.Sprintf("AI不可用，系统自动降级为安全等待模式 (%s)", reason),
+		Decisions: []Decision{
+			{
+				Symbol:    "ALL",
+				Action:    "wait",
+				Reasoning: fmt.Sprintf("LLM 暂时不可用，等待下一周期再尝试 (%s)", reason),
+			},
+		},
+		Timestamp: time.Now(),
+	}
+}
+
 // extractCoTTrace 提取思维链分析
 func extractCoTTrace(response string) string {
 	// 方法1: 优先尝试提取 <reasoning> 标签内容
-	if match := reReasoningTag.FindStringSubmatch(response); match != nil && len(match) > 1 {
+	if match := reReasoningTag.FindStringSubmatch(response); len(match) > 1 {
 		log.Printf("✓ 使用 <reasoning> 标签提取思维链")
 		return strings.TrimSpace(match[1])
 	}
@@ -493,10 +521,12 @@ func extractCoTTrace(response string) string {
 	}
 
 	// 方法3: 后备方案 - 查找JSON数组的开始位置
-	jsonStart := strings.Index(response, "[")
-	if jsonStart > 0 {
-		log.Printf("⚠️  使用旧版格式（[ 字符分离）提取思维链")
-		return strings.TrimSpace(response[:jsonStart])
+	// 🔧 修复：旧逻辑只查找 "[" 会误判思维链中的数组数据（如 "Mid prices: [...]"）
+	// 改为查找 JSON 对象数组的特征头 "[\s*{"
+	reJSONStart := regexp.MustCompile(`\[\s*\{`)
+	if loc := reJSONStart.FindStringIndex(response); loc != nil && loc[0] > 0 {
+		log.Printf("⚠️  使用旧版格式（JSON数组头分离）提取思维链")
+		return strings.TrimSpace(response[:loc[0]])
 	}
 
 	// 如果找不到任何标记，整个响应都是思维链
@@ -515,7 +545,7 @@ func extractDecisions(response string) ([]Decision, error) {
 
 	// 方法1: 优先尝试从 <decision> 标签中提取
 	var jsonPart string
-	if match := reDecisionTag.FindStringSubmatch(s); match != nil && len(match) > 1 {
+	if match := reDecisionTag.FindStringSubmatch(s); len(match) > 1 {
 		jsonPart = strings.TrimSpace(match[1])
 		log.Printf("✓ 使用 <decision> 标签提取JSON")
 	} else {
@@ -528,7 +558,7 @@ func extractDecisions(response string) ([]Decision, error) {
 	jsonPart = fixMissingQuotes(jsonPart)
 
 	// 1) 优先从 ```json 代码块中提取
-	if m := reJSONFence.FindStringSubmatch(jsonPart); m != nil && len(m) > 1 {
+	if m := reJSONFence.FindStringSubmatch(jsonPart); len(m) > 1 {
 		jsonContent := strings.TrimSpace(m[1])
 		jsonContent = compactArrayOpen(jsonContent) // 把 "[ {" 规整为 "[{"
 		jsonContent = fixMissingQuotes(jsonContent) // 二次修复（防止 regex 提取后还有残留全角）
@@ -548,6 +578,7 @@ func extractDecisions(response string) ([]Decision, error) {
 	if jsonContent == "" {
 		// 🔧 安全回退 (Safe Fallback)：当AI只输出思维链没有JSON时，生成保底决策（避免系统崩溃）
 		log.Printf("⚠️  [SafeFallback] AI未输出JSON决策，进入安全等待模式 (AI response without JSON, entering safe wait mode)")
+		log.Printf("🔍 [DEBUG] 原始响应内容 (前500字符): %s", truncateString(response, 500))
 
 		// 提取思维链摘要（最多 240 字符）
 		cotSummary := jsonPart
@@ -592,12 +623,13 @@ func fixMissingQuotes(jsonStr string) string {
 	jsonStr = strings.ReplaceAll(jsonStr, "\u2019", "'")  // '
 
 	// ⚠️ 替换全角括号、冒号、逗号（防止AI输出全角JSON字符）
-	jsonStr = strings.ReplaceAll(jsonStr, "［", "[") // U+FF3B 全角左方括号
-	jsonStr = strings.ReplaceAll(jsonStr, "］", "]") // U+FF3D 全角右方括号
-	jsonStr = strings.ReplaceAll(jsonStr, "｛", "{") // U+FF5B 全角左花括号
-	jsonStr = strings.ReplaceAll(jsonStr, "｝", "}") // U+FF5D 全角右花括号
-	jsonStr = strings.ReplaceAll(jsonStr, "：", ":") // U+FF1A 全角冒号
-	jsonStr = strings.ReplaceAll(jsonStr, "，", ",") // U+FF0C 全角逗号
+	jsonStr = strings.ReplaceAll(jsonStr, "［", "[")  // U+FF3B 全角左方括号
+	jsonStr = strings.ReplaceAll(jsonStr, "］", "]")  // U+FF3D 全角右方括号
+	jsonStr = strings.ReplaceAll(jsonStr, "｛", "{")  // U+FF5B 全角左花括号
+	jsonStr = strings.ReplaceAll(jsonStr, "｝", "}")  // U+FF5D 全角右花括号
+	jsonStr = strings.ReplaceAll(jsonStr, "：", ":")  // U+FF1A 全角冒号
+	jsonStr = strings.ReplaceAll(jsonStr, "，", ",")  // U+FF0C 全角逗号
+	jsonStr = strings.ReplaceAll(jsonStr, "＂", "\"") // U+FF02 全角双引号
 
 	// ⚠️ 替换CJK标点符号（AI在中文上下文中也可能输出这些）
 	jsonStr = strings.ReplaceAll(jsonStr, "【", "[") // CJK左方头括号 U+3010
@@ -664,9 +696,9 @@ func compactArrayOpen(s string) string {
 }
 
 // validateDecisions 验证所有决策（需要账户信息和杠杆配置）
-func validateDecisions(decisions []Decision, accountEquity float64, btcEthLeverage, altcoinLeverage int) error {
+func validateDecisions(decisions []Decision, accountEquity float64, btcEthLeverage, altcoinLeverage int, minRiskRewardRatio float64) error {
 	for i, decision := range decisions {
-		if err := validateDecision(&decision, accountEquity, btcEthLeverage, altcoinLeverage); err != nil {
+		if err := validateDecision(&decision, accountEquity, btcEthLeverage, altcoinLeverage, minRiskRewardRatio); err != nil {
 			return fmt.Errorf("决策 #%d 验证失败: %w", i+1, err)
 		}
 	}
@@ -696,7 +728,7 @@ func findMatchingBracket(s string, start int) int {
 }
 
 // validateDecision 验证单个决策的有效性
-func validateDecision(d *Decision, accountEquity float64, btcEthLeverage, altcoinLeverage int) error {
+func validateDecision(d *Decision, accountEquity float64, btcEthLeverage, altcoinLeverage int, minRiskRewardRatio float64) error {
 	// 验证action
 	validActions := map[string]bool{
 		"open_long":          true,
@@ -706,6 +738,8 @@ func validateDecision(d *Decision, accountEquity float64, btcEthLeverage, altcoi
 		"update_stop_loss":   true,
 		"update_take_profit": true,
 		"partial_close":      true,
+		"part_close_long":    true,
+		"part_close_short":   true,
 		"hold":               true,
 		"wait":               true,
 	}
@@ -714,8 +748,8 @@ func validateDecision(d *Decision, accountEquity float64, btcEthLeverage, altcoi
 		return fmt.Errorf("无效的action: %s", d.Action)
 	}
 
-	// 开仓操作必须提供完整参数
-	if d.Action == "open_long" || d.Action == "open_short" {
+	// 开仓和部分平仓操作必须提供完整参数
+	if d.Action == "open_long" || d.Action == "open_short" || d.Action == "part_close_long" || d.Action == "part_close_short" {
 		// 根据币种使用配置的杠杆上限
 		maxLeverage := altcoinLeverage          // 山寨币使用配置的杠杆
 		maxPositionValue := accountEquity * 1.5 // 山寨币最多1.5倍账户净值
@@ -796,10 +830,10 @@ func validateDecision(d *Decision, accountEquity float64, btcEthLeverage, altcoi
 			}
 		}
 
-		// 硬约束：风险回报比必须≥3.0
-		if riskRewardRatio < 3.0 {
-			return fmt.Errorf("风险回报比过低(%.2f:1)，必须≥3.0:1 [风险:%.2f%% 收益:%.2f%%] [止损:%.2f 止盈:%.2f]",
-				riskRewardRatio, riskPercent, rewardPercent, d.StopLoss, d.TakeProfit)
+		// 硬约束：风险回报比必须≥minRiskRewardRatio
+		if riskRewardRatio < minRiskRewardRatio {
+			return fmt.Errorf("风险回报比过低(%.2f:1)，必须≥%.1f:1 [风险:%.2f%% 收益:%.2f%%] [止损:%.2f 止盈:%.2f]",
+				riskRewardRatio, minRiskRewardRatio, riskPercent, rewardPercent, d.StopLoss, d.TakeProfit)
 		}
 	}
 
@@ -825,4 +859,12 @@ func validateDecision(d *Decision, accountEquity float64, btcEthLeverage, altcoi
 	}
 
 	return nil
+}
+
+// truncateString 截断字符串
+func truncateString(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "..."
 }

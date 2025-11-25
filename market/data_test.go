@@ -63,7 +63,7 @@ func TestCalculateIntradaySeries_VolumeCollection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			klines := generateTestKlines(tt.klineCount)
-			data := calculateIntradaySeries(klines)
+			data := calculateIntradaySeries(klines, tt.expectedVolLen)
 
 			if data == nil {
 				t.Fatal("calculateIntradaySeries returned nil")
@@ -689,5 +689,117 @@ func TestIsStaleData_EmptyKlines(t *testing.T) {
 
 	if result {
 		t.Error("Expected false for empty klines, got true")
+	}
+}
+
+func TestCalculateEMAArray(t *testing.T) {
+	klines := generateTestKlines(50)
+	prices := make([]float64, len(klines))
+	for i, k := range klines {
+		prices[i] = k.Close
+	}
+
+	period := 20
+	emaArray := CalculateEMAArray(prices, period)
+
+	if len(emaArray) != len(prices) {
+		t.Errorf("Expected length %d, got %d", len(prices), len(emaArray))
+	}
+
+	// Verify last value matches single point calculation
+	lastEMA := calculateEMA(klines, period)
+	if math.Abs(emaArray[len(emaArray)-1]-lastEMA) > 0.000001 {
+		t.Errorf("Expected last EMA %f, got %f", lastEMA, emaArray[len(emaArray)-1])
+	}
+}
+
+func TestCalculateRSIArray(t *testing.T) {
+	klines := generateTestKlines(50)
+	prices := make([]float64, len(klines))
+	for i, k := range klines {
+		prices[i] = k.Close
+	}
+
+	period := 14
+	rsiArray := CalculateRSIArray(prices, period)
+
+	if len(rsiArray) != len(prices) {
+		t.Errorf("Expected length %d, got %d", len(prices), len(rsiArray))
+	}
+
+	// Verify last value matches single point calculation
+	lastRSI := calculateRSI(klines, period)
+	if math.Abs(rsiArray[len(rsiArray)-1]-lastRSI) > 0.000001 {
+		t.Errorf("Expected last RSI %f, got %f", lastRSI, rsiArray[len(rsiArray)-1])
+	}
+}
+
+func TestCalculateMACDArray(t *testing.T) {
+	klines := generateTestKlines(50)
+	prices := make([]float64, len(klines))
+	for i, k := range klines {
+		prices[i] = k.Close
+	}
+
+	macd, _, _ := CalculateMACDArray(prices)
+
+	if len(macd) != len(prices) {
+		t.Errorf("Expected length %d, got %d", len(prices), len(macd))
+	}
+
+	// Verify last value matches single point calculation
+	lastMACD := calculateMACD(klines)
+	if math.Abs(macd[len(macd)-1]-lastMACD) > 0.000001 {
+		t.Errorf("Expected last MACD %f, got %f", lastMACD, macd[len(macd)-1])
+	}
+}
+
+func TestCalculateBollingerBandsArray(t *testing.T) {
+	klines := generateTestKlines(50)
+	prices := make([]float64, len(klines))
+	for i, k := range klines {
+		prices[i] = k.Close
+	}
+
+	upper, mid, lower := CalculateBollingerBandsArray(prices, 20, 2.0)
+
+	if len(upper) != len(prices) {
+		t.Errorf("Expected length %d, got %d", len(prices), len(upper))
+	}
+
+	// Verify last value matches single point calculation
+	lastUpper, lastMid, lastLower := calculateBollingerBands(klines, 20, 2.0)
+	if math.Abs(upper[len(upper)-1]-lastUpper) > 0.000001 {
+		t.Errorf("Expected last Upper %f, got %f", lastUpper, upper[len(upper)-1])
+	}
+	if math.Abs(mid[len(mid)-1]-lastMid) > 0.000001 {
+		t.Errorf("Expected last Mid %f, got %f", lastMid, mid[len(mid)-1])
+	}
+	if math.Abs(lower[len(lower)-1]-lastLower) > 0.000001 {
+		t.Errorf("Expected last Lower %f, got %f", lastLower, lower[len(lower)-1])
+	}
+}
+
+func TestCalculateATRArray(t *testing.T) {
+	klines := generateTestKlines(50)
+	highs := make([]float64, len(klines))
+	lows := make([]float64, len(klines))
+	closes := make([]float64, len(klines))
+	for i, k := range klines {
+		highs[i] = k.High
+		lows[i] = k.Low
+		closes[i] = k.Close
+	}
+
+	atrArray := CalculateATRArray(highs, lows, closes, 14)
+
+	if len(atrArray) != len(klines) {
+		t.Errorf("Expected length %d, got %d", len(klines), len(atrArray))
+	}
+
+	// Verify last value matches single point calculation
+	lastATR := calculateATR(klines, 14)
+	if math.Abs(atrArray[len(atrArray)-1]-lastATR) > 0.000001 {
+		t.Errorf("Expected last ATR %f, got %f", lastATR, atrArray[len(atrArray)-1])
 	}
 }

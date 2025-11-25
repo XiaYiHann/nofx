@@ -51,15 +51,17 @@ type PositionSnapshot struct {
 
 // DecisionAction 决策动作
 type DecisionAction struct {
-	Action    string    `json:"action"`    // open_long, open_short, close_long, close_short, update_stop_loss, update_take_profit, partial_close
-	Symbol    string    `json:"symbol"`    // 币种
-	Quantity  float64   `json:"quantity"`  // 数量（部分平仓时使用）
-	Leverage  int       `json:"leverage"`  // 杠杆（开仓时）
-	Price     float64   `json:"price"`     // 执行价格
-	OrderID   int64     `json:"order_id"`  // 订单ID
-	Timestamp time.Time `json:"timestamp"` // 执行时间
-	Success   bool      `json:"success"`   // 是否成功
-	Error     string    `json:"error"`     // 错误信息
+	Action     string    `json:"action"`     // open_long, open_short, close_long, close_short, update_stop_loss, update_take_profit, partial_close
+	Symbol     string    `json:"symbol"`     // 币种
+	Quantity   float64   `json:"quantity"`   // 数量（部分平仓时使用）
+	Leverage   int       `json:"leverage"`   // 杠杆（开仓时）
+	Price      float64   `json:"price"`      // 执行价格
+	OrderID    int64     `json:"order_id"`   // 订单ID
+	Confidence float64   `json:"confidence"` // 置信度
+	Reasoning  string    `json:"reasoning"`  // 决策理由
+	Timestamp  time.Time `json:"timestamp"`  // 执行时间
+	Success    bool      `json:"success"`    // 是否成功
+	Error      string    `json:"error"`      // 错误信息
 }
 
 // DecisionLogger 决策日志记录器
@@ -92,9 +94,19 @@ func NewDecisionLogger(logDir string) *DecisionLogger {
 
 // LogDecision 记录决策
 func (l *DecisionLogger) LogDecision(record *DecisionRecord) error {
-	l.cycleNumber++
-	record.CycleNumber = l.cycleNumber
-	record.Timestamp = time.Now()
+	// 如果传入的记录没有时间戳，则使用当前时间
+	if record.Timestamp.IsZero() {
+		record.Timestamp = time.Now()
+	}
+
+	// 如果传入的记录没有周期号，则使用内部计数器
+	if record.CycleNumber == 0 {
+		l.cycleNumber++
+		record.CycleNumber = l.cycleNumber
+	} else {
+		// 如果传入了周期号，更新内部计数器以保持同步
+		l.cycleNumber = record.CycleNumber
+	}
 
 	// 生成文件名：decision_YYYYMMDD_HHMMSS_cycleN.json
 	filename := fmt.Sprintf("decision_%s_cycle%d.json",

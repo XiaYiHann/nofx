@@ -367,4 +367,72 @@ export const api = {
     if (!res.ok) throw new Error('获取服务器IP失败')
     return res.json()
   },
+
+  // 回测相关接口
+  async getBacktests(): Promise<any[]> {
+    const res = await httpClient.get(`${API_BASE}/backtests`, getAuthHeaders())
+    if (!res.ok) throw new Error('获取回测列表失败')
+    return res.json()
+  },
+
+  async getBacktest(backtestId: string): Promise<any> {
+    const res = await httpClient.get(
+      `${API_BASE}/backtest/${backtestId}`,
+      getAuthHeaders()
+    )
+    if (!res.ok) throw new Error('获取回测详情失败')
+    return res.json()
+  },
+
+  async createBacktest(request: {
+    trader_id: string
+    start_time: string
+    end_time: string
+    initial_balance: number
+    use_trader_config?: boolean
+    mock_mode?: boolean
+  }): Promise<any> {
+    const res = await httpClient.post(
+      `${API_BASE}/backtest`,
+      request,
+      getAuthHeaders()
+    )
+    if (!res.ok) throw new Error('创建回测失败')
+    return res.json()
+  },
+
+  async getBacktestEquityHistory(backtestId: string): Promise<any[]> {
+    const res = await httpClient.get(
+      `${API_BASE}/backtest/${backtestId}/equity-history`,
+      getAuthHeaders()
+    )
+    if (!res.ok) throw new Error('获取回测净值历史失败')
+    return res.json()
+  },
+
+  async getBacktestTrades(backtestId: string): Promise<any[]> {
+    const res = await httpClient.get(
+      `${API_BASE}/backtest/${backtestId}/trades`,
+      getAuthHeaders()
+    )
+    if (!res.ok) throw new Error('获取回测交易记录失败')
+    return res.json()
+  },
+
+  async getBacktestDecisions(backtestId: string): Promise<any[]> {
+    const res = await httpClient.get(
+      `${API_BASE}/backtest/${backtestId}/decisions`,
+      getAuthHeaders()
+    )
+    if (!res.ok) throw new Error('获取回测决策记录失败')
+    return res.json()
+  },
+
+  async deleteBacktest(backtestId: string): Promise<void> {
+    const res = await httpClient.delete(
+      `${API_BASE}/backtest/${backtestId}`,
+      getAuthHeaders()
+    )
+    if (!res.ok) throw new Error('删除回测失败')
+  },
 }

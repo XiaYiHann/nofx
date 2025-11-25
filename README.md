@@ -319,43 +319,25 @@ Before using this system, you need a Binance Futures account. **Use our referral
 
 ## 🚀 Quick Start
 
-### 🐳 Option A: Docker One-Click Deployment (EASIEST - Recommended!)
+### 🐳 Docker One-Click Deployment
 
-**⚡ Start the platform in 2 simple steps with Docker - No installation needed!**
+**⚡ Start the platform in 1 simple step with Docker - No installation needed!**
 
 Docker automatically handles all dependencies (Go, Node.js, TA-Lib, SQLite) and environment setup.
 
-#### Step 1: Prepare Configuration
+#### Step 1: One-Click Start
 ```bash
-# Copy configuration template
-cp config.json.example config.json
-
-# Edit and fill in your API keys
-nano config.json  # or use any editor
-```
-
-⚠️ **Note**: Basic config.json is still needed for some settings, but ~~trader configurations~~ are now done through the web interface.
-
-#### Step 2: One-Click Start
-```bash
-# Option 1: Use convenience script (Recommended)
+# Make the script executable
 chmod +x start.sh
-./start.sh start --build
 
-> #### Docker Compose Version Notes
->
-> **This project uses Docker Compose V2 syntax (with spaces)**
->
-> If you have the older standalone `docker-compose` installed, please upgrade to Docker Desktop or Docker 20.10+
-
-# Option 2: Use docker compose directly
-docker compose up -d --build
+# Start the system (automatically generates config & keys if missing)
+./start.sh start
 ```
+
+> **Note**: The script will automatically generate `.env`, `config.json`, and RSA keys if they don't exist. You can edit `config.json` later to customize settings.
 
 #### Step 2: Access Web Interface
 Open your browser and visit: **http://localhost:3000**
-
-> Tip: You can change the frontend and backend ports via `.env` or environment variables. `NOFX_BACKEND_PORT` (default 8080) and `NOFX_FRONTEND_PORT` (default 3000) are used by `start.sh` and `docker-compose`. When running the frontend dev server, `start.sh` automatically exports `VITE_API_URL=http://localhost:${NOFX_BACKEND_PORT}` to keep the proxy aligned.
 
 **That's it! 🎉** Your AI trading platform is now running!
 
@@ -371,58 +353,12 @@ Open your browser and visit: **http://localhost:3000**
 ./start.sh status    # Check status
 ./start.sh stop      # Stop services
 ./start.sh restart   # Restart services
+./start.sh build     # Rebuild images
 ```
 
 **📖 For detailed Docker deployment guide, troubleshooting, and advanced configuration:**
 - **English**: See [docs/getting-started/docker-deploy.en.md](docs/getting-started/docker-deploy.en.md)
 - **中文**: 查看 [docs/getting-started/docker-deploy.zh-CN.md](docs/getting-started/docker-deploy.zh-CN.md)
-
----
-
-### 📦 Option B: Manual Installation (For Developers)
-
-**Note**: If you used Docker deployment above, skip this section. Manual installation is only needed if you want to modify the code or run without Docker.
-
-### 1. Environment Requirements
-
-- **Go 1.21+**
-- **Node.js 18+**
-- **TA-Lib** library (technical indicator calculation)
-
-#### Installing TA-Lib
-
-**macOS:**
-```bash
-brew install ta-lib
-```
-
-**Ubuntu/Debian:**
-```bash
-sudo apt-get install libta-lib0-dev
-```
-
-**Other systems**: Refer to [TA-Lib Official Documentation](https://github.com/markcheno/go-talib)
-
-### 2. Clone the Project
-
-```bash
-git clone https://github.com/tinkle-community/nofx.git
-cd nofx
-```
-
-### 3. Install Dependencies
-
-**Backend:**
-```bash
-go mod download
-```
-
-**Frontend:**
-```bash
-cd web
-npm install
-cd ..
-```
 
 ### 4. Get AI API Keys
 

@@ -1,0 +1,13 @@
+uid=1_0 RootWebArea "NOFX - AI Auto Trading Dashboard" url="http://localhost:3000/login"
+  uid=1_1 image "NoFx Logo" url="http://localhost:3000/icons/nofx.svg"
+  uid=1_2 heading "登录 NOFX" level="1"
+  uid=1_3 StaticText "请输入您的邮箱和密码"
+  uid=1_4 StaticText "邮箱"
+  uid=1_5 textbox "请输入邮箱地址" required
+  uid=1_6 StaticText "密码"
+  uid=1_7 textbox "请输入密码（至少6位）" required
+  uid=1_8 button "显示密码"
+  uid=1_9 button "忘记密码？"
+  uid=1_10 button "登录"
+  uid=1_11 StaticText "还没有账户？"
+  uid=1_12 button "立即注册"

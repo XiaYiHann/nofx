@@ -193,6 +193,51 @@ export interface CompetitionData {
   count: number
 }
 
+// Backtest related types
+export interface Backtest {
+  id: string
+  user_id: string
+  trader_id: string
+  start_time: string
+  end_time: string
+  initial_balance: number
+  scan_interval_minutes: number
+  trading_symbols: string
+  use_trader_config: boolean
+  indicator_config: string
+  custom_prompt: string
+  override_base_prompt: boolean
+  system_prompt_template: string
+  status: 'pending' | 'running' | 'completed' | 'failed'
+  progress: number
+  final_equity: number
+  total_pnl: number
+  total_pnl_pct: number
+  max_drawdown: number
+  sharpe_ratio: number
+  win_rate: number
+  total_trades: number
+  created_at: string
+  completed_at?: string
+}
+
+export interface BacktestTrade {
+  id: number
+  backtest_id: string
+  symbol: string
+  side: 'long' | 'short'
+  action: 'open' | 'close'
+  entry_price: number
+  exit_price: number
+  quantity: number
+  leverage: number
+  pnl: number
+  pnl_pct: number
+  fee: number
+  entry_time: string
+  exit_time: string
+}
+
 // Trader Configuration Data for View Modal
 export interface TraderConfigData {
   trader_id?: string

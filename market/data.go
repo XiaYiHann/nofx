@@ -78,8 +78,8 @@ func ValidateTimeframe(tf string) bool {
 	return supported[tf]
 }
 
-// calculateTimeframeData 计算单个时间框架的所有指标数据
-func calculateTimeframeData(klines []Kline, timeframe string, dataPoints int) *TimeframeData {
+// CalculateTimeframeData 计算单个时间框架的所有指标数据
+func CalculateTimeframeData(klines []Kline, timeframe string, dataPoints int) *TimeframeData {
 	if len(klines) == 0 {
 		return nil
 	}
@@ -286,7 +286,7 @@ func Get(symbol string, config ...*IndicatorConfig) (*Data, error) {
 			dataPoints = GetDefaultDataPoints(tf)
 		}
 
-		tfData := calculateTimeframeData(klines, tf, dataPoints)
+		tfData := CalculateTimeframeData(klines, tf, dataPoints)
 		if tfData != nil {
 			timeframeDataMap[tf] = tfData
 		}
@@ -467,6 +467,9 @@ func calculateATR(klines []Kline, period int) float64 {
 	}
 
 	trs := make([]float64, len(klines))
+	// First TR is High - Low
+	trs[0] = klines[0].High - klines[0].Low
+
 	for i := 1; i < len(klines); i++ {
 		high := klines[i].High
 		low := klines[i].Low
@@ -481,13 +484,13 @@ func calculateATR(klines []Kline, period int) float64 {
 
 	// 计算初始ATR
 	sum := 0.0
-	for i := 1; i <= period; i++ {
+	for i := 0; i < period; i++ {
 		sum += trs[i]
 	}
 	atr := sum / float64(period)
 
 	// Wilder平滑
-	for i := period + 1; i < len(klines); i++ {
+	for i := period; i < len(klines); i++ {
 		atr = (atr*float64(period-1) + trs[i]) / float64(period)
 	}
 
@@ -1019,4 +1022,192 @@ func isStaleData(klines []Kline, symbol string) bool {
 	// Price frozen but has volume: might be extremely low volatility market, allow but log warning
 	log.Printf("⚠️  %s detected extreme price stability (no fluctuation for %d consecutive periods), but volume is normal", symbol, stalePriceThreshold)
 	return false
+}
+
+// CalculateEMAArray 批量计算EMA
+func CalculateEMAArray(prices []float64, period int) []float64 {
+	if len(prices) == 0 {
+		return nil
+	}
+	result := make([]float64, len(prices))
+	if len(prices) < period {
+		return result
+	}
+
+	// 计算SMA作为初始EMA
+	sum := 0.0
+	for i := 0; i < period; i++ {
+		sum += prices[i]
+	}
+	ema := sum / float64(period)
+	result[period-1] = ema
+
+	// 计算后续EMA
+	multiplier := 2.0 / float64(period+1)
+	for i := period; i < len(prices); i++ {
+		ema = (prices[i]-ema)*multiplier + ema
+		result[i] = ema
+	}
+
+	return result
+}
+
+// CalculateRSIArray 批量计算RSI
+func CalculateRSIArray(prices []float64, period int) []float64 {
+	if len(prices) == 0 {
+		return nil
+	}
+	result := make([]float64, len(prices))
+	if len(prices) <= period {
+		return result
+	}
+
+	gains := 0.0
+	losses := 0.0
+
+	// 计算初始平均涨跌幅
+	for i := 1; i <= period; i++ {
+		change := prices[i] - prices[i-1]
+		if change > 0 {
+			gains += change
+		} else {
+			losses += -change
+		}
+	}
+
+	avgGain := gains / float64(period)
+	avgLoss := losses / float64(period)
+
+	if avgLoss == 0 {
+		result[period] = 100
+	} else {
+		rs := avgGain / avgLoss
+		result[period] = 100 - (100 / (1 + rs))
+	}
+
+	// 使用Wilder平滑方法计算后续RSI
+	for i := period + 1; i < len(prices); i++ {
+		change := prices[i] - prices[i-1]
+		currentGain := 0.0
+		currentLoss := 0.0
+		if change > 0 {
+			currentGain = change
+		} else {
+			currentLoss = -change
+		}
+
+		avgGain = (avgGain*float64(period-1) + currentGain) / float64(period)
+		avgLoss = (avgLoss*float64(period-1) + currentLoss) / float64(period)
+
+		if avgLoss == 0 {
+			result[i] = 100
+		} else {
+			rs := avgGain / avgLoss
+			result[i] = 100 - (100 / (1 + rs))
+		}
+	}
+
+	return result
+}
+
+// CalculateMACDArray 批量计算MACD
+func CalculateMACDArray(prices []float64) ([]float64, []float64, []float64) {
+	if len(prices) < 26 {
+		return make([]float64, len(prices)), make([]float64, len(prices)), make([]float64, len(prices))
+	}
+
+	ema12 := CalculateEMAArray(prices, 12)
+	ema26 := CalculateEMAArray(prices, 26)
+
+	macdLine := make([]float64, len(prices))
+	for i := 0; i < len(prices); i++ {
+		macdLine[i] = ema12[i] - ema26[i]
+	}
+
+	// Signal Line is EMA9 of MACD Line
+	// Note: We need to handle the leading zeros in macdLine correctly.
+	// The first valid MACD value is at index 25 (26th element).
+	signalLine := make([]float64, len(prices))
+	if len(prices) > 25 {
+		validMACD := macdLine[25:]
+		validSignal := CalculateEMAArray(validMACD, 9)
+		copy(signalLine[25:], validSignal)
+	}
+
+	histogram := make([]float64, len(prices))
+	for i := 0; i < len(prices); i++ {
+		histogram[i] = macdLine[i] - signalLine[i]
+	}
+
+	return macdLine, signalLine, histogram
+}
+
+// CalculateBollingerBandsArray 批量计算布林带
+func CalculateBollingerBandsArray(prices []float64, period int, multiplier float64) ([]float64, []float64, []float64) {
+	if len(prices) < period {
+		return make([]float64, len(prices)), make([]float64, len(prices)), make([]float64, len(prices))
+	}
+
+	upper := make([]float64, len(prices))
+	mid := make([]float64, len(prices)) // SMA
+	lower := make([]float64, len(prices))
+
+	for i := period - 1; i < len(prices); i++ {
+		// Calculate SMA
+		sum := 0.0
+		for j := 0; j < period; j++ {
+			sum += prices[i-j]
+		}
+		sma := sum / float64(period)
+		mid[i] = sma
+
+		// Calculate StdDev
+		varianceSum := 0.0
+		for j := 0; j < period; j++ {
+			diff := prices[i-j] - sma
+			varianceSum += diff * diff
+		}
+		stdDev := math.Sqrt(varianceSum / float64(period))
+
+		upper[i] = sma + multiplier*stdDev
+		lower[i] = sma - multiplier*stdDev
+	}
+
+	return upper, mid, lower
+}
+
+// CalculateATRArray 批量计算ATR
+func CalculateATRArray(highs, lows, closes []float64, period int) []float64 {
+	if len(highs) != len(lows) || len(lows) != len(closes) {
+		return nil
+	}
+	length := len(highs)
+	result := make([]float64, length)
+	if length <= period {
+		return result
+	}
+
+	tr := make([]float64, length)
+	// TR for first point is High - Low
+	tr[0] = highs[0] - lows[0]
+	for i := 1; i < length; i++ {
+		hl := highs[i] - lows[i]
+		hc := math.Abs(highs[i] - closes[i-1])
+		lc := math.Abs(lows[i] - closes[i-1])
+		tr[i] = math.Max(hl, math.Max(hc, lc))
+	}
+
+	// First ATR is SMA of TR
+	sumTR := 0.0
+	for i := 0; i < period; i++ {
+		sumTR += tr[i]
+	}
+	result[period-1] = sumTR / float64(period)
+
+	// Subsequent ATR: (Previous ATR * (n-1) + Current TR) / n
+	for i := period; i < length; i++ {
+		result[i] = (result[i-1]*float64(period-1) + tr[i]) / float64(period)
+	}
+
+	return result
 }

@@ -3,6 +3,7 @@ package trader
 import (
 	"context"
 	"encoding/json"
+	"encoding/hex"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -255,7 +256,7 @@ func TestNewAsterTrader(t *testing.T) {
 			name:          "成功创建",
 			user:          "0x1234567890123456789012345678901234567890",
 			signer:        "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
-			privateKeyHex: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+			privateKeyHex: func() string { k, _ := crypto.GenerateKey(); return hex.EncodeToString(crypto.FromECDSA(k)) }(),
 			wantError:     false,
 		},
 		{

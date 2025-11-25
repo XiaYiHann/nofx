@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"crypto/rand"
+	"encoding/hex"
 	"nofx/api"
 	"nofx/auth"
 	"nofx/config"
@@ -16,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -215,8 +218,16 @@ func main() {
 		// 回退到数据库配置
 		jwtSecret, _ = database.GetSystemConfig("jwt_secret")
 		if jwtSecret == "" {
-			jwtSecret = "your-jwt-secret-key-change-in-production-make-it-long-and-random"
-			log.Printf("⚠️  使用默认JWT密钥，建议使用加密设置脚本生成安全密钥")
+			// 生成随机密钥
+			randomBytes := make([]byte, 32)
+			if _, err := rand.Read(randomBytes); err == nil {
+				jwtSecret = hex.EncodeToString(randomBytes)
+				log.Printf("⚠️  未配置JWT密钥，已自动生成随机密钥 (重启后将失效，请在环境变量或数据库中配置)")
+			} else {
+				// 极端情况下回退
+				jwtSecret = "temporary-secret-" + strconv.FormatInt(time.Now().UnixNano(), 16)
+				log.Printf("⚠️  生成随机密钥失败，使用临时时间戳密钥")
+			}
 		} else {
 			log.Printf("🔑 使用数据库中JWT密钥")
 		}

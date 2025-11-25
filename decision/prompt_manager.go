@@ -160,3 +160,8 @@ func GetAllPromptTemplates() []*PromptTemplate {
 func ReloadPromptTemplates() error {
 	return globalPromptManager.ReloadTemplates(promptsDir)
 }
+
+// SetPromptsDir 设置提示词目录路径（主要用于测试）
+func SetPromptsDir(dir string) {
+	promptsDir = dir
+}

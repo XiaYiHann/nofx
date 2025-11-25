@@ -10,7 +10,25 @@ import (
 // 注意: 这些测试需要 WSMonitorCli 已初始化
 // 在实际运行时可能需要 mock WebSocket 数据
 
+// initTestMonitor initializes the WSMonitorCli for testing
+func initTestMonitor() {
+	if WSMonitorCli == nil {
+		WSMonitorCli = NewWSMonitor(10)
+	}
+}
+
 func TestGet_DefaultConfig(t *testing.T) {
+	initTestMonitor()
+
+	// Populate test data for default timeframes (3m and 4h)
+	klines := generateTestKlines(100)
+	if m, ok := WSMonitorCli.klineDataMaps["3m"]; ok {
+		m.Store("BTCUSDT", klines)
+	}
+	if m, ok := WSMonitorCli.klineDataMaps["4h"]; ok {
+		m.Store("BTCUSDT", klines)
+	}
+
 	// 跳过需要WebSocket连接的测试
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
