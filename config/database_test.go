@@ -637,6 +637,10 @@ func TestDataPersistenceAcrossReopen(t *testing.T) {
 	dbPath := tmpFile.Name()
 	defer os.Remove(dbPath)
 
+	// 设置 DATA_ENCRYPTION_KEY 环境变量
+	os.Setenv("DATA_ENCRYPTION_KEY", "test-key-123456789012345678901234")
+	defer os.Unsetenv("DATA_ENCRYPTION_KEY")
+
 	// 设置加密服务
 	rsaKeyPath := "test_rsa_key.pem"
 	cryptoService, err := crypto.NewCryptoService(rsaKeyPath)
