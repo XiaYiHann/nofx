@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+> No changes yet — future work will appear here.
+
+---
+
+## [3.1.0] - 2025-11-25
+
 ### Added
 - **Account Balance Refresh Button** - Manual refresh capability for account balance data
   - One-click refresh button in account overview section
