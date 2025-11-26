@@ -8,7 +8,7 @@
 
 | 🎁 **CONTRIBUTOR AIRDROP PROGRAM** |
 |:----------------------------------:|
-| Code · Bug Fixes · Issues → Token Airdrop |
+| Code · Bug Fixes · Issues → Airdrop |
 | [Learn More](#-contributor-airdrop-program) |
 
 **Languages:** [English](README.md) | [中文](docs/i18n/zh-CN/README.md) | [Українська](docs/i18n/uk/README.md) | [Русский](docs/i18n/ru/README.md) | [日本語](docs/i18n/ja/README.md) | [한국어](docs/i18n/ko/README.md) | [Tiếng Việt](docs/i18n/vi/README.md)
@@ -1166,7 +1166,7 @@ We welcome contributions from the community! See our comprehensive guides:
 
 ## 🎁 Contributor Airdrop Program
 
-All contributions are tracked on GitHub. When NOFX generates revenue, contributors will receive token airdrops based on their contributions.
+All contributions are tracked on GitHub. When NOFX generates revenue, contributors will receive airdrops based on their contributions.
 
 ### 🔥 Priority Rewards: Pinned Issues
 
