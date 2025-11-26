@@ -193,8 +193,8 @@ NOFX 采用现代化的模块化架构：
 | 交易所 | 状态 | 注册（手续费优惠） | API设置 |
 |--------|------|-------------------|---------|
 | **Binance** | ✅ 已支持 | [注册](https://www.binance.com/join?ref=NOFXCHI) | [API指南](../../getting-started/binance-api.md) |
-| **OKX** | 🚧 即将支持 | [注册](https://www.okx.com/join/1865360) | 即将推出 |
-| **Bybit** | 🚧 即将支持 | [注册](https://partner.bybit.com/b/83856) | 即将推出 |
+| **Bybit** | ✅ 已支持 | [注册](https://partner.bybit.com/b/83856) | [API指南](../../getting-started/bybit-api.md) |
+| **OKX** | ✅ 已支持 | [注册](https://www.okx.com/join/1865360) | [API指南](../../getting-started/okx-api.md) |
 
 ### Perp-DEX（去中心化永续交易所）
 
@@ -202,6 +202,7 @@ NOFX 采用现代化的模块化架构：
 |--------|------|-------------------|--------------|
 | **Hyperliquid** | ✅ 已支持 | [注册](https://app.hyperliquid.xyz/join/AITRADING) | [代理钱包指南](../../getting-started/hyperliquid-agent-wallet.md) |
 | **Aster DEX** | ✅ 已支持 | [注册](https://www.asterdex.com/en/referral/fdfc0e) | [API钱包指南](../../getting-started/aster-api-wallet.md) |
+| **Lighter** | ✅ 已支持 | [注册](https://lighter.xyz) | [代理钱包指南](../../getting-started/lighter-agent-wallet.md) |
 
 ---
 

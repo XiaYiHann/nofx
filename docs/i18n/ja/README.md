@@ -232,8 +232,8 @@ nofx/
 | 取引所 | ステータス | 登録（手数料割引） | API設定 |
 |--------|------------|-------------------|---------|
 | **Binance** | ✅ 対応済み | [登録](https://www.binance.com/join?ref=NOFXJAPAN) | [APIガイド](../../getting-started/binance-api.md) |
-| **OKX** | 🚧 近日対応 | [登録](https://www.okx.com/join/1865360) | 近日公開 |
-| **Bybit** | 🚧 近日対応 | [登録](https://partner.bybit.com/b/83856) | 近日公開 |
+| **Bybit** | ✅ 対応済み | [登録](https://partner.bybit.com/b/83856) | [APIガイド](../../getting-started/bybit-api.md) |
+| **OKX** | ✅ 対応済み | [登録](https://www.okx.com/join/1865360) | [APIガイド](../../getting-started/okx-api.md) |
 
 ### Perp-DEX（分散型無期限取引所）
 
@@ -241,6 +241,7 @@ nofx/
 |--------|------------|-------------------|---------------------------|
 | **Hyperliquid** | ✅ 対応済み | [登録](https://app.hyperliquid.xyz/join/AITRADING) | [エージェントウォレットガイド](../../getting-started/hyperliquid-agent-wallet.md) |
 | **Aster DEX** | ✅ 対応済み | [登録](https://www.asterdex.com/en/referral/fdfc0e) | [APIウォレットガイド](../../getting-started/aster-api-wallet.md) |
+| **Lighter** | ✅ 対応済み | [登録](https://lighter.xyz) | [エージェントウォレットガイド](../../getting-started/lighter-agent-wallet.md) |
 
 ---
 
