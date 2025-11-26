@@ -22,8 +22,7 @@
 - [✨ 当前实现](#-当前实现---加密货币市场)
 - [🔮 路线图](#-路线图---通用市场扩展)
 - [🏗️ 技术架构](#️-技术架构)
-- [🏦 支持的交易所](#-支持的交易所)
-- [💰 注册币安账户](#-注册币安账户省手续费)
+- [🏦 支持的交易所（DEX/CEX教程）](#-支持的交易所dexcex教程)
 - [🚀 快速开始](#-快速开始)
 - [📖 AI决策流程](#-ai决策流程)
 - [🧠 AI自我学习示例](#-ai自我学习示例)
@@ -80,10 +79,12 @@
 ## 📸 系统截图
 
 ### 🏆 竞赛模式 - AI实时对战
+
 ![竞赛页面](../../../screenshots/competition-page.png)
 *多AI排行榜和实时性能对比图表，展示Qwen vs DeepSeek实时交易对战*
 
 ### 📊 交易详情 - 完整交易仪表盘
+
 ![详情页面](../../../screenshots/details-page.png)
 *专业交易界面，包含权益曲线、实时持仓、AI决策日志，支持展开查看输入提示词和AI思维链推理过程*
 
@@ -94,12 +95,14 @@
 NOFX 目前已在**加密货币市场全面运行**，具备以下经过验证的能力：
 
 ### 🏆 多智能体竞赛框架
+
 - **实时智能体对战**：Qwen vs DeepSeek 模型实时交易竞赛
 - **独立账户管理**：每个智能体维护独立的决策日志和性能指标
 - **实时性能对比**：实时 ROI 追踪、胜率统计、正面对抗分析
 - **自进化循环**：智能体从历史表现中学习，持续改进
 
 ### 🧠 AI 自学习与优化
+
 - **历史反馈系统**：每次决策前分析最近 20 个交易周期
 - **智能性能分析**：
   - 识别表现最佳/最差资产
@@ -109,6 +112,7 @@ NOFX 目前已在**加密货币市场全面运行**，具备以下经过验证�
 - **动态策略调整**：AI 根据回测结果自主调整交易风格
 
 ### 📊 通用市场数据层（加密货币实现）
+
 - **多时间框架分析**：3分钟实时 + 4小时趋势数据
 - **技术指标**：EMA20/50、MACD、RSI(7/14)、ATR
 - **持仓量追踪**：市场情绪、资金流向分析
@@ -116,6 +120,7 @@ NOFX 目前已在**加密货币市场全面运行**，具备以下经过验证�
 - **跨交易所支持**：Binance、Hyperliquid、Aster DEX，统一数据接口
 
 ### 🎯 统一风控系统
+
 - **仓位限制**：单资产限制（山寨币≤1.5x净值，BTC/ETH≤10x净值）
 - **可配置杠杆**：根据资产类别和账户类型动态调整 1x 到 50x
 - **保证金管理**：总使用率≤90%，AI 控制分配
@@ -123,12 +128,14 @@ NOFX 目前已在**加密货币市场全面运行**，具备以下经过验证�
 - **防叠加保护**：防止同一资产/方向的重复仓位
 
 ### ⚡ 低延迟执行引擎
+
 - **多交易所 API 集成**：Binance Futures、Hyperliquid DEX、Aster DEX
 - **自动精度处理**：每个交易所智能订单大小和价格格式化
 - **优先级执行**：先平仓现有持仓，再开新仓
 - **滑点控制**：执行前验证，实时精度检查
 
 ### 🎨 专业监控界面
+
 - **币安风格仪表板**：专业暗色主题，实时更新
 - **净值曲线**：历史账户价值追踪（USD/百分比切换）
 - **性能图表**：多智能体 ROI 对比，实时更新
@@ -144,12 +151,14 @@ NOFX 的使命是成为所有金融市场的**通用 AI 交易操作系统**。
 **愿景：** 相同架构。相同智能体框架。所有市场。
 
 **扩展市场：**
+
 - 📈 **股票市场**：美股、A股、港股
 - 📊 **期货市场**：商品期货、指数期货
 - 🎯 **期权交易**：股票期权、加密期权
 - 💱 **外汇市场**：主要货币对、交叉盘
 
 **即将推出的功能：**
+
 - 增强AI能力（GPT-4、Claude 3、Gemini Pro、灵活prompt模板）
 - 新交易所集成（OKX、Bybit、Lighter、EdgeX + CEX/Perp-DEX）
 - 项目结构重构（高内聚低耦合、SOLID原则）
@@ -157,6 +166,7 @@ NOFX 的使命是成为所有金融市场的**通用 AI 交易操作系统**。
 - 用户体验改进（移动端响应式、TradingView图表、告警系统）
 
 📖 **详细路线图和时间表，请参阅：**
+
 - **中文:** [路线图文档](../../roadmap/README.zh-CN.md)
 - **English:** [Roadmap Documentation](../../roadmap/README.md)
 
@@ -174,6 +184,7 @@ NOFX 采用现代化的模块化架构：
 - **实时更新：** SWR，5-10 秒轮询间隔
 
 **核心特性：**
+
 - 🗄️ 数据库驱动的配置（无需编辑 JSON）
 - 🔐 JWT 认证，支持可选的 2FA
 - 📊 实时性能跟踪和分析
@@ -181,12 +192,13 @@ NOFX 采用现代化的模块化架构：
 - 🔌 RESTful API，完整的配置和监控
 
 📖 **详细架构文档，请查看：**
+
 - **中文版：** [架构文档](../../architecture/README.zh-CN.md)
 - **English:** [Architecture Documentation](../../architecture/README.md)
 
 ---
 
-## 🏦 支持的交易所
+## 🏦 支持的交易所（DEX/CEX教程）
 
 ### CEX（中心化交易所）
 
@@ -206,34 +218,6 @@ NOFX 采用现代化的模块化架构：
 
 ---
 
-## 💰 注册币安账户（省手续费！）
-
-使用本系统前，您需要一个币安合约账户。**使用我们的推荐链接注册可享受手续费优惠：**
-
-**🎁 [注册币安 - 享手续费折扣](https://www.binance.com/join?ref=TINKLEVIP)**
-
-### 注册步骤：
-
-1. **点击上方链接** 访问币安注册页面
-2. **完成注册** 使用邮箱/手机号注册
-3. **完成KYC身份认证**（合约交易必须）
-4. **开通合约账户**：
-   - 进入币安首页 → 衍生品 → U本位合约
-   - 点击"立即开通"激活合约交易
-5. **创建API密钥**：
-   - 进入账户 → API管理
-   - 创建新的API密钥，**务必勾选"合约"权限**
-   - 保存API Key和Secret Key（~~config.json中需要~~ *Web界面中需要*）
-   - **重要**：添加IP白名单以确保安全
-
-### 手续费优惠说明：
-
-- ✅ **现货交易**：最高享30%手续费返佣
-- ✅ **合约交易**：最高享30%手续费返佣
-- ✅ **终身有效**：永久享受交易手续费折扣
-
----
-
 ## 🚀 快速开始
 
 ### 🐳 方式A：Docker 一键部署（最简单 - 新手推荐！）
@@ -243,6 +227,7 @@ NOFX 采用现代化的模块化架构：
 Docker会自动处理所有依赖（Go、Node.js、TA-Lib）和环境配置，完美适合新手！
 
 #### 步骤1：准备配置文件
+
 ```bash
 # 复制配置文件模板
 cp config.json.example config.json
@@ -254,6 +239,7 @@ nano config.json  # 或使用其他编辑器
 ⚠️ **注意**: 基础config.json仍需要一些设置，但~~交易员配置~~现在通过Web界面进行。
 
 #### 步骤2：一键启动
+
 ```bash
 # 方式1：使用便捷脚本（推荐）
 chmod +x start.sh
@@ -266,11 +252,13 @@ docker compose up -d --build
 ```
 
 #### 步骤3：访问控制台
-在浏览器中打开：**http://localhost:3000**
+
+在浏览器中打开：**<http://localhost:3000>**
 
 **就是这么简单！🎉** 你的AI交易系统已经运行起来了！
 
 #### 管理你的系统
+
 ```bash
 ./start.sh logs      # 查看日志
 ./start.sh status    # 检查状态
@@ -279,6 +267,7 @@ docker compose up -d --build
 ```
 
 **📖 详细的Docker部署教程、故障排查和高级配置：**
+
 - **中文**: 查看 [DOCKER_DEPLOY.md](DOCKER_DEPLOY.md)
 - **English**: See [DOCKER_DEPLOY.en.md](DOCKER_DEPLOY.en.md)
 - **日本語**: [DOCKER_DEPLOY.ja.md](DOCKER_DEPLOY.ja.md)を参照
@@ -298,11 +287,13 @@ docker compose up -d --build
 #### 安装 TA-Lib
 
 **macOS:**
+
 ```bash
 brew install ta-lib
 ```
 
 **Ubuntu/Debian:**
+
 ```bash
 sudo apt-get install libta-lib0-dev
 ```
@@ -319,11 +310,13 @@ cd nofx
 ### 3. 安装依赖
 
 **后端:**
+
 ```bash
 go mod download
 ```
 
 **前端:**
+
 ```bash
 cd web
 npm install
@@ -337,6 +330,7 @@ cd ..
 #### 选项1：DeepSeek（推荐新手）
 
 **为什么选择DeepSeek？**
+
 - 💰 比GPT-4便宜（约1/10成本）
 - 🚀 响应速度快
 - 🎯 交易决策质量优秀
@@ -377,6 +371,7 @@ cd ..
 ### 5. 系统配置
 
 **两种配置模式可选：**
+
 - **🌟 新手模式**：单trader + 默认币种（推荐！）
 - **⚔️ 专家模式**：多trader竞赛
 
@@ -388,7 +383,7 @@ cd ..
 cp config.json.example config.json
 ```
 
-~~**步骤2**：编辑`config.json`填入您的API密钥~~ 
+~~**步骤2**：编辑`config.json`填入您的API密钥~~
 
 *现在通过Web界面配置，无需编辑JSON文件*
 
@@ -444,115 +439,6 @@ cp config.json.example config.json
 
 ---
 
-#### 🔷 备选：使用Hyperliquid交易所
-
-**NOFX也支持Hyperliquid** - 去中心化永续期货交易所。使用Hyperliquid而非Binance：
-
-**步骤1**：获取以太坊私钥（用于Hyperliquid身份验证）
-
-1. 打开**MetaMask**（或任何以太坊钱包）
-2. 导出你的私钥
-3. **去掉`0x`前缀**
-4. 在[Hyperliquid](https://hyperliquid.xyz)上为钱包充值
-
-~~**步骤2**：为Hyperliquid配置`config.json`~~ *通过Web界面配置*
-
-```json
-{
-  "traders": [
-    {
-      "id": "hyperliquid_trader",
-      "name": "My Hyperliquid Trader",
-      "enabled": true,
-      "ai_model": "deepseek",
-      "exchange": "hyperliquid",
-      "hyperliquid_private_key": "your_private_key_without_0x",
-      "hyperliquid_wallet_addr": "your_ethereum_address",
-      "hyperliquid_testnet": false,
-      "deepseek_key": "sk-xxxxxxxxxxxxx",
-      "initial_balance": 1000.0,
-      "scan_interval_minutes": 3
-    }
-  ],
-  "use_default_coins": true,
-  "api_server_port": 8080
-}
-```
-
-**与Binance配置的关键区别：**
-- 用`hyperliquid_private_key`替换`binance_api_key` + `binance_secret_key`
-- 添加`"exchange": "hyperliquid"`字段
-- 设置`hyperliquid_testnet: false`用于主网（或`true`用于测试网）
-
-**⚠️ 安全警告**：切勿分享你的私钥！使用专门的钱包进行交易，而非主钱包。
-
----
-
-#### 🔶 备选：使用Aster DEX交易所
-
-**NOFX也支持Aster DEX** - 兼容Binance的去中心化永续期货交易所！
-
-**为什么选择Aster？**
-- 🎯 兼容Binance API（轻松迁移）
-- 🔐 API钱包安全系统
-- 💰 更低的交易手续费
-- 🌐 多链支持（ETH、BSC、Polygon）
-- 🌍 无需KYC
-
-**步骤1**：注册并创建Aster API钱包
-
-1. 通过[推荐链接注册Aster](https://www.asterdex.com/en/referral/fdfc0e)（享手续费优惠）
-2. 访问[Aster API钱包](https://www.asterdex.com/en/api-wallet)
-3. 连接你的主钱包（MetaMask、WalletConnect等）
-4. 点击"创建API钱包"
-5. **立即保存这3项：**
-   - 主钱包地址（User）
-   - API钱包地址（Signer）
-   - API钱包私钥（⚠️ 仅显示一次！）
-
-~~**步骤2**：为Aster配置`config.json`~~ *通过Web界面配置*
-
-```json
-{
-  "traders": [
-    {
-      "id": "aster_deepseek",
-      "name": "Aster DeepSeek Trader",
-      "enabled": true,
-      "ai_model": "deepseek",
-      "exchange": "aster",
-
-      "aster_user": "0xYOUR_MAIN_WALLET_ADDRESS_HERE",
-      "aster_signer": "0xYOUR_API_WALLET_SIGNER_ADDRESS_HERE",
-      "aster_private_key": "your_api_wallet_private_key_without_0x_prefix",
-
-      "deepseek_key": "sk-xxxxxxxxxxxxx",
-      "initial_balance": 1000.0,
-      "scan_interval_minutes": 3
-    }
-  ],
-  "use_default_coins": true,
-  "api_server_port": 8080,
-  "leverage": {
-    "btc_eth_leverage": 5,
-    "altcoin_leverage": 5
-  }
-}
-```
-
-**关键配置字段：**
-- `"exchange": "aster"` - 设置交易所为Aster
-- `aster_user` - 你的主钱包地址
-- `aster_signer` - API钱包地址（来自步骤1）
-- `aster_private_key` - API钱包私钥（去掉`0x`前缀）
-
-**⚠️ 安全提示**：
-- API钱包与主钱包分离（额外的安全层）
-- 切勿分享API私钥
-- 你可以随时在[asterdex.com](https://www.asterdex.com/en/api-wallet)撤销API钱包访问
-
----
-
 #### ⚔️ 专家模式：多Trader竞赛
 
 用于运行多个AI trader相互竞争：
@@ -593,6 +479,7 @@ cp config.json.example config.json
 ```
 
 **竞赛模式要求：**
+
 - 2个独立的币安合约账户（不同的API密钥）
 - 两种AI API密钥（Qwen + DeepSeek）
 - 更多测试资金（推荐：每个账户500+ USDT）
@@ -627,6 +514,7 @@ cp config.json.example config.json
 | `api_server_port` | Web仪表板端口 | `8080` | ✅ 是 |
 
 **默认交易币种**（当 `use_default_coins: true` 时）：
+
 - BTC、ETH、SOL、BNB、XRP、DOGE、ADA、HYPE
 
 ---
@@ -664,6 +552,7 @@ cp config.json.example config.json
 **示例：**
 
 **安全配置（子账户或保守）：**
+
 ```json
 "leverage": {
   "btc_eth_leverage": 5,
@@ -672,6 +561,7 @@ cp config.json.example config.json
 ```
 
 **激进配置（仅主账户）：**
+
 ```json
 "leverage": {
   "btc_eth_leverage": 20,
@@ -693,6 +583,7 @@ cp config.json.example config.json
 **智能默认行为（v2.0.2+）：**
 
 系统现在会自动默认为`use_default_coins: true`，如果：
+
 - 您在config.json中未包含此字段，或
 - 您将其设为`false`但未提供`coin_pool_api_url`
 
@@ -701,6 +592,7 @@ cp config.json.example config.json
 **配置示例：**
 
 ✅ **选项1：显式设置（推荐以保持清晰）**
+
 ```json
 "use_default_coins": true,
 "coin_pool_api_url": "",
@@ -708,6 +600,7 @@ cp config.json.example config.json
 ```
 
 ✅ **选项2：省略字段（自动使用默认币种）**
+
 ```json
 // 完全不包含"use_default_coins"
 "coin_pool_api_url": "",
@@ -715,6 +608,7 @@ cp config.json.example config.json
 ```
 
 ⚙️ **高级：使用外部API**
+
 ```json
 "use_default_coins": false,
 "coin_pool_api_url": "http://your-api.com/coins",
@@ -728,6 +622,7 @@ cp config.json.example config.json
 #### 🚀 启动系统（2个步骤）
 
 系统有**2个部分**需要分别运行：
+
 1. **后端**（AI交易大脑 + API）
 2. **前端**（Web监控仪表板）
 
@@ -764,6 +659,7 @@ go build -o nofx
 | `DeepSeek API error` | 验证DeepSeek API密钥和余额 |
 
 **✅ 后端运行正常的标志：**
+
 - 无错误信息
 - 出现"开始交易监控..."
 - 系统显示账户余额
@@ -790,7 +686,8 @@ VITE v5.x.x  ready in xxx ms
 ```
 
 **✅ 前端运行正常的标志：**
-- "Local: http://localhost:3000/"消息
+
+- "Local: <http://localhost:3000/"消息>
 - 无错误信息
 - 也保持此终端窗口打开！
 
@@ -800,15 +697,17 @@ VITE v5.x.x  ready in xxx ms
 
 在Web浏览器中访问：
 
-**🌐 http://localhost:3000**
+**🌐 <http://localhost:3000>**
 
 **您将看到：**
+
 - 📊 实时账户余额
 - 📈 持仓（如果有）
 - 🤖 AI决策日志
 - 📉 净值曲线图
 
 **首次使用提示：**
+
 - 首次AI决策可能需要3-5分钟
 - 初始决策可能显示"观望"- 这是正常的
 - AI需要先分析市场状况
@@ -820,12 +719,14 @@ VITE v5.x.x  ready in xxx ms
 **需要关注的内容：**
 
 ✅ **健康系统标志：**
+
 - 后端终端每3-5分钟显示决策周期
 - 无持续错误信息
 - 账户余额更新
 - Web仪表板自动刷新
 
 ⚠️ **警告标志：**
+
 - 重复的API错误
 - 10分钟以上无决策
 - 余额快速下降
@@ -852,6 +753,7 @@ curl http://localhost:8080/api/health
 5. 按`Ctrl+C`
 
 **⚠️ 重要：**
+
 - 始终先停止后端
 - 关闭终端前等待确认
 - 不要强制退出（不要直接关闭终端）
@@ -863,6 +765,7 @@ curl http://localhost:8080/api/health
 每个决策周期（默认3分钟），系统按以下流程运行：
 
 ### 步骤1: 📊 分析历史表现（最近20个周期）
+
 - ✓ 计算整体胜率、平均盈利、盈亏比
 - ✓ 统计各币种表现（胜率、平均USDT盈亏）
 - ✓ 识别最佳/最差币种
@@ -873,6 +776,7 @@ curl http://localhost:8080/api/health
 **↓**
 
 ### 步骤2: 💰 获取账户状态
+
 - 账户净值、可用余额、未实现盈亏
 - 持仓数量、总盈亏（已实现+未实现）
 - 保证金使用率（current/maximum）
@@ -881,6 +785,7 @@ curl http://localhost:8080/api/health
 **↓**
 
 ### 步骤3: 🔍 分析现有持仓（如果有）
+
 - 获取每个持仓的市场数据（3分钟+4小时K线）
 - 计算技术指标（RSI、MACD、EMA）
 - 显示持仓时长（例如"持仓时长2小时15分钟"）
@@ -890,6 +795,7 @@ curl http://localhost:8080/api/health
 **↓**
 
 ### 步骤4: 🎯 评估新机会（候选币种池）
+
 - 获取币种池（2种模式）：
   - 🌟 **默认模式**: BTC、ETH、SOL、BNB、XRP等
   - ⚙️ **高级模式**: AI500（前20） + OI Top（前20）
@@ -900,6 +806,7 @@ curl http://localhost:8080/api/health
 **↓**
 
 ### 步骤5: 🧠 AI综合决策
+
 - 查看历史反馈（胜率、盈亏比、最佳/最差币种）
 - 接收所有原始序列数据（K线、指标、持仓量）
 - Chain of Thought 思维链分析
@@ -910,6 +817,7 @@ curl http://localhost:8080/api/health
 **↓**
 
 ### 步骤6: ⚡ 执行交易
+
 - 优先级排序：先平仓，再开仓
 - 精度自动适配（LOT_SIZE规则）
 - 防止仓位叠加（同币种同方向拒绝开仓）
@@ -920,6 +828,7 @@ curl http://localhost:8080/api/health
 **↓**
 
 ### 步骤7: 📝 记录日志
+
 - 保存完整决策记录到 `decision_logs/`
 - 包含思维链、决策JSON、账户快照、执行结果
 - 存储完整持仓数据（数量、杠杆、开/平仓时间）
@@ -933,21 +842,25 @@ curl http://localhost:8080/api/health
 ### v2.0.2的核心改进
 
 **📌 持仓时长追踪：**
+
 - 系统现在追踪每个持仓已持有多长时间
 - 在用户提示中显示："持仓时长2小时15分钟"
 - 帮助AI更好地判断何时退出仓位
 
 **📌 准确的盈亏计算：**
+
 - 之前：只显示百分比（100U@5% = 1000U@5% = 都显示"5.0"）
 - 现在：真实USDT盈亏 = 仓位价值 × 价格变化% × 杠杆倍数
 - 示例：1000 USDT × 5% × 20倍 = 1000 USDT实际盈利
 
 **📌 增强的AI自由度：**
+
 - AI可以自由分析所有原始序列数据
 - 不再局限于预定义的指标组合
 - 可以执行自己的趋势分析、支撑位/阻力位计算
 
 **📌 改进的持仓追踪：**
+
 - 使用`symbol_side`键值（例如"BTCUSDT_long"）
 - 防止同时持有多空仓时的冲突
 - 存储完整数据：数量、杠杆、开/平仓时间
@@ -1046,6 +959,7 @@ GET /api/config               # 系统配置
 每次AI决策都会生成详细的JSON日志：
 
 ### 日志文件路径
+
 ```
 decision_logs/
 ├── qwen_trader/
@@ -1140,6 +1054,7 @@ decision_logs/
 ### 使用建议
 
 ✅ **建议做法**
+
 - 仅使用可承受损失的资金测试
 - 从小额资金开始（建议100-500 USDT）
 - 定期检查系统运行状态
@@ -1147,6 +1062,7 @@ decision_logs/
 - 分析AI决策日志，理解策略
 
 ❌ **不建议做法**
+
 - 投入全部资金或借贷资金
 - 长时间无人监控运行
 - 盲目信任AI决策
@@ -1160,6 +1076,7 @@ decision_logs/
 ### 1. 编译错误：TA-Lib not found
 
 **解决**: 安装TA-Lib库
+
 ```bash
 # macOS
 brew install ta-lib
@@ -1175,6 +1092,7 @@ sudo apt-get install libta-lib0-dev
 ### 3. AI API超时
 
 **解决**:
+
 - 检查API密钥是否正确
 - 检查网络连接（可能需要代理）
 - 系统超时时间已设置为120秒
@@ -1182,13 +1100,15 @@ sudo apt-get install libta-lib0-dev
 ### 4. 前端无法连接后端
 
 **解决**:
-- 确保后端正在运行（http://localhost:8080）
+
+- 确保后端正在运行（<http://localhost:8080）>
 - 检查端口8080是否被占用
 - 查看浏览器控制台错误信息
 
 ### 5. 币种池API失败
 
 **解决**:
+
 - 币种池API是可选的
 - 如果API失败，系统会使用默认主流币种（BTC、ETH等）
 - ~~检查config.json中的API URL和auth参数~~ *检查Web界面中的配置*
@@ -1215,6 +1135,7 @@ sudo apt-get install libta-lib0-dev
 **最新版本：** v3.0.0 (2025-10-30) - 重大架构变革
 
 **近期亮点：**
+
 - 🚀 完整系统重新设计，基于Web的配置平台
 - 🗄️ 数据库驱动架构（SQLite）
 - 🎨 无需编辑JSON - 全部通过Web界面配置
@@ -1228,6 +1149,7 @@ sudo apt-get install libta-lib0-dev
 本项目采用 **GNU Affero 通用公共许可证 v3.0 (AGPL-3.0)** - 详见 [LICENSE](LICENSE) 文件
 
 **这意味着什么：**
+
 - ✅ 你可以使用、修改和分发此软件
 - ✅ 你必须公开你修改版本的源代码
 - ✅ 如果你在服务器上运行修改版本，必须向用户提供源代码
@@ -1254,6 +1176,7 @@ sudo apt-get install libta-lib0-dev
 ## 📬 联系方式
 
 ### 🐛 技术支持
+
 - **GitHub Issues**: [提交Issue](https://github.com/tinkle-community/nofx/issues)
 - **开发者社区**: [Telegram群组](https://t.me/nofx_dev_community)
 

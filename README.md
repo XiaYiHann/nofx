@@ -22,8 +22,7 @@
 - [✨ Current Implementation](#-current-implementation---crypto-markets)
 - [🔮 Roadmap](#-roadmap---universal-market-expansion)
 - [🏗️ Technical Architecture](#️-technical-architecture)
-- [🏦 Supported Exchanges](#-supported-exchanges)
-- [💰 Register Binance Account](#-register-binance-account-save-on-fees)
+- [🏦 Supported Exchanges (DEX/CEX Tutorials)](#-supported-exchanges-dexcex-tutorials)
 - [🚀 Quick Start](#-quick-start)
 - [📖 AI Decision Flow](#-ai-decision-flow)
 - [🧠 AI Self-Learning](#-ai-self-learning-example)
@@ -202,7 +201,7 @@ NOFX is built with a modern, modular architecture:
 
 ---
 
-## 🏦 Supported Exchanges
+## 🏦 Supported Exchanges (DEX/CEX Tutorials)
 
 ### CEX (Centralized Exchanges)
 
@@ -266,34 +265,6 @@ services:
 ### Notes
 
 - Token lifetime: 24h. On logout, tokens are blacklisted in-memory until expiry. For multi-instance deployments, use a shared store (e.g., Redis) to sync the blacklist.
-
----
-
-## 💰 Register Binance Account (Save on Fees!)
-
-Before using this system, you need a Binance Futures account. **Use our referral link to save on trading fees:**
-
-**🎁 [Register Binance - Get Fee Discount](https://www.binance.com/join?ref=TINKLEVIP)**
-
-### Registration Steps
-
-1. **Click the link above** to visit Binance registration page
-2. **Complete registration** with email/phone number
-3. **Complete KYC verification** (required for futures trading)
-4. **Enable Futures account**:
-   - Go to Binance homepage → Derivatives → USD-M Futures
-   - Click "Open Now" to activate futures trading
-5. **Create API Key**:
-   - Go to Account → API Management
-   - Create new API key, **enable "Futures" permission**
-   - Save API Key and Secret Key (~~needed for config.json~~) *needed for web interface*
-   - **Important**: Whitelist your IP address for security
-
-### Fee Discount Benefits
-
-- ✅ **Spot trading**: Up to 30% fee discount
-- ✅ **Futures trading**: Up to 30% fee discount
-- ✅ **Lifetime validity**: Permanent discount on all trades
 
 ---
 
@@ -461,121 +432,6 @@ Open your browser and visit: **🌐 <http://localhost:3000>**
 - Monitor performance in real-time
 
 **✅ No more JSON file editing - everything is done through the web interface!**
-
----
-
-#### 🔷 Alternative: Using Hyperliquid Exchange
-
-**NOFX also supports Hyperliquid** - a decentralized perpetual futures exchange. To use Hyperliquid instead of Binance:
-
-**Step 1**: Get your Ethereum private key (for Hyperliquid authentication)
-
-1. Open **MetaMask** (or any Ethereum wallet)
-2. Export your private key
-3. **Remove the `0x` prefix** from the key
-4. Fund your wallet on [Hyperliquid](https://hyperliquid.xyz)
-
-**Step 2**: ~~Configure `config.json` for Hyperliquid~~ *Configure through web interface*
-
-```json
-{
-  "traders": [
-    {
-      "id": "hyperliquid_trader",
-      "name": "My Hyperliquid Trader",
-      "enabled": true,
-      "ai_model": "deepseek",
-      "exchange": "hyperliquid",
-      "hyperliquid_private_key": "your_private_key_without_0x",
-      "hyperliquid_wallet_addr": "your_ethereum_address",
-      "hyperliquid_testnet": false,
-      "deepseek_key": "sk-xxxxxxxxxxxxx",
-      "initial_balance": 1000.0,
-      "scan_interval_minutes": 3
-    }
-  ],
-  "use_default_coins": true,
-  "api_server_port": 8080
-}
-```
-
-**Key Differences from Binance Config:**
-
-- Replace `binance_api_key` + `binance_secret_key` with `hyperliquid_private_key`
-- Add `"exchange": "hyperliquid"` field
-- Set `hyperliquid_testnet: false` for mainnet (or `true` for testnet)
-
-**⚠️ Security Warning**: Never share your private key! Use a dedicated wallet for trading, not your main wallet.
-
----
-
-#### 🔶 Alternative: Using Aster DEX Exchange
-
-**NOFX also supports Aster DEX** - a Binance-compatible decentralized perpetual futures exchange!
-
-**Why Choose Aster?**
-
-- 🎯 Binance-compatible API (easy migration)
-- 🔐 API Wallet security system
-- 💰 Lower trading fees
-- 🌐 Multi-chain support (ETH, BSC, Polygon)
-- 🌍 No KYC required
-
-**Step 1**: Register and Create Aster API Wallet
-
-1. Register via [Aster Referral Link](https://www.asterdex.com/en/referral/fdfc0e) (get fee discounts!)
-2. Visit [Aster API Wallet](https://www.asterdex.com/en/api-wallet)
-3. Connect your main wallet (MetaMask, WalletConnect, etc.)
-4. Click "Create API Wallet"
-5. **Save these 3 items immediately:**
-   - Main Wallet address (User)
-   - API Wallet address (Signer)
-   - API Wallet Private Key (⚠️ shown only once!)
-
-**Step 2**: ~~Configure `config.json` for Aster~~ *Configure through web interface*
-
-```json
-{
-  "traders": [
-    {
-      "id": "aster_deepseek",
-      "name": "Aster DeepSeek Trader",
-      "enabled": true,
-      "ai_model": "deepseek",
-      "exchange": "aster",
-
-      "aster_user": "0xYOUR_MAIN_WALLET_ADDRESS_HERE",
-      "aster_signer": "0xYOUR_API_WALLET_SIGNER_ADDRESS_HERE",
-      "aster_private_key": "your_api_wallet_private_key_without_0x_prefix",
-
-      "deepseek_key": "sk-xxxxxxxxxxxxx",
-      "initial_balance": 1000.0,
-      "scan_interval_minutes": 3
-    }
-  ],
-  "use_default_coins": true,
-  "api_server_port": 8080,
-  "leverage": {
-    "btc_eth_leverage": 5,
-    "altcoin_leverage": 5
-  }
-}
-```
-
-**Key Configuration Fields:**
-
-- `"exchange": "aster"` - Set exchange to Aster
-- `aster_user` - Your main wallet address
-- `aster_signer` - API wallet address (from Step 1)
-- `aster_private_key` - API wallet private key (without `0x` prefix)
-
-**📖 For detailed setup instructions, see**: [Aster Integration Guide](ASTER_INTEGRATION.md)
-
-**⚠️ Security Notes**:
-
-- API wallet is separate from your main wallet (extra security layer)
-- Never share your API private key
-- You can revoke API wallet access anytime at [asterdex.com](https://www.asterdex.com/en/api-wallet)
 
 ---
 

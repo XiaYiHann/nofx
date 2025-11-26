@@ -21,10 +21,7 @@
 - [✨ 現在の実装 - 暗号通貨市場](#-現在の実装---暗号通貨市場)
 - [🔮 ロードマップ](#-ロードマップ---ユニバーサルマーケット拡大)
 - [🏗️ 技術アーキテクチャ](#️-技術アーキテクチャ)
-- [🏦 対応取引所](#-対応取引所)
-- [💰 Binanceアカウント登録](#-binanceアカウント登録手数料節約)
-- [🔷 Hyperliquidアカウント登録](#-hyperliquid取引所の使用)
-- [🔶 Aster DEXアカウント登録](#-aster-dex取引所の使用)
+- [🏦 対応取引所（DEX/CEXチュートリアル）](#-対応取引所dexcexチュートリアル)
 - [🚀 クイックスタート](#-クイックスタート)
 - [📖 AI判断フロー](#-ai判断フロー)
 - [🧠 AI自己学習の例](#-ai自己学習の例)
@@ -225,7 +222,7 @@ nofx/
 
 ---
 
-## 🏦 対応取引所
+## 🏦 対応取引所（DEX/CEXチュートリアル）
 
 ### CEX（中央集権型取引所）
 
@@ -242,34 +239,6 @@ nofx/
 | **Hyperliquid** | ✅ 対応済み | [登録](https://app.hyperliquid.xyz/join/AITRADING) | [エージェントウォレットガイド](../../getting-started/hyperliquid-agent-wallet.md) |
 | **Aster DEX** | ✅ 対応済み | [登録](https://www.asterdex.com/en/referral/fdfc0e) | [APIウォレットガイド](../../getting-started/aster-api-wallet.md) |
 | **Lighter** | ✅ 対応済み | [登録](https://lighter.xyz) | [エージェントウォレットガイド](../../getting-started/lighter-agent-wallet.md) |
-
----
-
-## 💰 Binanceアカウント登録（手数料節約！）
-
-このシステムを使用する前に、Binance先物アカウントが必要です。**紹介リンクを使用して取引手数料を節約しましょう：**
-
-**🎁 [Binance登録 - 手数料割引を取得](https://www.binance.com/join?ref=TINKLEVIP)**
-
-### 登録手順
-
-1. **上記のリンクをクリック**してBinance登録ページにアクセス
-2. メール/電話番号で**登録を完了**
-3. **KYC認証を完了**（先物取引に必要）
-4. **先物アカウントを有効化**：
-   - Binanceホームページ → デリバティブ → USDT無期限先物
-   - 「今すぐ開設」をクリックして先物取引を有効化
-5. **APIキーを作成**：
-   - アカウント → API管理
-   - 新しいAPIキーを作成、**「先物」権限を有効化**
-   - APIキーとシークレットキーを保存（config.jsonに必要）
-   - **重要**: セキュリティのためIPアドレスをホワイトリストに追加
-
-### 手数料割引の利点
-
-- ✅ **現物取引**: 最大30%の手数料割引
-- ✅ **先物取引**: 最大30%の手数料割引
-- ✅ **生涯有効**: すべての取引で永久割引
 
 ---
 
@@ -494,110 +463,6 @@ cp config.json.example config.json
 
 ---
 
-#### 🔷 代替：Hyperliquid取引所の使用
-
-**NOFXはHyperliquidもサポート** - 分散型無期限先物取引所。Binanceの代わりにHyperliquidを使用するには：
-
-**ステップ1**: Ethereum秘密鍵を取得（Hyperliquid認証用）
-
-1. **MetaMask**（または任意のEthereumウォレット）を開く
-2. 秘密鍵をエクスポート
-3. キーから**`0x`プレフィックスを削除**
-4. [Hyperliquid](https://hyperliquid.xyz)でウォレットに資金を入金
-
-**ステップ2**: Hyperliquid用に`config.json`を設定
-
-```json
-{
-  "traders": [
-    {
-      "id": "hyperliquid_trader",
-      "name": "My Hyperliquid Trader",
-      "enabled": true,
-      "ai_model": "deepseek",
-      "exchange": "hyperliquid",
-      "hyperliquid_private_key": "your_private_key_without_0x",
-      "hyperliquid_wallet_addr": "your_ethereum_address",
-      "hyperliquid_testnet": false,
-      "deepseek_key": "sk-xxxxxxxxxxxxx",
-      "initial_balance": 1000.0,
-      "scan_interval_minutes": 3
-    }
-  ],
-  "use_default_coins": true,
-  "api_server_port": 8080
-}
-```
-
-**Binance設定との主な違い:**
-
-- `binance_api_key` + `binance_secret_key`を`hyperliquid_private_key`に置き換え
-- `"exchange": "hyperliquid"`フィールドを追加
-- メインネットには`hyperliquid_testnet: false`、テストネットには`true`を設定
-
-**⚠️ セキュリティ警告**: 秘密鍵は絶対に共有しないでください！メインウォレットではなく、取引専用のウォレットを使用してください。
-
----
-
-#### 🔶 代替：Aster DEX取引所の使用
-
-**NOFXはAster DEXもサポート** - Binance互換の分散型無期限先物取引所！
-
-**なぜAsterを選ぶ？**
-
-- 🎯 Binance互換API（簡単な移行）
-- 🔐 APIウォレットセキュリティシステム
-- 💰 低い取引手数料
-- 🌐 マルチチェーンサポート（ETH、BSC、Polygon）
-- 🌍 KYC不要
-
-**ステップ1**: Aster APIウォレットを作成
-
-1. [Aster APIウォレット](https://www.asterdex.com/en/api-wallet)にアクセス
-2. メインウォレットを接続（MetaMask、WalletConnectなど）
-3. 「APIウォレットを作成」をクリック
-4. **これらの3つの項目をすぐに保存：**
-   - メインウォレットアドレス（User）
-   - APIウォレットアドレス（Signer）
-   - APIウォレット秘密鍵（⚠️ 一度だけ表示！）
-
-**ステップ2**: Aster用に`config.json`を設定
-
-```json
-{
-  "traders": [
-    {
-      "id": "aster_deepseek",
-      "name": "Aster DeepSeek Trader",
-      "enabled": true,
-      "ai_model": "deepseek",
-      "exchange": "aster",
-
-      "aster_user": "0x63DD5aCC6b1aa0f563956C0e534DD30B6dcF7C4e",
-      "aster_signer": "0x21cF8Ae13Bb72632562c6Fff438652Ba1a151bb0",
-      "aster_private_key": "4fd0a42218f3eae43a6ce26d22544e986139a01e5b34a62db53757ffca81bae1",
-
-      "deepseek_key": "sk-xxxxxxxxxxxxx",
-      "initial_balance": 1000.0,
-      "scan_interval_minutes": 3
-    }
-  ],
-  "use_default_coins": true,
-  "api_server_port": 8080,
-  "leverage": {
-    "btc_eth_leverage": 5,
-    "altcoin_leverage": 5
-  }
-}
-```
-
-**主要設定フィールド:**
-
-- `"exchange": "aster"` - 取引所をAsterに設定
-- `aster_user` - メインウォレットアドレス
-- `aster_signer` - APIウォレットアドレス（ステップ1から）
-- `aster_private_key` - APIウォレット秘密鍵（`0x`プレフィックスなし）
-
 **📖 詳細なセットアップ手順については**: [Aster統合ガイド](ASTER_INTEGRATION.md)を参照
 
 **⚠️ セキュリティ注意事項**:
@@ -608,6 +473,9 @@ cp config.json.example config.json
 
 ---
 
+=======
+>>>>>>> 1b1f5d1f (docs: simplify exchange sections, consolidate into Supported Exchanges table)
+>>>>>>>
 #### ⚔️ エキスパートモード：マルチトレーダー競争
 
 複数のAIトレーダーが互いに競争する場合：
