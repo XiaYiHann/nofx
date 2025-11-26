@@ -52,6 +52,14 @@ export interface DecisionAction {
   error?: string
   confidence?: number
   reasoning?: string
+
+  /* Auto-scaling / audit fields (optional) - added to match backend DecisionAction */
+  auto_scaled?: boolean
+  original_position_size_usd?: number
+  scaled_position_size_usd?: number
+  required_margin?: number
+  available_balance?: number
+  scale_reason?: string
 }
 
 export interface AccountSnapshot {

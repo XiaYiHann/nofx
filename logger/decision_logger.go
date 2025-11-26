@@ -62,6 +62,14 @@ type DecisionAction struct {
 	Timestamp  time.Time `json:"timestamp"`  // 执行时间
 	Success    bool      `json:"success"`    // 是否成功
 	Error      string    `json:"error"`      // 错误信息
+
+	// 自动缩放相关字段（审计用）
+	AutoScaled              bool    `json:"auto_scaled,omitempty"`                // 是否经过自动缩放
+	OriginalPositionSizeUSD float64 `json:"original_position_size_usd,omitempty"` // 原始仓位大小（USDT）
+	ScaledPositionSizeUSD   float64 `json:"scaled_position_size_usd,omitempty"`   // 缩放后仓位大小（USDT）
+	RequiredMargin          float64 `json:"required_margin,omitempty"`            // 所需保证金
+	AvailableBalance        float64 `json:"available_balance,omitempty"`          // 可用余额
+	ScaleReason             string  `json:"scale_reason,omitempty"`               // 缩放原因
 }
 
 // DecisionLogger 决策日志记录器

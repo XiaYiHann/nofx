@@ -815,6 +815,88 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *decision.Decision, act
 	}
 }
 
+// MarginCheckResult 保证金检查结果
+type MarginCheckResult struct {
+	OriginalPositionSizeUSD float64 // 原始仓位大小（USDT）
+	ScaledPositionSizeUSD   float64 // 缩放后仓位大小（USDT）
+	RequiredMargin          float64 // 所需保证金
+	EstimatedFee            float64 // 预估手续费
+	AvailableBalance        float64 // 可用余额
+	AutoScaled              bool    // 是否经过自动缩放
+	ScaleReason             string  // 缩放原因
+	Rejected                bool    // 是否被拒绝（无法缩放到有效仓位）
+	RejectReason            string  // 拒绝原因
+}
+
+// checkAndScaleMargin 检查保证金并在必要时自动缩放仓位
+// 返回缩放后的 position_size_usd 和检查结果
+// 安全边际系数 = 0.95（预留5%给手续费和滑点）
+func (at *AutoTrader) checkAndScaleMargin(positionSizeUSD float64, leverage int, balance map[string]interface{}) *MarginCheckResult {
+	const safetyMargin = 0.95    // 安全边际，预留5%给手续费和滑点
+	const minPositionSize = 12.0 // 最小仓位大小（USDT），对应交易所 10 USDT 最小名义价值 + 安全边际
+
+	result := &MarginCheckResult{
+		OriginalPositionSizeUSD: positionSizeUSD,
+		ScaledPositionSizeUSD:   positionSizeUSD,
+	}
+
+	// 获取可用余额
+	if avail, ok := balance["availableBalance"].(float64); ok {
+		result.AvailableBalance = avail
+	} else if avail, ok := balance["available_balance"].(float64); ok {
+		result.AvailableBalance = avail
+	}
+
+	// 计算所需保证金和手续费
+	result.RequiredMargin = positionSizeUSD / float64(leverage)
+	result.EstimatedFee = positionSizeUSD * 0.0004 // Taker 费率 0.04%
+	totalRequired := result.RequiredMargin + result.EstimatedFee
+
+	// 如果保证金充足，直接返回
+	if totalRequired <= result.AvailableBalance*safetyMargin {
+		return result
+	}
+
+	// 需要自动缩放
+	result.AutoScaled = true
+
+	// 计算最大可用仓位
+	// maxPositionSize = availableBalance * safetyMargin * leverage / (1 + feeRate * leverage)
+	// 简化计算：feeRate * leverage 很小，约等于 availableBalance * safetyMargin * leverage
+	maxPositionSize := result.AvailableBalance * safetyMargin * float64(leverage)
+
+	// 二次验证：确保保证金+手续费不超过可用余额
+	for maxPositionSize > minPositionSize {
+		testMargin := maxPositionSize / float64(leverage)
+		testFee := maxPositionSize * 0.0004
+		if testMargin+testFee <= result.AvailableBalance*safetyMargin {
+			break
+		}
+		// 减少 1%
+		maxPositionSize *= 0.99
+	}
+
+	// 检查缩放后的仓位是否满足最小要求
+	if maxPositionSize < minPositionSize {
+		result.Rejected = true
+		result.RejectReason = fmt.Sprintf("可用余额不足以开立最小仓位: 需要≥%.2f USDT，最大可开 %.2f USDT", minPositionSize, maxPositionSize)
+		return result
+	}
+
+	result.ScaledPositionSizeUSD = maxPositionSize
+	result.ScaleReason = fmt.Sprintf("保证金不足，从 %.2f USDT 缩放到 %.2f USDT (原需保证金 %.2f，可用 %.2f)",
+		positionSizeUSD, maxPositionSize, result.RequiredMargin, result.AvailableBalance)
+
+	// 更新计算结果
+	result.RequiredMargin = maxPositionSize / float64(leverage)
+	result.EstimatedFee = maxPositionSize * 0.0004
+
+	log.Printf("  ⚠️ 自动缩放仓位: %.2f → %.2f USDT (杠杆 %dx, 可用余额 %.2f USDT)",
+		positionSizeUSD, maxPositionSize, leverage, result.AvailableBalance)
+
+	return result
+}
+
 // executeOpenLongWithRecord 执行开多仓并记录详细信息
 func (at *AutoTrader) executeOpenLongWithRecord(decision *decision.Decision, actionRecord *logger.DecisionAction) error {
 	log.Printf("  📈 开多仓: %s", decision.Symbol)
@@ -835,31 +917,33 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *decision.Decision, act
 		return err
 	}
 
-	// 计算数量
-	quantity := decision.PositionSizeUSD / marketData.CurrentPrice
-	actionRecord.Quantity = quantity
-	actionRecord.Price = marketData.CurrentPrice
-
-	// ⚠️ 保证金验证：防止保证金不足错误（code=-2019）
-	requiredMargin := decision.PositionSizeUSD / float64(decision.Leverage)
-
+	// 获取账户余额
 	balance, err := at.trader.GetBalance()
 	if err != nil {
 		return fmt.Errorf("获取账户余额失败: %w", err)
 	}
-	availableBalance := 0.0
-	if avail, ok := balance["availableBalance"].(float64); ok {
-		availableBalance = avail
+
+	// ⚠️ 保证金检查与自动缩放
+	marginCheck := at.checkAndScaleMargin(decision.PositionSizeUSD, decision.Leverage, balance)
+
+	// 记录保证金检查结果到 actionRecord（审计用）
+	actionRecord.OriginalPositionSizeUSD = marginCheck.OriginalPositionSizeUSD
+	actionRecord.ScaledPositionSizeUSD = marginCheck.ScaledPositionSizeUSD
+	actionRecord.RequiredMargin = marginCheck.RequiredMargin
+	actionRecord.AvailableBalance = marginCheck.AvailableBalance
+	actionRecord.AutoScaled = marginCheck.AutoScaled
+	actionRecord.ScaleReason = marginCheck.ScaleReason
+
+	// 如果被拒绝（无法缩放到有效仓位），返回错误
+	if marginCheck.Rejected {
+		return fmt.Errorf("❌ %s", marginCheck.RejectReason)
 	}
 
-	// 手续费估算（Taker费率 0.04%）
-	estimatedFee := decision.PositionSizeUSD * 0.0004
-	totalRequired := requiredMargin + estimatedFee
-
-	if totalRequired > availableBalance {
-		return fmt.Errorf("❌ 保证金不足: 需要 %.2f USDT（保证金 %.2f + 手续费 %.2f），可用 %.2f USDT",
-			totalRequired, requiredMargin, estimatedFee, availableBalance)
-	}
+	// 使用缩放后的仓位大小计算数量
+	actualPositionSize := marginCheck.ScaledPositionSizeUSD
+	quantity := actualPositionSize / marketData.CurrentPrice
+	actionRecord.Quantity = quantity
+	actionRecord.Price = marketData.CurrentPrice
 
 	// 设置仓位模式
 	if err := at.trader.SetMarginMode(decision.Symbol, at.config.IsCrossMargin); err != nil {
@@ -878,13 +962,18 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *decision.Decision, act
 		actionRecord.OrderID = orderID
 	}
 
-	log.Printf("  ✓ 开仓成功，订单ID: %v, 数量: %.4f", order["orderId"], quantity)
+	if marginCheck.AutoScaled {
+		log.Printf("  ✓ 开仓成功（自动缩放），订单ID: %v, 数量: %.4f, 仓位: %.2f → %.2f USDT",
+			order["orderId"], quantity, marginCheck.OriginalPositionSizeUSD, marginCheck.ScaledPositionSizeUSD)
+	} else {
+		log.Printf("  ✓ 开仓成功，订单ID: %v, 数量: %.4f", order["orderId"], quantity)
+	}
 
 	// 记录开仓时间
 	posKey := decision.Symbol + "_long"
 	at.positionFirstSeenTime[posKey] = time.Now().UnixMilli()
 
-	// 设置止损止盈
+	// 设置止损止盈（根据缩放比例调整风险控制参数是可选的，这里保持原止损止盈价格）
 	if err := at.trader.SetStopLoss(decision.Symbol, "LONG", quantity, decision.StopLoss); err != nil {
 		log.Printf("  ⚠ 设置止损失败: %v", err)
 	}
@@ -915,31 +1004,33 @@ func (at *AutoTrader) executeOpenShortWithRecord(decision *decision.Decision, ac
 		return err
 	}
 
-	// 计算数量
-	quantity := decision.PositionSizeUSD / marketData.CurrentPrice
-	actionRecord.Quantity = quantity
-	actionRecord.Price = marketData.CurrentPrice
-
-	// ⚠️ 保证金验证：防止保证金不足错误（code=-2019）
-	requiredMargin := decision.PositionSizeUSD / float64(decision.Leverage)
-
+	// 获取账户余额
 	balance, err := at.trader.GetBalance()
 	if err != nil {
 		return fmt.Errorf("获取账户余额失败: %w", err)
 	}
-	availableBalance := 0.0
-	if avail, ok := balance["availableBalance"].(float64); ok {
-		availableBalance = avail
+
+	// ⚠️ 保证金检查与自动缩放
+	marginCheck := at.checkAndScaleMargin(decision.PositionSizeUSD, decision.Leverage, balance)
+
+	// 记录保证金检查结果到 actionRecord（审计用）
+	actionRecord.OriginalPositionSizeUSD = marginCheck.OriginalPositionSizeUSD
+	actionRecord.ScaledPositionSizeUSD = marginCheck.ScaledPositionSizeUSD
+	actionRecord.RequiredMargin = marginCheck.RequiredMargin
+	actionRecord.AvailableBalance = marginCheck.AvailableBalance
+	actionRecord.AutoScaled = marginCheck.AutoScaled
+	actionRecord.ScaleReason = marginCheck.ScaleReason
+
+	// 如果被拒绝（无法缩放到有效仓位），返回错误
+	if marginCheck.Rejected {
+		return fmt.Errorf("❌ %s", marginCheck.RejectReason)
 	}
 
-	// 手续费估算（Taker费率 0.04%）
-	estimatedFee := decision.PositionSizeUSD * 0.0004
-	totalRequired := requiredMargin + estimatedFee
-
-	if totalRequired > availableBalance {
-		return fmt.Errorf("❌ 保证金不足: 需要 %.2f USDT（保证金 %.2f + 手续费 %.2f），可用 %.2f USDT",
-			totalRequired, requiredMargin, estimatedFee, availableBalance)
-	}
+	// 使用缩放后的仓位大小计算数量
+	actualPositionSize := marginCheck.ScaledPositionSizeUSD
+	quantity := actualPositionSize / marketData.CurrentPrice
+	actionRecord.Quantity = quantity
+	actionRecord.Price = marketData.CurrentPrice
 
 	// 设置仓位模式
 	if err := at.trader.SetMarginMode(decision.Symbol, at.config.IsCrossMargin); err != nil {
@@ -958,13 +1049,18 @@ func (at *AutoTrader) executeOpenShortWithRecord(decision *decision.Decision, ac
 		actionRecord.OrderID = orderID
 	}
 
-	log.Printf("  ✓ 开仓成功，订单ID: %v, 数量: %.4f", order["orderId"], quantity)
+	if marginCheck.AutoScaled {
+		log.Printf("  ✓ 开仓成功（自动缩放），订单ID: %v, 数量: %.4f, 仓位: %.2f → %.2f USDT",
+			order["orderId"], quantity, marginCheck.OriginalPositionSizeUSD, marginCheck.ScaledPositionSizeUSD)
+	} else {
+		log.Printf("  ✓ 开仓成功，订单ID: %v, 数量: %.4f", order["orderId"], quantity)
+	}
 
 	// 记录开仓时间
 	posKey := decision.Symbol + "_short"
 	at.positionFirstSeenTime[posKey] = time.Now().UnixMilli()
 
-	// 设置止损止盈
+	// 设置止损止盈（根据缩放比例调整风险控制参数是可选的，这里保持原止损止盈价格）
 	if err := at.trader.SetStopLoss(decision.Symbol, "SHORT", quantity, decision.StopLoss); err != nil {
 		log.Printf("  ⚠ 设置止损失败: %v", err)
 	}

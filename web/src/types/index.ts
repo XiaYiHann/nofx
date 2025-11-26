@@ -50,6 +50,14 @@ export interface DecisionAction {
   timestamp: string
   success: boolean
   error: string
+
+  // Optional audit fields for auto-scaling
+  auto_scaled?: boolean
+  original_position_size_usd?: number
+  scaled_position_size_usd?: number
+  required_margin?: number
+  available_balance?: number
+  scale_reason?: string
 }
 
 // 决策记录

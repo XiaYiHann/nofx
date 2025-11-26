@@ -443,7 +443,7 @@ func (s *AutoTraderTestSuite) TestExecuteOpenPosition() {
 			name:         "多仓_保证金不足",
 			action:       "open_long",
 			availBalance: 0.0,
-			expectedErr:  "保证金不足",
+			expectedErr:  "可用余额不足",
 			executeFn: func(d *decision.Decision, a *logger.DecisionAction) error {
 				return s.autoTrader.executeOpenLongWithRecord(d, a)
 			},
@@ -452,7 +452,7 @@ func (s *AutoTraderTestSuite) TestExecuteOpenPosition() {
 			name:         "空仓_保证金不足",
 			action:       "open_short",
 			availBalance: 0.0,
-			expectedErr:  "保证金不足",
+			expectedErr:  "可用余额不足",
 			executeFn: func(d *decision.Decision, a *logger.DecisionAction) error {
 				return s.autoTrader.executeOpenShortWithRecord(d, a)
 			},
@@ -978,6 +978,201 @@ func (m *MockDatabase) UpdateTraderInitialBalance(userID, traderID string, newBa
 		return errors.New("database error")
 	}
 	return nil
+}
+
+// ============================================================
+// 层次 4: 保证金检查与自动缩放测试
+// ============================================================
+
+func (s *AutoTraderTestSuite) TestCheckAndScaleMargin_SufficientBalance() {
+	// 测试场景：余额充足，不需要缩放
+	balance := map[string]interface{}{
+		"availableBalance": 10000.0,
+	}
+
+	result := s.autoTrader.checkAndScaleMargin(5000.0, 10, balance)
+
+	s.False(result.AutoScaled, "余额充足时不应该自动缩放")
+	s.False(result.Rejected, "余额充足时不应该被拒绝")
+	s.Equal(5000.0, result.OriginalPositionSizeUSD)
+	s.Equal(5000.0, result.ScaledPositionSizeUSD)
+	s.Equal(500.0, result.RequiredMargin) // 5000 / 10
+	s.Equal(10000.0, result.AvailableBalance)
+}
+
+func (s *AutoTraderTestSuite) TestCheckAndScaleMargin_InsufficientBalance_AutoScale() {
+	// 测试场景：余额不足，自动缩放
+	// 可用余额 500，杠杆 10x，请求仓位 7000
+	// 需要保证金 = 7000 / 10 = 700 USDT > 500 * 0.95 = 475，需要缩放
+	balance := map[string]interface{}{
+		"availableBalance": 500.0,
+	}
+
+	result := s.autoTrader.checkAndScaleMargin(7000.0, 10, balance)
+
+	s.True(result.AutoScaled, "余额不足时应该自动缩放")
+	s.False(result.Rejected, "仍可开立有效仓位时不应该被拒绝")
+	s.Equal(7000.0, result.OriginalPositionSizeUSD)
+	s.Less(result.ScaledPositionSizeUSD, 7000.0, "缩放后仓位应小于原始值")
+	s.Greater(result.ScaledPositionSizeUSD, 12.0, "缩放后仓位应大于最小值")
+
+	// 验证缩放后的保证金不超过可用余额的95%
+	scaledMargin := result.ScaledPositionSizeUSD / 10
+	s.LessOrEqual(scaledMargin, 500.0*0.95, "缩放后保证金应≤可用余额*95%")
+}
+
+func (s *AutoTraderTestSuite) TestCheckAndScaleMargin_VeryLowBalance_Rejected() {
+	// 测试场景：余额极低，无法开立最小仓位
+	// 可用余额 1.0 USDT，最小仓位 12 USDT，无法缩放
+	balance := map[string]interface{}{
+		"availableBalance": 1.0,
+	}
+
+	result := s.autoTrader.checkAndScaleMargin(1000.0, 10, balance)
+
+	s.True(result.Rejected, "余额极低时应该被拒绝")
+	s.Contains(result.RejectReason, "可用余额不足以开立最小仓位")
+}
+
+func (s *AutoTraderTestSuite) TestCheckAndScaleMargin_EdgeCase_ExactBalance() {
+	// 测试场景：余额刚好足够（边界情况）
+	// 可用余额 100 USDT，杠杆 10x，请求仓位 950 USDT
+	// 需要保证金 = 950 / 10 = 95 USDT ≈ 100 * 0.95 = 95
+	balance := map[string]interface{}{
+		"availableBalance": 100.0,
+	}
+
+	result := s.autoTrader.checkAndScaleMargin(900.0, 10, balance)
+
+	s.False(result.AutoScaled, "边界情况下不应该缩放")
+	s.False(result.Rejected)
+}
+
+func (s *AutoTraderTestSuite) TestCheckAndScaleMargin_DifferentLeverages() {
+	// 测试不同杠杆对缩放的影响
+	tests := []struct {
+		name           string
+		positionSize   float64
+		leverage       int
+		availBalance   float64
+		expectScaled   bool
+		expectRejected bool
+	}{
+		{
+			name:           "低杠杆_余额不足",
+			positionSize:   1000.0,
+			leverage:       1,
+			availBalance:   500.0,
+			expectScaled:   true,
+			expectRejected: false,
+		},
+		{
+			name:           "高杠杆_余额充足",
+			positionSize:   10000.0,
+			leverage:       20,
+			availBalance:   1000.0,
+			expectScaled:   false,
+			expectRejected: false,
+		},
+		{
+			name:           "高杠杆_余额不足",
+			positionSize:   50000.0,
+			leverage:       20,
+			availBalance:   1000.0,
+			expectScaled:   true,
+			expectRejected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			balance := map[string]interface{}{
+				"availableBalance": tt.availBalance,
+			}
+
+			result := s.autoTrader.checkAndScaleMargin(tt.positionSize, tt.leverage, balance)
+
+			s.Equal(tt.expectScaled, result.AutoScaled)
+			s.Equal(tt.expectRejected, result.Rejected)
+
+			if result.AutoScaled && !result.Rejected {
+				// 验证缩放后保证金不超过可用余额的95%
+				scaledMargin := result.ScaledPositionSizeUSD / float64(tt.leverage)
+				s.LessOrEqual(scaledMargin, tt.availBalance*0.95)
+			}
+		})
+	}
+}
+
+func (s *AutoTraderTestSuite) TestExecuteOpenLong_WithAutoScale() {
+	// 模拟保证金不足场景
+	s.mockTrader.balance["availableBalance"] = 100.0
+	s.mockTrader.positions = []map[string]interface{}{}
+
+	d := &decision.Decision{
+		Symbol:          "BTCUSDT",
+		Action:          "open_long",
+		PositionSizeUSD: 5000.0, // 请求5000 USDT，但只有100可用
+		Leverage:        10,
+		StopLoss:        45000.0,
+		TakeProfit:      55000.0,
+	}
+
+	actionRecord := &logger.DecisionAction{}
+
+	err := s.autoTrader.executeOpenLongWithRecord(d, actionRecord)
+
+	s.NoError(err, "自动缩放后应该成功开仓")
+	s.True(actionRecord.AutoScaled, "应该记录自动缩放")
+	s.Equal(5000.0, actionRecord.OriginalPositionSizeUSD)
+	s.Less(actionRecord.ScaledPositionSizeUSD, 5000.0, "缩放后仓位应小于原始值")
+	s.Greater(actionRecord.ScaledPositionSizeUSD, 12.0, "缩放后仓位应大于最小值")
+	s.Contains(actionRecord.ScaleReason, "保证金不足")
+}
+
+func (s *AutoTraderTestSuite) TestExecuteOpenShort_WithAutoScale() {
+	// 模拟保证金不足场景
+	s.mockTrader.balance["availableBalance"] = 200.0
+	s.mockTrader.positions = []map[string]interface{}{}
+
+	d := &decision.Decision{
+		Symbol:          "ETHUSDT",
+		Action:          "open_short",
+		PositionSizeUSD: 10000.0, // 请求10000 USDT，但只有200可用
+		Leverage:        5,
+		StopLoss:        4000.0,
+		TakeProfit:      3000.0,
+	}
+
+	actionRecord := &logger.DecisionAction{}
+
+	err := s.autoTrader.executeOpenShortWithRecord(d, actionRecord)
+
+	s.NoError(err, "自动缩放后应该成功开仓")
+	s.True(actionRecord.AutoScaled, "应该记录自动缩放")
+	s.Contains(actionRecord.ScaleReason, "保证金不足")
+}
+
+func (s *AutoTraderTestSuite) TestExecuteOpenLong_InsufficientBalance_Rejected() {
+	// 模拟余额极低，无法开立最小仓位
+	s.mockTrader.balance["availableBalance"] = 0.5 // 只有0.5 USDT
+	s.mockTrader.positions = []map[string]interface{}{}
+
+	d := &decision.Decision{
+		Symbol:          "BTCUSDT",
+		Action:          "open_long",
+		PositionSizeUSD: 1000.0,
+		Leverage:        10,
+		StopLoss:        45000.0,
+		TakeProfit:      55000.0,
+	}
+
+	actionRecord := &logger.DecisionAction{}
+
+	err := s.autoTrader.executeOpenLongWithRecord(d, actionRecord)
+
+	s.Error(err, "余额极低时应该返回错误")
+	s.Contains(err.Error(), "可用余额不足以开立最小仓位")
 }
 
 // MockTrader 增强版（添加错误控制）
