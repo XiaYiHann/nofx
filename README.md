@@ -18,18 +18,18 @@
 
 - [🚀 Universal AI Trading Operating System](#-universal-ai-trading-operating-system)
 - [👥 Developer Community](#-developer-community)
-- [🆕 What's New](#-whats-new-latest-update)
 - [📸 Screenshots](#-screenshots)
 - [✨ Current Implementation](#-current-implementation---crypto-markets)
 - [🔮 Roadmap](#-roadmap---universal-market-expansion)
 - [🏗️ Technical Architecture](#️-technical-architecture)
+- [🏦 Supported Exchanges](#-supported-exchanges)
 - [💰 Register Binance Account](#-register-binance-account-save-on-fees)
 - [🚀 Quick Start](#-quick-start)
 - [📖 AI Decision Flow](#-ai-decision-flow)
 - [🧠 AI Self-Learning](#-ai-self-learning-example)
 - [📊 Web Interface Features](#-web-interface-features)
 - [🎛️ API Endpoints](#️-api-endpoints)
-- [🔐 Admin Mode (Single-User)](#-admin-mode-single-user) 
+- [🔐 Admin Mode (Single-User)](#-admin-mode-single-user)
 - [⚠️ Important Risk Warnings](#️-important-risk-warnings)
 - [🛠️ Common Issues](#️-common-issues)
 - [📈 Performance Tips](#-performance-optimization-tips)
@@ -58,7 +58,7 @@
 
 ### 💼 Seed Funding Round Open
 
-We are currently raising our **seed round**. 
+We are currently raising our **seed round**.
 
 **For investment inquiries**, please DM **Tinkle** or **Zack** via Twitter.
 
@@ -76,71 +76,15 @@ Join our Telegram developer community to discuss, share ideas, and get support:
 
 ---
 
-## 🆕 What's New (Latest Update)
-
-### 🚀 Multi-Exchange Support!
-
-NOFX now supports **three major exchanges**: Binance, Hyperliquid, and Aster DEX!
-
-#### **Hyperliquid Exchange**
-
-A high-performance decentralized perpetual futures exchange!
-
-**Key Features:**
-- ✅ Full trading support (long/short, leverage, stop-loss/take-profit)
-- ✅ Automatic precision handling (order size & price)
-- ✅ Unified trader interface (seamless exchange switching)
-- ✅ Support for both mainnet and testnet
-- ✅ No API keys needed - just your Ethereum private key
-
-**New Workflow:**
-1. **Configure AI Models**: Add your DeepSeek/Qwen API keys through the web interface
-2. **Configure Exchanges**: Set up Binance/Hyperliquid API credentials
-3. **Create Traders**: Combine any AI model with any exchange to create custom traders
-4. **Monitor & Control**: Start/stop traders and monitor performance in real-time
-
-**Why This Update?**
-- 🎯 **User-Friendly**: No more editing JSON files or server restarts
-- 🔧 **Flexible**: Mix and match different AI models with different exchanges
-- 📊 **Scalable**: Create unlimited trader combinations
-- 🔒 **Secure**: Database storage with proper data management
-
-See [Quick Start](#-quick-start) for the new setup process!
-
-#### **Aster DEX Exchange** (NEW! v2.0.2)
-
-A Binance-compatible decentralized perpetual futures exchange!
-
-**Key Features:**
-- ✅ Binance-style API (easy migration from Binance)
-- ✅ Web3 wallet authentication (secure and decentralized)
-- ✅ Full trading support with automatic precision handling
-- ✅ Lower trading fees than CEX
-- ✅ EVM-compatible (Ethereum, BSC, Polygon, etc.)
-
-**Why Aster?**
-- 🎯 **Binance-compatible API** - minimal code changes required
-- 🔐 **API Wallet System** - separate trading wallet for security
-- 💰 **Competitive fees** - lower than most centralized exchanges
-- 🌐 **Multi-chain support** - trade on your preferred EVM chain
-
-**Quick Start:**
-1. Register via [Aster Referral Link](https://www.asterdex.com/en/referral/fdfc0e) (get fee discounts!)
-2. Visit [Aster API Wallet](https://www.asterdex.com/en/api-wallet)
-3. Connect your main wallet and create an API wallet
-4. Copy the API Signer address and Private Key
-5. Set `"exchange": "aster"` in config.json
-6. Add `"aster_user"`, `"aster_signer"`, and `"aster_private_key"`
-
----
-
 ## 📸 Screenshots
 
 ### 🏆 Competition Mode - Real-time AI Battle
+
 ![Competition Page](screenshots/competition-page.png)
 *Multi-AI leaderboard with real-time performance comparison charts showing Qwen vs DeepSeek live trading battle*
 
 ### 📊 Trader Details - Complete Trading Dashboard
+
 ![Details Page](screenshots/details-page.png)
 *Professional trading interface with equity curves, live positions, and AI decision logs with expandable input prompts & chain-of-thought reasoning*
 
@@ -151,12 +95,14 @@ A Binance-compatible decentralized perpetual futures exchange!
 NOFX is currently **fully operational in cryptocurrency markets** with the following proven capabilities:
 
 ### 🏆 Multi-Agent Competition Framework
+
 - **Live Agent Battle**: Qwen vs DeepSeek models compete in real-time trading
 - **Independent Account Management**: Each agent maintains its own decision logs and performance metrics
 - **Real-time Performance Comparison**: Live ROI tracking, win rate statistics, and head-to-head analysis
 - **Self-Evolution Loop**: Agents learn from their historical performance and continuously improve
 
 ### 🧠 AI Self-Learning & Optimization
+
 - **Historical Feedback System**: Analyzes last 20 trading cycles before each decision
 - **Smart Performance Analysis**:
   - Identifies best/worst performing assets
@@ -166,6 +112,7 @@ NOFX is currently **fully operational in cryptocurrency markets** with the follo
 - **Dynamic Strategy Adjustment**: AI autonomously adapts trading style based on backtest results
 
 ### 📊 Universal Market Data Layer (Crypto Implementation)
+
 - **🆕 Dynamic Multi-Timeframe Analysis**: Configurable 1-11 timeframes (1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 12h, 1d)
   - **Flexible Configuration**: Choose any combination from short-term (1m) to long-term (1d)
   - **Hot Reload**: Update timeframe settings without restarting traders
@@ -177,6 +124,7 @@ NOFX is currently **fully operational in cryptocurrency markets** with the follo
 - **Cross-Exchange Support**: Binance, Hyperliquid, Aster DEX with unified data interface
 
 ### 🎯 Unified Risk Control System
+
 - **Position Limits**: Per-asset limits (Altcoins ≤1.5x equity, BTC/ETH ≤10x equity)
 - **Configurable Leverage**: Dynamic leverage from 1x to 50x based on asset class and account type
 - **Margin Management**: Total usage ≤90%, AI-controlled allocation
@@ -184,12 +132,14 @@ NOFX is currently **fully operational in cryptocurrency markets** with the follo
 - **Anti-Stacking Protection**: Prevents duplicate positions in same asset/direction
 
 ### ⚡ Low-Latency Execution Engine
+
 - **Multi-Exchange API Integration**: Binance Futures, Hyperliquid DEX, Aster DEX
 - **Automatic Precision Handling**: Smart order size & price formatting per exchange
 - **Priority Execution**: Close existing positions first, then open new ones
 - **Slippage Control**: Pre-execution validation, real-time precision checks
 
 ### 🎨 Professional Monitoring Interface
+
 - **Binance-Style Dashboard**: Professional dark theme with real-time updates
 - **Equity Curves**: Historical account value tracking (USD/percentage toggle)
 - **Performance Charts**: Multi-agent ROI comparison with live updates
@@ -205,12 +155,14 @@ NOFX is on a mission to become the **Universal AI Trading Operating System** for
 **Vision:** Same architecture. Same agent framework. All markets.
 
 **Expansion Markets:**
+
 - 📈 **Stock Markets**: US equities, A-shares, Hong Kong stocks
 - 📊 **Futures Markets**: Commodity futures, index futures
 - 🎯 **Options Trading**: Equity options, crypto options
 - 💱 **Forex Markets**: Major currency pairs, cross rates
 
 **Upcoming Features:**
+
 - Enhanced AI capabilities (GPT-4, Claude 3, Gemini Pro, flexible prompt templates)
 - New exchange integrations (OKX, Bybit, Lighter, EdgeX + CEX/Perp-DEX)
 - Project structure refactoring (high cohesion, low coupling, SOLID principles)
@@ -218,6 +170,7 @@ NOFX is on a mission to become the **Universal AI Trading Operating System** for
 - User experience improvements (mobile-responsive, TradingView charts, alert system)
 
 📖 **For detailed roadmap and timeline, see:**
+
 - **English:** [Roadmap Documentation](docs/roadmap/README.md)
 - **中文:** [路线图文档](docs/roadmap/README.zh-CN.md)
 
@@ -235,6 +188,7 @@ NOFX is built with a modern, modular architecture:
 - **Real-time Updates:** SWR with 5-10s polling intervals
 
 **Key Features:**
+
 - 🗄️ Database-driven configuration (no more JSON editing)
 - 🔐 JWT authentication with optional 2FA support
 - 📊 Real-time performance tracking and analytics
@@ -242,16 +196,35 @@ NOFX is built with a modern, modular architecture:
 - 🔌 RESTful API for all configuration and monitoring
 
 📖 **For detailed architecture documentation, see:**
+
 - **English:** [Architecture Documentation](docs/architecture/README.md)
 - **中文:** [架构文档](docs/architecture/README.zh-CN.md)
 
 ---
+
+## 🏦 Supported Exchanges
+
+### CEX (Centralized Exchanges)
+
+| Exchange | Status | Register (Fee Discount) | API Setup |
+|----------|--------|-------------------------|-----------|
+| **Binance** | ✅ Supported | [Register](https://www.binance.com/join?ref=NOFXENG) | [API Guide](docs/getting-started/binance-api.md) |
+| **OKX** | 🚧 Coming Soon | [Register](https://www.okx.com/join/1865360) | Coming Soon |
+| **Bybit** | 🚧 Coming Soon | [Register](https://partner.bybit.com/b/83856) | Coming Soon |
+
+### Perp-DEX (Decentralized Perpetual Exchanges)
+
+| Exchange | Status | Register (Fee Discount) | Agent Wallet Setup |
+|----------|--------|-------------------------|--------------------|
+| **Hyperliquid** | ✅ Supported | [Register](https://app.hyperliquid.xyz/join/AITRADING) | [Agent Wallet Guide](docs/getting-started/hyperliquid-agent-wallet.md) |
+| **Aster DEX** | ✅ Supported | [Register](https://www.asterdex.com/en/referral/fdfc0e) | [API Wallet Guide](docs/getting-started/aster-api-wallet.md) |
 
 ## 🔐 Admin Mode (Single-User)
 
 For self-hosted or single-tenant setups, NOFX supports a strict admin-only mode that disables public features and requires an admin password for all access.
 
 ### How it works
+
 - All API endpoints require a valid JWT when `admin_mode=true`, except:
   - `GET /api/health`
   - `GET /api/config`
@@ -259,7 +232,9 @@ For self-hosted or single-tenant setups, NOFX supports a strict admin-only mode 
 - Logout invalidates the current token via an in-memory blacklist (sufficient for single instance; use Redis for multi-instance – see Notes).
 
 ### Quick setup
+
 1) Set flags in `config.json`:
+
 ```jsonc
 {
   // ... other config
@@ -269,9 +244,11 @@ For self-hosted or single-tenant setups, NOFX supports a strict admin-only mode 
 ```
 
 2) Provide required environment variables:
+
 - `NOFX_ADMIN_PASSWORD` — plaintext admin password (only used at startup to derive a bcrypt hash)
 
 Docker Compose example (already wired):
+
 ```yaml
 services:
   nofx:
@@ -280,11 +257,13 @@ services:
 ```
 
 1) Login flow (admin mode):
+
 - Open the web UI → you’ll be redirected to the login page
 - Enter admin password → the server returns a JWT
 - The UI stores the token and authenticates subsequent API calls
 
 ### Notes
+
 - Token lifetime: 24h. On logout, tokens are blacklisted in-memory until expiry. For multi-instance deployments, use a shared store (e.g., Redis) to sync the blacklist.
 
 ---
@@ -295,7 +274,7 @@ Before using this system, you need a Binance Futures account. **Use our referral
 
 **🎁 [Register Binance - Get Fee Discount](https://www.binance.com/join?ref=TINKLEVIP)**
 
-### Registration Steps:
+### Registration Steps
 
 1. **Click the link above** to visit Binance registration page
 2. **Complete registration** with email/phone number
@@ -309,7 +288,7 @@ Before using this system, you need a Binance Futures account. **Use our referral
    - Save API Key and Secret Key (~~needed for config.json~~) *needed for web interface*
    - **Important**: Whitelist your IP address for security
 
-### Fee Discount Benefits:
+### Fee Discount Benefits
 
 - ✅ **Spot trading**: Up to 30% fee discount
 - ✅ **Futures trading**: Up to 30% fee discount
@@ -326,6 +305,7 @@ Before using this system, you need a Binance Futures account. **Use our referral
 Docker automatically handles all dependencies (Go, Node.js, TA-Lib, SQLite) and environment setup.
 
 #### Step 1: One-Click Start
+
 ```bash
 # Make the script executable
 chmod +x start.sh
@@ -337,17 +317,20 @@ chmod +x start.sh
 > **Note**: The script will automatically generate `.env`, `config.json`, and RSA keys if they don't exist. You can edit `config.json` later to customize settings.
 
 #### Step 2: Access Web Interface
-Open your browser and visit: **http://localhost:3000**
+
+Open your browser and visit: **<http://localhost:3000>**
 
 **That's it! 🎉** Your AI trading platform is now running!
 
 #### Initial Setup (Through Web Interface)
+
 1. **Configure AI Models**: Add your DeepSeek/Qwen API keys
 2. **Configure Exchanges**: Set up Binance/Hyperliquid credentials  
 3. **Create Traders**: Combine AI models with exchanges
 4. **Start Trading**: Launch your configured traders
 
 #### Manage Your System
+
 ```bash
 ./start.sh logs      # View logs
 ./start.sh status    # Check status
@@ -357,6 +340,7 @@ Open your browser and visit: **http://localhost:3000**
 ```
 
 **📖 For detailed Docker deployment guide, troubleshooting, and advanced configuration:**
+
 - **English**: See [docs/getting-started/docker-deploy.en.md](docs/getting-started/docker-deploy.en.md)
 - **中文**: 查看 [docs/getting-started/docker-deploy.zh-CN.md](docs/getting-started/docker-deploy.zh-CN.md)
 
@@ -367,6 +351,7 @@ Before configuring the system, you need to obtain AI API keys. Choose one of the
 #### Option 1: DeepSeek (Recommended for Beginners)
 
 **Why DeepSeek?**
+
 - 💰 Cheaper than GPT-4 (about 1/10 the cost)
 - 🚀 Fast response time
 - 🎯 Excellent trading decision quality
@@ -440,25 +425,28 @@ npm run dev
 
 #### **Step 3: Access the Web Interface**
 
-Open your browser and visit: **🌐 http://localhost:3000**
+Open your browser and visit: **🌐 <http://localhost:3000>**
 
 ### 6. Configure Through Web Interface
 
 **Now configure everything through the web interface - no more JSON editing!**
 
 #### **Step 1: Configure AI Models**
+
 1. Click "AI模型配置" button
 2. Enable DeepSeek or Qwen (or both)
 3. Enter your API keys
 4. Save configuration
 
 #### **Step 2: Configure Exchanges**  
+
 1. Click "交易所配置" button
 2. Enable Binance or Hyperliquid (or both)
 3. Enter your API credentials
 4. Save configuration
 
 #### **Step 3: Create Traders**
+
 1. Click "创建交易员" button
 2. Select an AI model (must be configured first)
 3. Select an exchange (must be configured first)  
@@ -466,6 +454,7 @@ Open your browser and visit: **🌐 http://localhost:3000**
 5. Create trader
 
 #### **Step 4: Start Trading**
+
 - Your traders will appear in the main interface
 - Use Start/Stop buttons to control them
 - Monitor performance in real-time
@@ -510,6 +499,7 @@ Open your browser and visit: **🌐 http://localhost:3000**
 ```
 
 **Key Differences from Binance Config:**
+
 - Replace `binance_api_key` + `binance_secret_key` with `hyperliquid_private_key`
 - Add `"exchange": "hyperliquid"` field
 - Set `hyperliquid_testnet: false` for mainnet (or `true` for testnet)
@@ -523,6 +513,7 @@ Open your browser and visit: **🌐 http://localhost:3000**
 **NOFX also supports Aster DEX** - a Binance-compatible decentralized perpetual futures exchange!
 
 **Why Choose Aster?**
+
 - 🎯 Binance-compatible API (easy migration)
 - 🔐 API Wallet security system
 - 💰 Lower trading fees
@@ -571,6 +562,7 @@ Open your browser and visit: **🌐 http://localhost:3000**
 ```
 
 **Key Configuration Fields:**
+
 - `"exchange": "aster"` - Set exchange to Aster
 - `aster_user` - Your main wallet address
 - `aster_signer` - API wallet address (from Step 1)
@@ -579,6 +571,7 @@ Open your browser and visit: **🌐 http://localhost:3000**
 **📖 For detailed setup instructions, see**: [Aster Integration Guide](ASTER_INTEGRATION.md)
 
 **⚠️ Security Notes**:
+
 - API wallet is separate from your main wallet (extra security layer)
 - Never share your API private key
 - You can revoke API wallet access anytime at [asterdex.com](https://www.asterdex.com/en/api-wallet)
@@ -625,6 +618,7 @@ For running multiple AI traders competing against each other:
 ```
 
 **Requirements for Competition Mode:**
+
 - 2 separate Binance futures accounts (different API keys)
 - Both AI API keys (Qwen + DeepSeek)
 - More capital for testing (recommended: 500+ USDT per account)
@@ -659,6 +653,7 @@ For running multiple AI traders competing against each other:
 | `api_server_port` | Web dashboard port | `8080` | ✅ Yes |
 
 ~~**Default Trading Coins** (when `use_default_coins: true`):
+
 - BTC, ETH, SOL, BNB, XRP, DOGE, ADA, HYPE~~
 
 *Note: Trading coins are now configured through the web interface*
@@ -700,6 +695,7 @@ The leverage settings control the maximum leverage the AI can use for each trade
 **Examples:**
 
 ~~**Safe configuration (subaccount or conservative):**~~
+
 ```json
 "leverage": {
   "btc_eth_leverage": 5,
@@ -708,6 +704,7 @@ The leverage settings control the maximum leverage the AI can use for each trade
 ```
 
 ~~**Aggressive configuration (main account only):**~~
+
 ```json
 "leverage": {
   "btc_eth_leverage": 20,
@@ -731,6 +728,7 @@ The leverage settings control the maximum leverage the AI can use for each trade
 **Smart Default Behavior (v2.0.2+):**
 
 The system now automatically defaults to `use_default_coins: true` if:
+
 - You don't include this field in config.json, OR
 - You set it to `false` but don't provide `coin_pool_api_url`
 
@@ -739,6 +737,7 @@ This makes it beginner-friendly! You can even omit this field entirely.
 **Configuration Examples:**
 
 ✅ **Option 1: Explicitly set (Recommended for clarity)**
+
 ```json
 "use_default_coins": true,
 "coin_pool_api_url": "",
@@ -746,6 +745,7 @@ This makes it beginner-friendly! You can even omit this field entirely.
 ```
 
 ✅ **Option 2: Omit the field (uses default coins automatically)**
+
 ```json
 // Just don't include "use_default_coins" at all
 "coin_pool_api_url": "",
@@ -753,6 +753,7 @@ This makes it beginner-friendly! You can even omit this field entirely.
 ```
 
 ⚙️ **Advanced: Use external API**
+
 ```json
 "use_default_coins": false,
 "coin_pool_api_url": "http://your-api.com/coins",
@@ -766,6 +767,7 @@ This makes it beginner-friendly! You can even omit this field entirely.
 #### 🚀 Starting the System (2 steps)
 
 The system has **2 parts** that run separately:
+
 1. **Backend** (AI trading brain + API)
 2. **Frontend** (Web dashboard for monitoring)
 
@@ -802,6 +804,7 @@ go build -o nofx
 | `DeepSeek API error` | Verify your DeepSeek API key and balance |
 
 **✅ Backend is running correctly when you see:**
+
 - No error messages
 - "开始交易监控..." appears
 - System shows account balance
@@ -828,7 +831,8 @@ VITE v5.x.x  ready in xxx ms
 ```
 
 **✅ Frontend is running when you see:**
-- "Local: http://localhost:3000/" message
+
+- "Local: <http://localhost:3000/>" message
 - No error messages
 - Keep this terminal window open too!
 
@@ -838,15 +842,17 @@ VITE v5.x.x  ready in xxx ms
 
 Open your web browser and visit:
 
-**🌐 http://localhost:3000**
+**🌐 <http://localhost:3000>**
 
 **What you'll see:**
+
 - 📊 Real-time account balance
 - 📈 Open positions (if any)
 - 🤖 AI decision logs
 - 📉 Equity curve chart
 
 **First-time tips:**
+
 - It may take 3-5 minutes for the first AI decision
 - Initial decisions might say "观望" (wait) - this is normal
 - AI needs to analyze market conditions first
@@ -858,12 +864,14 @@ Open your web browser and visit:
 **What to watch:**
 
 ✅ **Healthy System Signs:**
+
 - Backend terminal shows decision cycles every 3-5 minutes
 - No continuous error messages
 - Account balance updates
 - Web dashboard refreshes automatically
 
 ⚠️ **Warning Signs:**
+
 - Repeated API errors
 - No decisions for 10+ minutes
 - Balance decreasing rapidly
@@ -890,6 +898,7 @@ Should return: `{"status":"ok"}`
 5. Press `Ctrl+C`
 
 **⚠️ Important:**
+
 - Always stop the backend first
 - Wait for confirmation before closing terminals
 - Don't force quit (don't close terminal directly)
@@ -901,6 +910,7 @@ Should return: `{"status":"ok"}`
 Each decision cycle (default 3 minutes), the system executes the following intelligent process:
 
 ### Step 1: 📊 Analyze Historical Performance (last 20 cycles)
+
 - ✓ Calculate overall win rate, avg profit, P/L ratio
 - ✓ Per-coin statistics (win rate, avg P/L in USDT)
 - ✓ Identify best/worst performing coins
@@ -911,6 +921,7 @@ Each decision cycle (default 3 minutes), the system executes the following intel
 **↓**
 
 ### Step 2: 💰 Get Account Status
+
 - Total equity & available balance
 - Number of open positions & unrealized P/L
 - Margin usage rate (AI manages up to 90%)
@@ -919,6 +930,7 @@ Each decision cycle (default 3 minutes), the system executes the following intel
 **↓**
 
 ### Step 3: 🔍 Analyze Existing Positions (if any)
+
 - For each position, fetch latest market data
 - Calculate real-time technical indicators:
   - 3min K-line: RSI(7), MACD, EMA20
@@ -931,6 +943,7 @@ Each decision cycle (default 3 minutes), the system executes the following intel
 **↓**
 
 ### Step 4: 🎯 Evaluate New Opportunities (candidate coins)
+
 - Fetch coin pool (2 modes):
   - 🌟 **Default Mode**: BTC, ETH, SOL, BNB, XRP, etc.
   - ⚙️ **Advanced Mode**: AI500 (top 20) + OI Top (top 20)
@@ -942,6 +955,7 @@ Each decision cycle (default 3 minutes), the system executes the following intel
 **↓**
 
 ### Step 5: 🧠 AI Comprehensive Decision (DeepSeek/Qwen)
+
 - Review historical feedback:
   - Recent win rate & profit factor
   - Best/worst coins performance
@@ -960,6 +974,7 @@ Each decision cycle (default 3 minutes), the system executes the following intel
 **↓**
 
 ### Step 6: ⚡ Execute Trades
+
 - Priority order: Close existing → Then open new
 - Risk checks before execution:
   - Position size limits (1.5x for altcoins, 10x BTC)
@@ -974,6 +989,7 @@ Each decision cycle (default 3 minutes), the system executes the following intel
 **↓**
 
 ### Step 7: 📝 Record Complete Logs & Update Performance
+
 - Save decision log to `decision_logs/{trader_id}/`
 - Log includes:
   - Complete Chain of Thought (CoT)
@@ -998,21 +1014,25 @@ Each decision cycle (default 3 minutes), the system executes the following intel
 ### Key Improvements in v2.0.2
 
 **📌 Position Duration Tracking:**
+
 - System now tracks how long each position has been held
 - Displayed in user prompt: "持仓时长2小时15分钟"
 - Helps AI make better decisions on when to exit
 
 **📌 Accurate PnL Calculation:**
+
 - Previously: Only percentage (100U@5% = 1000U@5% = both showed "5.0")
 - Now: Real USDT profit = Position Value × Price Change × Leverage
 - Example: 1000 USDT × 5% × 20x = 1000 USDT actual profit
 
 **📌 Enhanced AI Freedom:**
+
 - AI can freely analyze all raw sequence data
 - No longer restricted to predefined indicator combinations
 - Can perform own trend analysis, support/resistance calculation
 
 **📌 Improved Position Tracking:**
+
 - Uses `symbol_side` key (e.g., "BTCUSDT_long")
 - Prevents conflicts when holding both long & short
 - Stores complete data: quantity, leverage, open/close times
@@ -1138,6 +1158,7 @@ GET /api/health                   # Health check
 ### Usage Recommendations
 
 ✅ **Recommended**
+
 - Use only funds you can afford to lose for testing
 - Start with small amounts (recommended 100-500 USDT)
 - Regularly check system operation status
@@ -1145,6 +1166,7 @@ GET /api/health                   # Health check
 - Analyze AI decision logs to understand strategy
 
 ❌ **Not Recommended**
+
 - Invest all funds or borrowed money
 - Run unsupervised for long periods
 - Blindly trust AI decisions
@@ -1160,6 +1182,7 @@ GET /api/health                   # Health check
 ### 1. Compilation error: TA-Lib not found
 
 **Solution**: Install TA-Lib library
+
 ```bash
 # macOS
 brew install ta-lib
@@ -1175,6 +1198,7 @@ sudo apt-get install libta-lib0-dev
 ### 3. AI API timeout
 
 **Solution**:
+
 - Check if API key is correct
 - Check network connection (may need proxy)
 - System timeout is set to 120 seconds
@@ -1182,13 +1206,15 @@ sudo apt-get install libta-lib0-dev
 ### 4. Frontend can't connect to backend
 
 **Solution**:
-- Ensure backend is running (http://localhost:8080)
+
+- Ensure backend is running (<http://localhost:8080>)
 - Check if port 8080 is occupied
 - Check browser console for errors
 
 ### 5. Coin pool API failure
 
 **Solution**:
+
 - Coin pool API is optional
 - If API fails, system uses default mainstream coins (BTC, ETH, etc.)
 - ~~Check API URL and auth parameter in config.json~~ *Check configuration in web interface*
@@ -1215,6 +1241,7 @@ sudo apt-get install libta-lib0-dev
 **Latest Release:** v3.0.0 (2025-10-30) - Major Architecture Transformation
 
 **Recent Highlights:**
+
 - 🚀 Complete system redesign with web-based configuration
 - 🗄️ Database-driven architecture (SQLite)
 - 🎨 No more JSON editing - all configuration through web interface
@@ -1228,6 +1255,7 @@ sudo apt-get install libta-lib0-dev
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)** - See [LICENSE](LICENSE) file for details.
 
 **What this means:**
+
 - ✅ You can use, modify, and distribute this software
 - ✅ You must disclose source code of your modifications
 - ✅ If you run a modified version on a server, you must make the source code available to users
@@ -1247,6 +1275,7 @@ We welcome contributions from the community! See our comprehensive guides:
 - **🔒 [Security Policy](SECURITY.md)** - Report vulnerabilities responsibly
 
 **Quick Start:**
+
 1. Fork the project
 2. Create feature branch (`git checkout -b feature/AmazingFeature`)
 3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
@@ -1257,8 +1286,8 @@ We welcome contributions from the community! See our comprehensive guides:
 
 ## 📬 Contact
 
-
 ### 🐛 Technical Support
+
 - **GitHub Issues**: [Submit an Issue](https://github.com/tinkle-community/nofx/issues)
 - **Developer Community**: [Telegram Group](https://t.me/nofx_dev_community)
 
