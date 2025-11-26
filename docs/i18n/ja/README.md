@@ -22,6 +22,7 @@
 - [🔮 ロードマップ](#-ロードマップ---ユニバーサルマーケット拡大)
 - [🏗️ 技術アーキテクチャ](#️-技術アーキテクチャ)
 - [🏦 対応取引所（DEX/CEXチュートリアル）](#-対応取引所dexcexチュートリアル)
+- [🤖 対応AIモデル](#-対応aiモデル)
 - [🚀 クイックスタート](#-クイックスタート)
 - [📖 AI判断フロー](#-ai判断フロー)
 - [🧠 AI自己学習の例](#-ai自己学習の例)
@@ -239,6 +240,18 @@ nofx/
 | **Hyperliquid** | ✅ 対応済み | [登録](https://app.hyperliquid.xyz/join/AITRADING) | [エージェントウォレットガイド](../../getting-started/hyperliquid-agent-wallet.md) |
 | **Aster DEX** | ✅ 対応済み | [登録](https://www.asterdex.com/en/referral/fdfc0e) | [APIウォレットガイド](../../getting-started/aster-api-wallet.md) |
 | **Lighter** | ✅ 対応済み | [登録](https://lighter.xyz) | [エージェントウォレットガイド](../../getting-started/lighter-agent-wallet.md) |
+
+### 🤖 対応AIモデル
+
+| AIモデル | ステータス | APIキー取得 |
+|----------|------------|-------------|
+| **DeepSeek** | ✅ 対応済み | [APIキー取得](https://platform.deepseek.com) |
+| **Qwen** | ✅ 対応済み | [APIキー取得](https://dashscope.console.aliyun.com) |
+| **OpenAI (GPT)** | ✅ 対応済み | [APIキー取得](https://platform.openai.com) |
+| **Claude** | ✅ 対応済み | [APIキー取得](https://console.anthropic.com) |
+| **Gemini** | ✅ 対応済み | [APIキー取得](https://aistudio.google.com) |
+| **Grok** | ✅ 対応済み | [APIキー取得](https://console.x.ai) |
+| **Kimi** | ✅ 対応済み | [APIキー取得](https://platform.moonshot.cn) |
 
 ---
 
