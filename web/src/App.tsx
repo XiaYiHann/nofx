@@ -28,7 +28,13 @@ import type {
   TraderInfo,
 } from './types'
 
-type Page = 'competition' | 'traders' | 'trader' | 'strategies' | 'backtest' | 'faq'
+type Page =
+  | 'competition'
+  | 'traders'
+  | 'trader'
+  | 'strategies'
+  | 'backtest'
+  | 'faq'
 
 // 获取友好的AI模型名称
 function getModelDisplayName(modelId: string): string {
@@ -243,10 +249,7 @@ function App() {
   // Show loading spinner while checking auth or config
   if (isLoading || configLoading) {
     return (
-      <div
-        className="min-h-screen"
-        style={{ background: '#0B0E11' }}
-      >
+      <div className="min-h-screen" style={{ background: '#0B0E11' }}>
         {/* 添加 HeaderBar,即使在 loading 期间也显示导航栏 */}
         <HeaderBar
           isLoggedIn={!!user}
@@ -1006,7 +1009,7 @@ function TraderDetailsPage({
             >
               {getModelDisplayName(
                 selectedTrader.ai_model.split('_').pop() ||
-                selectedTrader.ai_model
+                  selectedTrader.ai_model
               )}
             </span>
           </span>
@@ -1051,7 +1054,7 @@ function TraderDetailsPage({
               background: isRefreshingAccount ? '#2B3139' : '#1E2329',
               border: '1px solid #2B3139',
               color: isRefreshingAccount ? '#848E9C' : '#F0B90B',
-              cursor: isRefreshingAccount ? 'not-allowed' : 'pointer'
+              cursor: isRefreshingAccount ? 'not-allowed' : 'pointer',
             }}
             onMouseEnter={(e) => {
               if (!isRefreshingAccount) {
@@ -1059,14 +1062,24 @@ function TraderDetailsPage({
               }
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = isRefreshingAccount ? '#2B3139' : '#1E2329'
+              e.currentTarget.style.background = isRefreshingAccount
+                ? '#2B3139'
+                : '#1E2329'
             }}
           >
-            <span style={{
-              display: 'inline-block',
-              animation: isRefreshingAccount ? 'spin 1s linear infinite' : 'none'
-            }}>🔄</span>
-            {isRefreshingAccount ? (t('refreshing', language) || '刷新中...') : (t('refresh', language) || '刷新余额')}
+            <span
+              style={{
+                display: 'inline-block',
+                animation: isRefreshingAccount
+                  ? 'spin 1s linear infinite'
+                  : 'none',
+              }}
+            >
+              🔄
+            </span>
+            {isRefreshingAccount
+              ? t('refreshing', language) || '刷新中...'
+              : t('refresh', language) || '刷新余额'}
           </button>
         )}
       </div>
@@ -1178,13 +1191,13 @@ function TraderDetailsPage({
                             style={
                               pos.side === 'long'
                                 ? {
-                                  background: 'rgba(14, 203, 129, 0.1)',
-                                  color: '#0ECB81',
-                                }
+                                    background: 'rgba(14, 203, 129, 0.1)',
+                                    color: '#0ECB81',
+                                  }
                                 : {
-                                  background: 'rgba(246, 70, 93, 0.1)',
-                                  color: '#F6465D',
-                                }
+                                    background: 'rgba(246, 70, 93, 0.1)',
+                                    color: '#F6465D',
+                                  }
                             }
                           >
                             {t(
@@ -1501,13 +1514,13 @@ function DecisionCard({
                 style={
                   action.action.includes('open')
                     ? {
-                      background: 'rgba(96, 165, 250, 0.1)',
-                      color: '#60a5fa',
-                    }
+                        background: 'rgba(96, 165, 250, 0.1)',
+                        color: '#60a5fa',
+                      }
                     : {
-                      background: 'rgba(240, 185, 11, 0.1)',
-                      color: '#F0B90B',
-                    }
+                        background: 'rgba(240, 185, 11, 0.1)',
+                        color: '#F0B90B',
+                      }
                 }
               >
                 {action.action}
@@ -1556,7 +1569,7 @@ function DecisionCard({
             style={{
               color:
                 decision.candidate_coins &&
-                  decision.candidate_coins.length === 0
+                decision.candidate_coins.length === 0
                   ? '#F6465D'
                   : '#848E9C',
             }}

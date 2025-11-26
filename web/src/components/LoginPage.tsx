@@ -207,7 +207,7 @@ export function LoginPage() {
                 <div className="text-right mt-2">
                   <button
                     type="button"
-                    onClick={() => window.location.href = '/reset-password'}
+                    onClick={() => (window.location.href = '/reset-password')}
                     className="text-xs hover:underline"
                     style={{ color: '#F0B90B' }}
                   >
@@ -319,7 +319,7 @@ export function LoginPage() {
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               还没有账户？{' '}
               <button
-                onClick={() => window.location.href = '/register'}
+                onClick={() => (window.location.href = '/register')}
                 className="font-semibold hover:underline transition-colors"
                 style={{ color: 'var(--brand-yellow)' }}
               >

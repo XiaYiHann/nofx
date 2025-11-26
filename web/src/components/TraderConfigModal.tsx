@@ -226,14 +226,16 @@ export function TraderConfigModal({
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         const errorMsg = errorData.error || `HTTP ${response.status}`
-        
+
         // 根据不同错误提供更详细的提示
         if (response.status === 404) {
           throw new Error('交易员不存在，请刷新页面后重试')
         } else if (response.status === 401) {
           throw new Error('登录已过期，请重新登录')
         } else if (response.status === 500) {
-          throw new Error(`获取余额失败: ${errorMsg}\n提示: 请确保交易员已启动并且交易所配置正确`)
+          throw new Error(
+            `获取余额失败: ${errorMsg}\n提示: 请确保交易员已启动并且交易所配置正确`
+          )
         } else {
           throw new Error(`获取账户余额失败 (${response.status}): ${errorMsg}`)
         }
@@ -252,7 +254,8 @@ export function TraderConfigModal({
       toast.success(`成功获取当前余额: ${currentBalance.toFixed(2)} USDT`)
     } catch (error) {
       console.error('获取余额失败:', error)
-      const errorMessage = error instanceof Error ? error.message : '获取余额失败，请检查网络连接'
+      const errorMessage =
+        error instanceof Error ? error.message : '获取余额失败，请检查网络连接'
       setBalanceFetchError(errorMessage)
       toast.error(errorMessage)
     } finally {

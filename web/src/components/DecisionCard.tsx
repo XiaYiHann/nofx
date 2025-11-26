@@ -127,13 +127,13 @@ export function DecisionCard({
                 style={
                   action.action.includes('open')
                     ? {
-                      background: 'rgba(96, 165, 250, 0.1)',
-                      color: '#60a5fa',
-                    }
+                        background: 'rgba(96, 165, 250, 0.1)',
+                        color: '#60a5fa',
+                      }
                     : {
-                      background: 'rgba(240, 185, 11, 0.1)',
-                      color: '#F0B90B',
-                    }
+                        background: 'rgba(240, 185, 11, 0.1)',
+                        color: '#F0B90B',
+                      }
                 }
               >
                 {action.action}
@@ -182,7 +182,7 @@ export function DecisionCard({
             style={{
               color:
                 decision.candidate_coins &&
-                  decision.candidate_coins.length === 0
+                decision.candidate_coins.length === 0
                   ? '#F6465D'
                   : '#848E9C',
             }}

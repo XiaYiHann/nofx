@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../lib/api'
-import { Plus, TrendingUp, TrendingDown, Play, Activity, Eye, Trash2 } from 'lucide-react'
+import {
+  Plus,
+  TrendingUp,
+  TrendingDown,
+  Play,
+  Activity,
+  Eye,
+  Trash2,
+} from 'lucide-react'
 import type { TraderInfo } from '../types'
 
 interface BacktestRun {
@@ -62,7 +70,7 @@ export default function BacktestPage() {
   const setTimeRange = (hours: number) => {
     const end = new Date()
     const start = new Date(end.getTime() - hours * 60 * 60 * 1000)
-    
+
     // Format for datetime-local: YYYY-MM-DDThh:mm
     // Note: We need to handle timezone offset to ensure local time is displayed correctly
     const toLocalISOString = (date: Date) => {
@@ -133,17 +141,23 @@ export default function BacktestPage() {
         // 1. 获取可用的模型和交易所配置
         const [models, exchanges] = await Promise.all([
           api.getModelConfigs(),
-          api.getExchangeConfigs()
+          api.getExchangeConfigs(),
         ])
 
         // 查找已启用的配置
         // 注意：这里假设返回的是数组。如果API返回对象，可能需要调整。
         // 根据 AITradersPage 的逻辑，这里应该是数组。
-        const enabledModel = Array.isArray(models) ? models.find((m: any) => m.enabled) : null
-        const enabledExchange = Array.isArray(exchanges) ? exchanges.find((e: any) => e.enabled) : null
+        const enabledModel = Array.isArray(models)
+          ? models.find((m: any) => m.enabled)
+          : null
+        const enabledExchange = Array.isArray(exchanges)
+          ? exchanges.find((e: any) => e.enabled)
+          : null
 
         if (!enabledModel || !enabledExchange) {
-          alert('Mock 测试需要至少配置一个启用的 AI 模型和交易所。\n请前往 "AI 交易员" 页面配置 API Key。')
+          alert(
+            'Mock 测试需要至少配置一个启用的 AI 模型和交易所。\n请前往 "AI 交易员" 页面配置 API Key。'
+          )
           return
         }
 
@@ -158,7 +172,7 @@ export default function BacktestPage() {
           altcoin_leverage: 1,
           trading_symbols: 'BTCUSDT',
           use_coin_pool: false,
-          use_oi_top: false
+          use_oi_top: false,
         })
 
         traderId = newTrader.trader_id
@@ -173,7 +187,9 @@ export default function BacktestPage() {
 
     const now = new Date()
     const endTime = now.toISOString()
-    const startTime = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days ago
+    const startTime = new Date(
+      now.getTime() - 3 * 24 * 60 * 60 * 1000
+    ).toISOString() // 3 days ago
 
     try {
       await api.createBacktest({
@@ -262,13 +278,16 @@ export default function BacktestPage() {
           className="rounded-lg p-6 mb-6"
           style={{
             background: 'var(--panel-bg)',
-            border: '1px solid var(--panel-border)'
+            border: '1px solid var(--panel-border)',
           }}
         >
           <h2 className="text-xl font-bold text-white mb-4">创建新回测</h2>
           <form onSubmit={handleCreateBacktest} className="space-y-4">
             <div>
-              <label htmlFor="trader-select" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="trader-select"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 选择交易员
               </label>
               <select
@@ -313,7 +332,10 @@ export default function BacktestPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="start-date" className="block text-sm font-medium text-gray-300 mb-2">
+                <label
+                  htmlFor="start-date"
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
                   开始时间
                 </label>
                 <input
@@ -326,7 +348,10 @@ export default function BacktestPage() {
                 />
               </div>
               <div>
-                <label htmlFor="end-date" className="block text-sm font-medium text-gray-300 mb-2">
+                <label
+                  htmlFor="end-date"
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
                   结束时间
                 </label>
                 <input
@@ -341,7 +366,10 @@ export default function BacktestPage() {
             </div>
 
             <div>
-              <label htmlFor="initial-balance" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="initial-balance"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 初始资金 (USDT)
               </label>
               <input
@@ -364,7 +392,10 @@ export default function BacktestPage() {
                 onChange={(e) => setUseTraderConfig(e.target.checked)}
                 className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-700 rounded"
               />
-              <label htmlFor="useTraderConfig" className="ml-2 text-sm text-gray-300">
+              <label
+                htmlFor="useTraderConfig"
+                className="ml-2 text-sm text-gray-300"
+              >
                 使用交易员的配置(指标、提示词等)
               </label>
             </div>
@@ -396,7 +427,7 @@ export default function BacktestPage() {
             className="text-center py-12 rounded-lg"
             style={{
               background: 'var(--panel-bg)',
-              border: '1px solid var(--panel-border)'
+              border: '1px solid var(--panel-border)',
             }}
           >
             <Activity className="w-12 h-12 text-gray-600 mx-auto mb-3" />
@@ -410,13 +441,15 @@ export default function BacktestPage() {
               className="rounded-lg p-5 transition-colors"
               style={{
                 background: 'var(--panel-bg)',
-                border: '1px solid var(--panel-border)'
+                border: '1px solid var(--panel-border)',
               }}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className={`font-medium ${getStatusColor(backtest.status)}`}>
+                    <span
+                      className={`font-medium ${getStatusColor(backtest.status)}`}
+                    >
                       {getStatusText(backtest.status)}
                     </span>
                     {backtest.status === 'running' && (
@@ -445,18 +478,25 @@ export default function BacktestPage() {
                         <div>
                           <div className="text-gray-400 mb-1">总收益</div>
                           <div
-                            className={`font-medium ${backtest.total_pnl_pct >= 0
-                              ? 'text-green-500'
-                              : 'text-red-500'
-                              }`}
+                            className={`font-medium ${
+                              backtest.total_pnl_pct >= 0
+                                ? 'text-green-500'
+                                : 'text-red-500'
+                            }`}
                           >
-                            {backtest.total_pnl_pct >= 0 ? <TrendingUp className="inline w-4 h-4" /> : <TrendingDown className="inline w-4 h-4" />}
-                            {' '}{backtest.total_pnl_pct.toFixed(2)}%
+                            {backtest.total_pnl_pct >= 0 ? (
+                              <TrendingUp className="inline w-4 h-4" />
+                            ) : (
+                              <TrendingDown className="inline w-4 h-4" />
+                            )}{' '}
+                            {backtest.total_pnl_pct.toFixed(2)}%
                           </div>
                         </div>
                         <div>
                           <div className="text-gray-400 mb-1">交易次数</div>
-                          <div className="text-white">{backtest.total_trades}</div>
+                          <div className="text-white">
+                            {backtest.total_trades}
+                          </div>
                         </div>
                       </>
                     )}
@@ -468,7 +508,8 @@ export default function BacktestPage() {
                 </div>
 
                 <div className="flex gap-2">
-                  {(backtest.status === 'completed' || backtest.status === 'running') && (
+                  {(backtest.status === 'completed' ||
+                    backtest.status === 'running') && (
                     <button
                       onClick={() => handleViewDetails(backtest.id)}
                       className="border border-gray-700 text-gray-300 hover:bg-gray-800 p-2 rounded-lg"

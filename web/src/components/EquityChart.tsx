@@ -32,21 +32,26 @@ interface EquityPoint {
 
 interface EquityChartProps {
   traderId?: string
-  backtestId?: string         // 回测ID，提供时使用回测API
-  initialBalance?: number     // 初始余额，回测模式下必须提供
-  isBacktest?: boolean        // 明确标识为回测模式
+  backtestId?: string // 回测ID，提供时使用回测API
+  initialBalance?: number // 初始余额，回测模式下必须提供
+  isBacktest?: boolean // 明确标识为回测模式
 }
 
-export function EquityChart({ traderId, backtestId, initialBalance: propsInitialBalance, isBacktest }: EquityChartProps) {
+export function EquityChart({
+  traderId,
+  backtestId,
+  initialBalance: propsInitialBalance,
+  isBacktest,
+}: EquityChartProps) {
   const { language } = useLanguage()
   const [displayMode, setDisplayMode] = useState<'dollar' | 'percent'>('dollar')
 
   const { data: history, error } = useSWR<EquityPoint[]>(
-    backtestId 
-      ? `backtest-equity-history-${backtestId}` 
-      : traderId 
-      ? `equity-history-${traderId}` 
-      : 'equity-history',
+    backtestId
+      ? `backtest-equity-history-${backtestId}`
+      : traderId
+        ? `equity-history-${traderId}`
+        : 'equity-history',
     async () => {
       if (backtestId) {
         // 回测模式：获取回测净值历史，并转换数据格式
@@ -54,16 +59,18 @@ export function EquityChart({ traderId, backtestId, initialBalance: propsInitial
         if (!backtestData || !Array.isArray(backtestData)) {
           return []
         }
-        return backtestData.map((point: any, index: number) => {
-          if (!point || !point.time) return null
-          return {
-            timestamp: point.time,
-            total_equity: point.equity || 0,
-            pnl: point.pnl || 0,
-            pnl_pct: point.pnl_pct || 0,
-            cycle_number: index + 1,
-          }
-        }).filter(Boolean) as EquityPoint[]
+        return backtestData
+          .map((point: any, index: number) => {
+            if (!point || !point.time) return null
+            return {
+              timestamp: point.time,
+              total_equity: point.equity || 0,
+              pnl: point.pnl || 0,
+              pnl_pct: point.pnl_pct || 0,
+              cycle_number: index + 1,
+            }
+          })
+          .filter(Boolean) as EquityPoint[]
       }
       // 实时交易模式：使用原有API
       return api.getEquityHistory(traderId)
@@ -78,11 +85,11 @@ export function EquityChart({ traderId, backtestId, initialBalance: propsInitial
 
   // 回测模式下不需要获取account数据
   const { data: account } = useSWR(
-    backtestId || isBacktest 
-      ? null 
-      : traderId 
-      ? `account-${traderId}` 
-      : 'account',
+    backtestId || isBacktest
+      ? null
+      : traderId
+        ? `account-${traderId}`
+        : 'account',
     () => api.getAccount(traderId),
     {
       refreshInterval: 15000, // 15秒刷新（配合后端缓存）
@@ -147,7 +154,7 @@ export function EquityChart({ traderId, backtestId, initialBalance: propsInitial
 
   // 计算初始余额（回测模式优先使用props传入的值）
   const initialBalance =
-    propsInitialBalance ||      // 回测模式：从props传入
+    propsInitialBalance || // 回测模式：从props传入
     account?.initial_balance || // 实时模式：从交易员配置读取
     (validHistory[0]
       ? validHistory[0].total_equity - validHistory[0].pnl
@@ -240,10 +247,9 @@ export function EquityChart({ traderId, backtestId, initialBalance: propsInitial
               className="text-2xl sm:text-3xl font-bold mono"
               style={{ color: '#EAECEF' }}
             >
-              {(isBacktest || backtestId) 
+              {isBacktest || backtestId
                 ? currentValue?.raw_equity.toFixed(2) || '0.00'
-                : account?.total_equity.toFixed(2) || '0.00'
-              }
+                : account?.total_equity.toFixed(2) || '0.00'}
               <span
                 className="text-base sm:text-lg ml-1"
                 style={{ color: '#848E9C' }}

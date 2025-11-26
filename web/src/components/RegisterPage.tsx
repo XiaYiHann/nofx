@@ -426,11 +426,19 @@ export function RegisterPage() {
                           color: 'var(--brand-light-gray)',
                         }}
                       >
-                        {qrCodeURL ? decodeURIComponent(qrCodeURL.match(/secret=([^&]+)/)?.[1] || '') : ''}
+                        {qrCodeURL
+                          ? decodeURIComponent(
+                              qrCodeURL.match(/secret=([^&]+)/)?.[1] || ''
+                            )
+                          : ''}
                       </code>
                       <button
                         onClick={() => {
-                          const secret = qrCodeURL ? decodeURIComponent(qrCodeURL.match(/secret=([^&]+)/)?.[1] || '') : ''
+                          const secret = qrCodeURL
+                            ? decodeURIComponent(
+                                qrCodeURL.match(/secret=([^&]+)/)?.[1] || ''
+                              )
+                            : ''
                           copyToClipboard(secret)
                         }}
                         className="px-2 py-1 text-xs rounded"
@@ -558,7 +566,7 @@ export function RegisterPage() {
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               已有账户？{' '}
               <button
-                onClick={() => window.location.href = '/login'}
+                onClick={() => (window.location.href = '/login')}
                 className="font-semibold hover:underline transition-colors"
                 style={{ color: 'var(--brand-yellow)' }}
               >

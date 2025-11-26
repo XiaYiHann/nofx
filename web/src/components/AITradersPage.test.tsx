@@ -174,7 +174,7 @@ describe('AITradersPage handleSaveEditTrader', () => {
       await api.updateTrader('full-test-trader', request)
 
       const [, actualRequest] = mockUpdateTrader.mock.calls[0]
-      
+
       // Verify all expected fields are present
       expect(actualRequest).toHaveProperty('name')
       expect(actualRequest).toHaveProperty('ai_model_id')

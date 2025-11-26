@@ -808,7 +808,7 @@ func TestIndicatorConfig_CreateAndRetrieve(t *testing.T) {
 
 	userID := "test-user-indicator"
 	traderID := fmt.Sprintf("test_indicator_%d", time.Now().Unix())
-	
+
 	// 创建trader配置，包含indicator_config
 	traderRecord := &TraderRecord{
 		ID:                   traderID,
@@ -848,7 +848,7 @@ func TestIndicatorConfig_CreateAndRetrieve(t *testing.T) {
 	// 验证indicator_config已正确保存
 	retrieved := traders[0]
 	if retrieved.IndicatorConfig != traderRecord.IndicatorConfig {
-		t.Errorf("IndicatorConfig不匹配:\n期望: %s\n实际: %s", 
+		t.Errorf("IndicatorConfig不匹配:\n期望: %s\n实际: %s",
 			traderRecord.IndicatorConfig, retrieved.IndicatorConfig)
 	}
 }
@@ -860,7 +860,7 @@ func TestIndicatorConfig_UpdateTrader(t *testing.T) {
 
 	userID := "test-user-update-indicator"
 	traderID := fmt.Sprintf("test_update_%d", time.Now().Unix())
-	
+
 	// 先创建一个trader
 	initialRecord := &TraderRecord{
 		ID:                   traderID,
@@ -892,7 +892,7 @@ func TestIndicatorConfig_UpdateTrader(t *testing.T) {
 
 	// 更新indicator_config
 	updatedConfig := `{"indicators":["ema","macd","rsi","atr","volume"],"timeframes":["3m","4h","1d"],"data_points":{"3m":50,"4h":30,"1d":20},"parameters":{"rsi_period":14}}`
-	
+
 	updateData := &TraderRecord{
 		ID:              retrievedID,
 		UserID:          userID,
@@ -908,7 +908,7 @@ func TestIndicatorConfig_UpdateTrader(t *testing.T) {
 	// 验证更新是否成功
 	traders, _ = db.GetTraders(userID)
 	if traders[0].IndicatorConfig != updatedConfig {
-		t.Errorf("IndicatorConfig更新失败:\n期望: %s\n实际: %s", 
+		t.Errorf("IndicatorConfig更新失败:\n期望: %s\n实际: %s",
 			updatedConfig, traders[0].IndicatorConfig)
 	}
 }
@@ -919,7 +919,7 @@ func TestIndicatorConfig_BackwardCompatibility(t *testing.T) {
 	defer cleanup()
 
 	userID := "test-user-backward-compat"
-	
+
 	// 创建不包含indicator_config的trader（模拟旧版本数据）
 	traderRecord := &TraderRecord{
 		ID:                   "trader-backward-compat-123",
@@ -958,7 +958,7 @@ func TestIndicatorConfig_BackwardCompatibility(t *testing.T) {
 	if retrieved.ID == "" {
 		t.Error("trader ID不应该为空")
 	}
-	
+
 	// 空的indicator_config应该是空字符串
 	if retrieved.IndicatorConfig != "" {
 		t.Logf("IndicatorConfig = %q (空字符串是正常的)", retrieved.IndicatorConfig)
@@ -972,10 +972,10 @@ func TestIndicatorConfig_DefaultValues(t *testing.T) {
 
 	userID := "test-user-defaults"
 	traderID := fmt.Sprintf("test_default_%d", time.Now().Unix())
-	
+
 	// 创建trader时使用默认indicator_config
 	defaultConfig := `{"indicators":["ema","macd","rsi","atr","volume"],"timeframes":["3m","4h"],"data_points":{"3m":40,"4h":25},"parameters":{}}`
-	
+
 	traderRecord := &TraderRecord{
 		ID:                   traderID,
 		UserID:               userID,
@@ -999,7 +999,7 @@ func TestIndicatorConfig_DefaultValues(t *testing.T) {
 
 	traders, _ := db.GetTraders(userID)
 	if traders[0].IndicatorConfig != defaultConfig {
-		t.Errorf("默认配置不匹配:\n期望: %s\n实际: %s", 
+		t.Errorf("默认配置不匹配:\n期望: %s\n实际: %s",
 			defaultConfig, traders[0].IndicatorConfig)
 	}
 }
