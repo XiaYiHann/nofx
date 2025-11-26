@@ -50,6 +50,8 @@ export interface DecisionAction {
   timestamp: string
   success: boolean
   error?: string
+  confidence?: number
+  reasoning?: string
 }
 
 export interface AccountSnapshot {
@@ -93,6 +95,7 @@ export interface TraderInfo {
   custom_prompt?: string
   use_coin_pool?: boolean
   use_oi_top?: boolean
+  system_prompt_template?: string
 }
 
 export interface AIModel {
@@ -119,6 +122,10 @@ export interface Exchange {
   asterUser?: string
   asterSigner?: string
   asterPrivateKey?: string
+  // Lighter 特定字段
+  lighterWalletAddr?: string
+  lighterPrivateKey?: string
+  lighterApiKeyPrivateKey?: string
 }
 
 export interface CreateTraderRequest {

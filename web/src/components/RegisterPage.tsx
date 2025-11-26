@@ -67,9 +67,9 @@ export function RegisterPage() {
 
     const result = await register(email, password, betaCode.trim() || undefined)
 
-    if (result.success && result.user_id) {
-      setUserID(result.user_id)
-      setQrCodeURL(result.qr_code_url || '')
+    if (result.success && result.userID) {
+      setUserID(result.userID)
+      setQrCodeURL(result.qrCodeURL || '')
       setStep('setup-otp')
     } else {
       const msg = result.message || t('registrationFailed', language)
