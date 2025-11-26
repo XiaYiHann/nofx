@@ -19,11 +19,11 @@
 - [🚀 通用AI交易操作系统](#-通用ai交易操作系统)
 - [👥 开发者社区](#-开发者社区)
 - [📸 系统截图](#-系统截图)
+- [🏦 支持的交易所（DEX/CEX教程）](#-支持的交易所dexcex教程)
+- [🤖 支持的AI模型](#-支持的ai模型)
 - [✨ 当前实现](#-当前实现---加密货币市场)
 - [🔮 路线图](#-路线图---通用市场扩展)
 - [🏗️ 技术架构](#️-技术架构)
-- [🏦 支持的交易所（DEX/CEX教程）](#-支持的交易所dexcex教程)
-- [🤖 支持的AI模型](#-支持的ai模型)
 - [🚀 快速开始](#-快速开始)
 - [📖 AI决策流程](#-ai决策流程)
 - [🧠 AI自我学习示例](#-ai自我学习示例)
@@ -88,6 +88,40 @@
 
 ![详情页面](../../../screenshots/details-page.png)
 *专业交易界面，包含权益曲线、实时持仓、AI决策日志，支持展开查看输入提示词和AI思维链推理过程*
+
+---
+
+## 🏦 支持的交易所（DEX/CEX教程）
+
+### CEX（中心化交易所）
+
+| 交易所 | 状态 | 注册（手续费优惠） | API设置 |
+|--------|------|-------------------|---------|
+| **Binance** | ✅ 已支持 | [注册](https://www.binance.com/join?ref=NOFXCHI) | [API指南](../../getting-started/binance-api.md) |
+| **Bybit** | ✅ 已支持 | [注册](https://partner.bybit.com/b/83856) | [API指南](../../getting-started/bybit-api.md) |
+| **OKX** | ✅ 已支持 | [注册](https://www.okx.com/join/1865360) | [API指南](../../getting-started/okx-api.md) |
+
+### Perp-DEX（去中心化永续交易所）
+
+| 交易所 | 状态 | 注册（手续费优惠） | 代理钱包设置 |
+|--------|------|-------------------|--------------|
+| **Hyperliquid** | ✅ 已支持 | [注册](https://app.hyperliquid.xyz/join/AITRADING) | [代理钱包指南](../../getting-started/hyperliquid-agent-wallet.md) |
+| **Aster DEX** | ✅ 已支持 | [注册](https://www.asterdex.com/en/referral/fdfc0e) | [API钱包指南](../../getting-started/aster-api-wallet.md) |
+| **Lighter** | ✅ 已支持 | [注册](https://lighter.xyz) | [代理钱包指南](../../getting-started/lighter-agent-wallet.md) |
+
+---
+
+## 🤖 支持的AI模型
+
+| AI模型 | 状态 | 获取API密钥 |
+|--------|------|-------------|
+| **DeepSeek** | ✅ 已支持 | [获取API密钥](https://platform.deepseek.com) |
+| **Qwen (通义千问)** | ✅ 已支持 | [获取API密钥](https://dashscope.console.aliyun.com) |
+| **OpenAI (GPT)** | ✅ 已支持 | [获取API密钥](https://platform.openai.com) |
+| **Claude** | ✅ 已支持 | [获取API密钥](https://console.anthropic.com) |
+| **Gemini** | ✅ 已支持 | [获取API密钥](https://aistudio.google.com) |
+| **Grok** | ✅ 已支持 | [获取API密钥](https://console.x.ai) |
+| **Kimi (月之暗面)** | ✅ 已支持 | [获取API密钥](https://platform.moonshot.cn) |
 
 ---
 
@@ -196,38 +230,6 @@ NOFX 采用现代化的模块化架构：
 
 - **中文版：** [架构文档](../../architecture/README.zh-CN.md)
 - **English:** [Architecture Documentation](../../architecture/README.md)
-
----
-
-## 🏦 支持的交易所（DEX/CEX教程）
-
-### CEX（中心化交易所）
-
-| 交易所 | 状态 | 注册（手续费优惠） | API设置 |
-|--------|------|-------------------|---------|
-| **Binance** | ✅ 已支持 | [注册](https://www.binance.com/join?ref=NOFXCHI) | [API指南](../../getting-started/binance-api.md) |
-| **Bybit** | ✅ 已支持 | [注册](https://partner.bybit.com/b/83856) | [API指南](../../getting-started/bybit-api.md) |
-| **OKX** | ✅ 已支持 | [注册](https://www.okx.com/join/1865360) | [API指南](../../getting-started/okx-api.md) |
-
-### Perp-DEX（去中心化永续交易所）
-
-| 交易所 | 状态 | 注册（手续费优惠） | 代理钱包设置 |
-|--------|------|-------------------|--------------|
-| **Hyperliquid** | ✅ 已支持 | [注册](https://app.hyperliquid.xyz/join/AITRADING) | [代理钱包指南](../../getting-started/hyperliquid-agent-wallet.md) |
-| **Aster DEX** | ✅ 已支持 | [注册](https://www.asterdex.com/en/referral/fdfc0e) | [API钱包指南](../../getting-started/aster-api-wallet.md) |
-| **Lighter** | ✅ 已支持 | [注册](https://lighter.xyz) | [代理钱包指南](../../getting-started/lighter-agent-wallet.md) |
-
-### 🤖 支持的AI模型
-
-| AI模型 | 状态 | 获取API密钥 |
-|--------|------|-------------|
-| **DeepSeek** | ✅ 已支持 | [获取API密钥](https://platform.deepseek.com) |
-| **Qwen (通义千问)** | ✅ 已支持 | [获取API密钥](https://dashscope.console.aliyun.com) |
-| **OpenAI (GPT)** | ✅ 已支持 | [获取API密钥](https://platform.openai.com) |
-| **Claude** | ✅ 已支持 | [获取API密钥](https://console.anthropic.com) |
-| **Gemini** | ✅ 已支持 | [获取API密钥](https://aistudio.google.com) |
-| **Grok** | ✅ 已支持 | [获取API密钥](https://console.x.ai) |
-| **Kimi (月之暗面)** | ✅ 已支持 | [获取API密钥](https://platform.moonshot.cn) |
 
 ---
 
