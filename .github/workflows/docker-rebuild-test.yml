@@ -1,0 +1,295 @@
+# ═══════════════════════════════════════════════════════════════
+# NOFX Docker Rebuild CI
+#
+# This workflow validates Docker builds on PRs and provides
+# optional integration test runs on schedule.
+#
+# Security Notes:
+# - LIVE_TESTS is NEVER enabled in CI
+# - LLM_API_KEY is only used in scheduled integration tests
+# - No secrets are baked into images
+# ═══════════════════════════════════════════════════════════════
+
+name: Docker Rebuild & Test
+
+on:
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - 'docker/**'
+      - 'docker-compose.yml'
+      - 'scripts/docker/**'
+      - 'Dockerfile*'
+      - 'go.mod'
+      - 'go.sum'
+      - 'web/package*.json'
+  push:
+    branches: [main, dev]
+    paths:
+      - 'docker/**'
+      - 'docker-compose.yml'
+      - 'scripts/docker/**'
+  # Manual trigger for full integration test
+  workflow_dispatch:
+    inputs:
+      run_integration:
+        description: 'Run integration tests (uses LLM API)'
+        type: boolean
+        default: false
+  # Scheduled integration test (weekly)
+  schedule:
+    - cron: '0 4 * * 0'  # Sunday 4:00 UTC
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Ensure tests don't make real exchange calls
+  LIVE_TESTS: "0"
+  # Use Go proxy for faster module downloads
+  GOPROXY: https://proxy.golang.org,direct
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # Unit Tests (always run)
+  # ─────────────────────────────────────────────────────────────
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+
+      - name: Install TA-Lib
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget build-essential
+          wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
+          tar -xzf ta-lib-0.4.0-src.tar.gz
+          cd ta-lib && ./configure --prefix=/usr && make && sudo make install
+          sudo ldconfig
+
+      - name: Run Unit Tests
+        run: |
+          # Run short tests only (no integration tests)
+          go test ./... -short -count=1 -timeout 5m
+        env:
+          CGO_ENABLED: 1
+          # Explicitly unset to ensure integration tests are skipped
+          LLM_API_KEY: ""
+
+      - name: Check for test failures
+        if: failure()
+        run: |
+          echo "❌ Unit tests failed!"
+          echo "Please fix tests before merging."
+          exit 1
+
+  # ─────────────────────────────────────────────────────────────
+  # Docker Build Test
+  # ─────────────────────────────────────────────────────────────
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.backend
+          push: false
+          load: true
+          tags: nofx/backend:test
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Build Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.frontend
+          push: false
+          load: true
+          tags: nofx/frontend:test
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+      - name: List Built Images
+        run: docker images | grep nofx
+
+  # ─────────────────────────────────────────────────────────────
+  # Health Check (smoke test)
+  # ─────────────────────────────────────────────────────────────
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    needs: docker-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Images
+        run: |
+          docker build -f docker/Dockerfile.backend -t nofx/backend:test .
+          docker build -f docker/Dockerfile.frontend -t nofx/frontend:test .
+
+      - name: Create Test Environment
+        run: |
+          # Create minimal .env for testing
+          cat > .env << EOF
+          NOFX_BACKEND_PORT=8080
+          NOFX_FRONTEND_PORT=3000
+          DATA_ENCRYPTION_KEY=test_encryption_key_for_ci_only
+          JWT_SECRET=test_jwt_secret_for_ci_only
+          EOF
+          
+          # Create required directories and files
+          mkdir -p secrets decision_logs prompts
+          openssl genrsa -out secrets/rsa_key 2048 2>/dev/null
+          openssl rsa -in secrets/rsa_key -pubout -out secrets/rsa_key.pub 2>/dev/null
+          touch config.db beta_codes.txt
+          
+          # Create minimal config.json
+          echo '{"system":{"lever_rate":10}}' > config.json
+
+      - name: Start Services
+        run: |
+          docker compose up -d
+          
+          # Wait for services to start
+          echo "Waiting for services to start..."
+          sleep 30
+
+      - name: Check Backend Health
+        run: |
+          # Wait for backend to be ready (up to 60s)
+          for i in {1..12}; do
+            if curl -sf http://localhost:8080/api/health; then
+              echo "✅ Backend health check passed"
+              exit 0
+            fi
+            echo "Waiting for backend... ($i/12)"
+            sleep 5
+          done
+          
+          echo "❌ Backend health check failed"
+          docker compose logs nofx
+          exit 1
+
+      - name: Check Frontend Health
+        run: |
+          # Wait for frontend to be ready (up to 30s)
+          for i in {1..6}; do
+            if curl -sf http://localhost:3000/ | grep -qi "html"; then
+              echo "✅ Frontend health check passed"
+              exit 0
+            fi
+            echo "Waiting for frontend... ($i/6)"
+            sleep 5
+          done
+          
+          echo "❌ Frontend health check failed"
+          docker compose logs nofx-frontend
+          exit 1
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
+
+  # ─────────────────────────────────────────────────────────────
+  # Integration Tests (optional, scheduled/manual only)
+  # ─────────────────────────────────────────────────────────────
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    # Only run on schedule or manual dispatch with integration flag
+    if: |
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && inputs.run_integration)
+    needs: unit-tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+
+      - name: Install TA-Lib
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget build-essential
+          wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
+          tar -xzf ta-lib-0.4.0-src.tar.gz
+          cd ta-lib && ./configure --prefix=/usr && make && sudo make install
+          sudo ldconfig
+
+      - name: Run LLM Integration Tests
+        run: |
+          echo "⚠️ Running integration tests (uses LLM API quota)"
+          go test ./decision/... -v -run "TestRealLLM" -count=1 -timeout 10m
+        env:
+          CGO_ENABLED: 1
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER || 'deepseek' }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL || 'deepseek-chat' }}
+          # NEVER enable live exchange tests in CI
+          LIVE_TESTS: "0"
+
+      - name: Integration Test Summary
+        if: always()
+        run: |
+          echo "═══════════════════════════════════════════════════════"
+          echo "Integration Test Run Complete"
+          echo "═══════════════════════════════════════════════════════"
+          echo "Note: These tests consume LLM API quotas."
+          echo "LIVE_TESTS was disabled to prevent real exchange calls."
+
+  # ─────────────────────────────────────────────────────────────
+  # Summary
+  # ─────────────────────────────────────────────────────────────
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [unit-tests, docker-build, health-check]
+    if: always()
+    steps:
+      - name: Check Results
+        run: |
+          echo "═══════════════════════════════════════════════════════"
+          echo "           NOFX Docker Build Summary"
+          echo "═══════════════════════════════════════════════════════"
+          echo ""
+          echo "Unit Tests:   ${{ needs.unit-tests.result }}"
+          echo "Docker Build: ${{ needs.docker-build.result }}"
+          echo "Health Check: ${{ needs.health-check.result }}"
+          echo ""
+          
+          if [[ "${{ needs.unit-tests.result }}" == "success" ]] && \
+             [[ "${{ needs.docker-build.result }}" == "success" ]] && \
+             [[ "${{ needs.health-check.result }}" == "success" ]]; then
+            echo "✅ All checks passed!"
+          else
+            echo "❌ Some checks failed. Please review the logs."
+            exit 1
+          fi

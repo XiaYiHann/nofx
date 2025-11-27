@@ -237,5 +237,54 @@ sqlite3 config.db "INSERT OR IGNORE INTO exchanges (id, user_id, name, type, ena
 
 - [PAPER_TRADING_FIXED.md](./PAPER_TRADING_FIXED.md) - Paper Trading 修复说明
 - [DEVELOPMENT_MODE.md](./DEVELOPMENT_MODE.md) - 开发模式文档
+- [docs/DOCKER_BUILD.md](./docs/DOCKER_BUILD.md) - Docker 构建指南
 - [docker-compose.yml](./docker-compose.yml) - Docker 配置
 - [README.md](./README.md) - 项目主文档
+
+---
+
+## 🐳 Docker 高级操作
+
+除了基本的启动脚本，项目还提供了专用的 Docker 管理脚本：
+
+### 重建镜像
+
+```bash
+# 完整重建（运行测试 + 构建 + 标记）
+./scripts/docker/rebuild.sh
+
+# 跳过测试快速重建（仅开发时使用）
+./scripts/docker/rebuild.sh --skip-tests
+
+# 包含集成测试（需要 LLM_API_KEY）
+./scripts/docker/rebuild.sh --with-integration
+```
+
+### 清理旧镜像
+
+```bash
+# 预览要清理的内容
+./scripts/docker/cleanup.sh --dry-run
+
+# 清理旧镜像，保留最近 3 个
+./scripts/docker/cleanup.sh
+
+# 完全清理
+./scripts/docker/cleanup.sh --all --force
+```
+
+### 健康检查
+
+```bash
+# 检查所有服务
+./scripts/docker/healthcheck.sh
+
+# 仅检查后端
+./scripts/docker/healthcheck.sh --backend-only
+
+# 等待启动（最多 120 秒）
+./scripts/docker/healthcheck.sh --wait 120
+```
+
+详细说明请参考 [docs/DOCKER_BUILD.md](./docs/DOCKER_BUILD.md)。
+
