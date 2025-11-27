@@ -220,6 +220,11 @@ func NewAutoTrader(config AutoTraderConfig, database interface{}, userID string)
 		return nil, fmt.Errorf("不支持的交易平台: %s", config.Exchange)
 	}
 
+	return NewAutoTraderWithDeps(config, database, userID, trader, mcpClient)
+}
+
+// NewAutoTraderWithDeps 允许创建带有注入依赖的 AutoTrader (用于测试或高级用法)
+func NewAutoTraderWithDeps(config AutoTraderConfig, database interface{}, userID string, trader Trader, mcpClient *mcp.Client) (*AutoTrader, error) {
 	// 验证初始金额配置
 	if config.InitialBalance <= 0 {
 		return nil, fmt.Errorf("初始金额必须大于0，请在配置中设置InitialBalance")
