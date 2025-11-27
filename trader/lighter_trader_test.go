@@ -45,33 +45,37 @@ func createMockLighterServer() *httptest.Server {
 
 		switch path {
 		// Mock GetBalance
-		case "/api/v1/account":
+		case "/api/v1/account/0/balance":
 			respBody = map[string]interface{}{
-				"totalBalance":      "10000.00",
-				"availableBalance":  "8000.00",
-				"marginUsed":        "2000.00",
-				"unrealizedPnl":     "100.50",
+				"total_equity":       10000.00,
+				"available_balance":  8000.00,
+				"margin_used":        2000.00,
+				"unrealized_pnl":     100.50,
+				"maintenance_margin": 500.00,
 			}
 
 		// Mock GetPositions
-		case "/api/v1/positions":
+		case "/api/v1/account/0/positions":
 			respBody = []map[string]interface{}{
 				{
-					"symbol":          "BTC_USDT",
-					"side":            "long",
-					"positionSize":    "0.5",
-					"entryPrice":      "50000.00",
-					"markPrice":       "50500.00",
-					"unrealizedPnl":   "250.00",
+					"symbol":            "BTC_USDT",
+					"side":              "long",
+					"size":              0.5,
+					"entry_price":       50000.00,
+					"mark_price":        50500.00,
+					"unrealized_pnl":    250.00,
+					"liquidation_price": 40000.00,
+					"leverage":          10.0,
+					"margin_used":       2500.00,
 				},
 			}
 
 		// Mock GetMarketPrice
-		case "/api/v1/ticker/price":
+		case "/api/v1/market/ticker":
 			symbol := r.URL.Query().Get("symbol")
 			respBody = map[string]interface{}{
 				"symbol":     symbol,
-				"last_price": "50000.00",
+				"last_price": 50000.00,
 			}
 
 		// Mock OrderBooks (for market index)
