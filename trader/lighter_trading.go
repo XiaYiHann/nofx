@@ -7,6 +7,13 @@ import (
 
 // OpenLong 开多仓
 func (t *LighterTrader) OpenLong(symbol string, quantity float64, leverage int) (map[string]interface{}, error) {
+	if quantity <= 0 {
+		return nil, fmt.Errorf("quantity must be positive")
+	}
+	if leverage <= 0 {
+		return nil, fmt.Errorf("leverage must be positive")
+	}
+
 	// TODO: 实现完整的开多仓逻辑
 	log.Printf("🚧 LIGHTER OpenLong 暂未完全实现 (symbol=%s, qty=%.4f, leverage=%d)", symbol, quantity, leverage)
 
@@ -25,6 +32,13 @@ func (t *LighterTrader) OpenLong(symbol string, quantity float64, leverage int) 
 
 // OpenShort 开空仓
 func (t *LighterTrader) OpenShort(symbol string, quantity float64, leverage int) (map[string]interface{}, error) {
+	if quantity <= 0 {
+		return nil, fmt.Errorf("quantity must be positive")
+	}
+	if leverage <= 0 {
+		return nil, fmt.Errorf("leverage must be positive")
+	}
+
 	// TODO: 实现完整的开空仓逻辑
 	log.Printf("🚧 LIGHTER OpenShort 暂未完全实现 (symbol=%s, qty=%.4f, leverage=%d)", symbol, quantity, leverage)
 
