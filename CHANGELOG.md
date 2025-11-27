@@ -11,7 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> No changes yet — future work will appear here.
+### Added
+
+- **Comprehensive Test Suite** - Added integration and E2E tests for better code quality (cherry-picked from `7e6a9a71`)
+  - New `testhelpers` package with DB, LLM, Server, and MockTrader helpers
+  - Refactored `trader/auto_trader.go` to support dependency injection for testing
+  - Added `backtest/full_system_test.go` for E2E backtest verification with mocks
+  - Added `manager/trader_manager_test.go` integration tests using real DB
+  - Added `api/integration_test.go` for API route testing
+  - Added `trader/live_integration_test.go` for optional live exchange connectivity tests
+  - Added `TESTING.md` documentation for running tests
 
 ---
 

@@ -12,6 +12,15 @@ NOFX 项目的所有重要更改都将记录在此文件中。
 ## [未发布]
 
 ### 新增
+
+- **综合测试套件** - 添加集成测试和端到端测试以提高代码质量（cherry-pick 自 `7e6a9a71`）
+  - 新增 `testhelpers` 包，包含 DB、LLM、Server 和 MockTrader 辅助工具
+  - 重构 `trader/auto_trader.go` 以支持测试依赖注入
+  - 添加 `backtest/full_system_test.go` 用于带 mock 的端到端回测验证
+  - 添加 `manager/trader_manager_test.go` 使用真实数据库的集成测试
+  - 添加 `api/integration_test.go` 用于 API 路由测试
+  - 添加 `trader/live_integration_test.go` 用于可选的实盘交易所连接测试
+  - 添加 `TESTING.md` 测试运行文档
 - 多语言文档系统（英文/中文/俄语/乌克兰语）
 - 完整的快速开始指南（Docker、PM2、自定义 API）
 - 架构文档，包含系统设计细节

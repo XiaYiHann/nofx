@@ -7,6 +7,7 @@ import (
 	"nofx/crypto"
 	"nofx/manager"
 	"nofx/testhelpers"
+	"os"
 	"testing"
 )
 
@@ -14,6 +15,10 @@ func TestAPIIntegration(t *testing.T) {
 	// Setup dependencies
 	db, cleanup := testhelpers.SetupTestDB(t)
 	defer cleanup()
+
+	// Set required environment variable for crypto service
+	os.Setenv("DATA_ENCRYPTION_KEY", "test-encryption-key-for-integration-tests")
+	defer os.Unsetenv("DATA_ENCRYPTION_KEY")
 
 	// Create crypto service
 	tmpKey := t.TempDir() + "/test_key"
@@ -56,7 +61,7 @@ func TestAPIIntegration(t *testing.T) {
 
 		// Register
 		regBody := map[string]string{
-			"email": "api_test@example.com",
+			"email":    "api_test@example.com",
 			"password": "password123",
 		}
 		w := perform("POST", "/api/register", regBody)
@@ -73,7 +78,7 @@ func TestAPIIntegration(t *testing.T) {
 
 		// Login
 		loginBody := map[string]string{
-			"email": "api_test@example.com",
+			"email":    "api_test@example.com",
 			"password": "password123",
 		}
 		wLogin := perform("POST", "/api/login", loginBody)

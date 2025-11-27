@@ -6,9 +6,9 @@ import (
 )
 
 type MockTrader struct {
-	Balance    map[string]interface{}
-	Positions  []map[string]interface{}
-	Prices     map[string]float64
+	Balance   map[string]interface{}
+	Positions []map[string]interface{}
+	Prices    map[string]float64
 }
 
 // Ensure MockTrader implements trader.Trader
@@ -17,8 +17,8 @@ var _ trader.Trader = (*MockTrader)(nil)
 func NewMockTrader() *MockTrader {
 	return &MockTrader{
 		Balance: map[string]interface{}{
-			"availableBalance": 1000.0,
-			"totalWalletBalance": 1000.0,
+			"availableBalance":      1000.0,
+			"totalWalletBalance":    1000.0,
 			"totalUnrealizedProfit": 0.0,
 		},
 		Positions: []map[string]interface{}{},
