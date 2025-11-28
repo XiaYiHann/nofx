@@ -1,3 +1,20 @@
+### 2025-11-29 00:55:00 CST
+**变更摘要**: 修复 market 包中由真实 Binance 返回的错误对象导致的测试不稳定性 — 使 API client 在遇到错误对象或非数组响应时返回可断言的友好错误；同时新增 deterministic 单元测试（httptest 模拟）并让外部集成测试默认跳过（需设置 LIVE_TESTS=1 才运行）。
+
+**设计思路**:
+- 在不改变默认行为的前提下，增添最小化、可注入的测试点：新增 `NewAPIClientWithBaseURL(baseURL, client)` 来支持测试注入 base URL 或自定义 HTTP client（原有 `NewAPIClient()` 行为不变）。
+- 在解析 Klines/Price/ExchangeInfo 时优先检查 HTTP 状态；当 body 无法解析成预期数组时，尝试解析为 Binance 的错误对象 `{code,msg}` 并返回结构化错误，避免未捕获的 unmarshal panic；解析失败时保留原始 body 作为诊断信息。
+- 将外部集成测试默认跳过（通过 `LIVE_TESTS=1` 开启），并把关键单元测试改为使用 `httptest.NewServer` 模拟成功/错误场景，保证 CI 的可重复性与确定性。
+
+**修改意图**:
+- 消除 CI 随机失败（例如受限地区返回“Service unavailable”或 HTML 错误页面）和 json unmarshal panic，确保 `go test ./...` 在 PR 检查中安全可重复运行。
+- 提供更明确的错误上下文（code/msg/body），便于快速定位外部 API 行为变更或网络策略问题。
+- 保持向后兼容及最小侵入式修改：只改进错误处理与可测试性，不改变公开 API 语义或现有生产代码预期。
+
+**关键变更文件（工作区快照）**:
+ - 已修改 (unstaged): `market/api_client.go`, `market/api_integration_test.go`
+ - 新增未跟踪 (untracked): `market/api_client_test.go`, `screenshots/dev_mode_mcp_test.png`
+
 ### 2025-11-28 23:30:28 CST
 **变更摘要**: 添加并验证“测试/开发模式 (--dev)”支持，允许本地绕过登录与 OTP（仅用于本地开发/测试），并在前后端与启动脚本中做了相应兼容改造。
 
