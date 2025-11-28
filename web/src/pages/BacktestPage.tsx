@@ -26,7 +26,7 @@ interface BacktestRun {
 }
 
 export default function BacktestPage() {
-  const { token } = useAuth()
+  const { user } = useAuth()
   const [backtests, setBacktests] = useState<BacktestRun[]>([])
   const [traders, setTraders] = useState<TraderInfo[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,11 +41,11 @@ export default function BacktestPage() {
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {
-    if (token) {
+    if (user) {
       loadBacktests()
       loadTraders()
     }
-  }, [token])
+  }, [user])
 
   const loadBacktests = async () => {
     try {
@@ -478,11 +478,10 @@ export default function BacktestPage() {
                         <div>
                           <div className="text-gray-400 mb-1">总收益</div>
                           <div
-                            className={`font-medium ${
-                              backtest.total_pnl_pct >= 0
-                                ? 'text-green-500'
-                                : 'text-red-500'
-                            }`}
+                            className={`font-medium ${backtest.total_pnl_pct >= 0
+                              ? 'text-green-500'
+                              : 'text-red-500'
+                              }`}
                           >
                             {backtest.total_pnl_pct >= 0 ? (
                               <TrendingUp className="inline w-4 h-4" />
@@ -510,14 +509,14 @@ export default function BacktestPage() {
                 <div className="flex gap-2">
                   {(backtest.status === 'completed' ||
                     backtest.status === 'running') && (
-                    <button
-                      onClick={() => handleViewDetails(backtest.id)}
-                      className="border border-gray-700 text-gray-300 hover:bg-gray-800 p-2 rounded-lg"
-                      title="查看详情"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  )}
+                      <button
+                        onClick={() => handleViewDetails(backtest.id)}
+                        className="border border-gray-700 text-gray-300 hover:bg-gray-800 p-2 rounded-lg"
+                        title="查看详情"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    )}
                   <button
                     onClick={() => handleDelete(backtest.id)}
                     className="border border-gray-700 text-red-500 hover:bg-gray-800 p-2 rounded-lg"
