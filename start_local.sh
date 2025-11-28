@@ -136,6 +136,12 @@ start_backend() {
     export DATA_ENCRYPTION_KEY=${DATA_ENCRYPTION_KEY:-$(openssl rand -hex 32)}
     export JWT_SECRET=${JWT_SECRET:-$(openssl rand -hex 32)}
     
+    # 检查是否为开发模式
+    if [ "$NOFX_DEV_MODE" = "true" ]; then
+        print_warning "🚧 开发模式已启用 (NOFX_DEV_MODE=true)"
+        export DISABLE_OTP=true
+    fi
+    
     # 在后台启动 Go 服务
     nohup go run . > backend.log 2>&1 &
     local pid=$!
@@ -227,6 +233,20 @@ stop() {
 # 启动所有服务
 # ------------------------------------------------------------------------
 start() {
+    # 解析 --dev 参数
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --dev)
+                export NOFX_DEV_MODE=true
+                print_warning "🚧 测试模式已启用 (--dev)"
+                shift
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+
     check_dependencies
     check_config
     install_frontend_deps
@@ -235,6 +255,16 @@ start() {
     start_frontend
     
     print_success "✅ 所有服务已启动！"
+    
+    # 开发模式下显示额外提示
+    if [ "$NOFX_DEV_MODE" = "true" ]; then
+        echo ""
+        print_warning "⚠️  测试模式注意事项："
+        print_warning "   • JWT 鉴权已绕过，前端将自动登录测试用户"
+        print_warning "   • 仅用于本地开发和测试，请勿在生产环境使用"
+        echo ""
+    fi
+    
     show_access_info
 }
 
@@ -242,9 +272,10 @@ start() {
 # 重启服务
 # ------------------------------------------------------------------------
 restart() {
+    local restart_args=("$@")
     stop
     sleep 2
-    start
+    start "${restart_args[@]}"
 }
 
 # ------------------------------------------------------------------------
@@ -331,45 +362,57 @@ show_access_info() {
 show_help() {
     echo "NOFX AI Trading System - 本地开发启动脚本"
     echo ""
-    echo "用法: ./start_local.sh [command]"
+    echo "用法: ./start_local.sh [command] [options]"
     echo ""
     echo "命令:"
-    echo "  start                      启动所有服务 (默认)"
-    echo "  stop                       停止所有服务"
-    echo "  restart                    重启所有服务"
-    echo "  status                     查看服务状态"
-    echo "  logs [backend|frontend]    查看日志"
-    echo "  help                       显示此帮助"
+    echo "  start [--dev]                启动所有服务 (默认)"
+    echo "  stop                         停止所有服务"
+    echo "  restart [--dev]              重启所有服务"
+    echo "  status                       查看服务状态"
+    echo "  logs [backend|frontend]      查看日志"
+    echo "  help                         显示此帮助"
+    echo ""
+    echo "选项:"
+    echo "  --dev                        启用测试模式（免登录调试）"
     echo ""
     echo "服务说明:"
     echo "  后端: Go 服务运行在 http://localhost:8080"
     echo "  前端: Vite 开发服务器运行在 http://localhost:5173"
+    echo ""
+    echo "测试模式说明:"
+    echo "  使用 --dev 参数启动时，系统将："
+    echo "  • 绕过 JWT 鉴权，前端自动登录测试用户"
+    echo "  • 禁用 OTP 验证"
+    echo "  • 仅用于本地开发测试，请勿在生产环境使用"
 }
 
 # ------------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------------
-case "${1:-start}" in
+COMMAND="${1:-start}"
+shift || true
+
+case "$COMMAND" in
     start)
-        start
+        start "$@"
         ;;
     stop)
         stop
         ;;
     restart)
-        restart
+        restart "$@"
         ;;
     status)
         status
         ;;
     logs)
-        logs $2
+        logs $1
         ;;
     help|--help|-h)
         show_help
         ;;
     *)
-        print_error "未知命令: $1"
+        print_error "未知命令: $COMMAND"
         show_help
         exit 1
         ;;
