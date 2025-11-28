@@ -12,16 +12,36 @@ import (
 )
 
 const (
-	baseURL = "https://fapi.binance.com"
+	defaultBaseURL = "https://fapi.binance.com"
 )
 
+// BinanceAPIError represents an error response from Binance API
+type BinanceAPIError struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+}
+
+func (e *BinanceAPIError) Error() string {
+	return fmt.Sprintf("Binance API error: code=%d msg=%s", e.Code, e.Msg)
+}
+
 type APIClient struct {
-	client *http.Client
+	client  *http.Client
+	baseURL string
 }
 
 func NewAPIClient() *APIClient {
-	client := &http.Client{
-		Timeout: 30 * time.Second,
+	return NewAPIClientWithBaseURL(defaultBaseURL, nil)
+}
+
+// NewAPIClientWithBaseURL creates an APIClient with a custom base URL and optional HTTP client.
+// This is primarily used for testing with httptest.Server.
+// If client is nil, a default HTTP client with 30s timeout will be used.
+func NewAPIClientWithBaseURL(baseURL string, client *http.Client) *APIClient {
+	if client == nil {
+		client = &http.Client{
+			Timeout: 30 * time.Second,
+		}
 	}
 
 	hookRes := hook.HookExec[hook.SetHttpClientResult](hook.SET_HTTP_CLIENT, client)
@@ -31,12 +51,13 @@ func NewAPIClient() *APIClient {
 	}
 
 	return &APIClient{
-		client: client,
+		client:  client,
+		baseURL: baseURL,
 	}
 }
 
 func (c *APIClient) GetExchangeInfo() (*ExchangeInfo, error) {
-	url := fmt.Sprintf("%s/fapi/v1/exchangeInfo", baseURL)
+	url := fmt.Sprintf("%s/fapi/v1/exchangeInfo", c.baseURL)
 	resp, err := c.client.Get(url)
 	if err != nil {
 		return nil, err
@@ -47,17 +68,31 @@ func (c *APIClient) GetExchangeInfo() (*ExchangeInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Check for API error response
+	if resp.StatusCode != http.StatusOK {
+		if apiErr := c.parseAPIError(body); apiErr != nil {
+			return nil, apiErr
+		}
+		return nil, fmt.Errorf("unexpected Binance response (status %d): %s", resp.StatusCode, string(body))
+	}
+
 	var exchangeInfo ExchangeInfo
 	err = json.Unmarshal(body, &exchangeInfo)
 	if err != nil {
-		return nil, err
+		// Try to parse as API error
+		if apiErr := c.parseAPIError(body); apiErr != nil {
+			return nil, apiErr
+		}
+		log.Printf("获取交易所信息失败,响应内容: %s", string(body))
+		return nil, fmt.Errorf("failed to unmarshal exchange info: %w", err)
 	}
 
 	return &exchangeInfo, nil
 }
 
 func (c *APIClient) GetKlines(symbol, interval string, limit int) ([]Kline, error) {
-	url := fmt.Sprintf("%s/fapi/v1/klines", baseURL)
+	url := fmt.Sprintf("%s/fapi/v1/klines", c.baseURL)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -80,11 +115,23 @@ func (c *APIClient) GetKlines(symbol, interval string, limit int) ([]Kline, erro
 		return nil, err
 	}
 
+	// Check for non-200 status code first
+	if resp.StatusCode != http.StatusOK {
+		if apiErr := c.parseAPIError(body); apiErr != nil {
+			return nil, apiErr
+		}
+		return nil, fmt.Errorf("unexpected Binance response (status %d): %s", resp.StatusCode, string(body))
+	}
+
 	var klineResponses []KlineResponse
 	err = json.Unmarshal(body, &klineResponses)
 	if err != nil {
+		// Try to parse as API error object (e.g., {"code": -2015, "msg": "..."})
+		if apiErr := c.parseAPIError(body); apiErr != nil {
+			return nil, apiErr
+		}
 		log.Printf("获取K线数据失败,响应内容: %s", string(body))
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal klines response: %w, body: %s", err, string(body))
 	}
 
 	var klines []Kline
@@ -124,7 +171,7 @@ func parseKline(kr KlineResponse) (Kline, error) {
 }
 
 func (c *APIClient) GetCurrentPrice(symbol string) (float64, error) {
-	url := fmt.Sprintf("%s/fapi/v1/ticker/price", baseURL)
+	url := fmt.Sprintf("%s/fapi/v1/ticker/price", c.baseURL)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return 0, err
@@ -145,10 +192,21 @@ func (c *APIClient) GetCurrentPrice(symbol string) (float64, error) {
 		return 0, err
 	}
 
+	// Check for API error response
+	if resp.StatusCode != http.StatusOK {
+		if apiErr := c.parseAPIError(body); apiErr != nil {
+			return 0, apiErr
+		}
+		return 0, fmt.Errorf("unexpected Binance response (status %d): %s", resp.StatusCode, string(body))
+	}
+
 	var ticker PriceTicker
 	err = json.Unmarshal(body, &ticker)
 	if err != nil {
-		return 0, err
+		if apiErr := c.parseAPIError(body); apiErr != nil {
+			return 0, apiErr
+		}
+		return 0, fmt.Errorf("failed to unmarshal price ticker: %w", err)
 	}
 
 	price, err := strconv.ParseFloat(ticker.Price, 64)
@@ -202,9 +260,19 @@ func (c *APIClient) GetKlinesRange(symbol, interval string, startTime, endTime i
 	return allKlines, nil
 }
 
+// parseAPIError attempts to parse the response body as a Binance API error object.
+// Returns nil if the body is not an API error object.
+func (c *APIClient) parseAPIError(body []byte) *BinanceAPIError {
+	var apiErr BinanceAPIError
+	if err := json.Unmarshal(body, &apiErr); err == nil && apiErr.Code != 0 {
+		return &apiErr
+	}
+	return nil
+}
+
 // getKlinesBatch 获取单批K线数据
 func (c *APIClient) getKlinesBatch(symbol, interval string, startTime, endTime int64, limit int) ([]Kline, error) {
-	url := fmt.Sprintf("%s/fapi/v1/klines", baseURL)
+	url := fmt.Sprintf("%s/fapi/v1/klines", c.baseURL)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -229,10 +297,23 @@ func (c *APIClient) getKlinesBatch(symbol, interval string, startTime, endTime i
 		return nil, err
 	}
 
+	// Check for non-200 status code first
+	if resp.StatusCode != http.StatusOK {
+		if apiErr := c.parseAPIError(body); apiErr != nil {
+			return nil, apiErr
+		}
+		return nil, fmt.Errorf("unexpected Binance response (status %d): %s", resp.StatusCode, string(body))
+	}
+
 	var klineResponses []KlineResponse
 	err = json.Unmarshal(body, &klineResponses)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal klines: %w", err)
+		// Try to parse as API error object
+		if apiErr := c.parseAPIError(body); apiErr != nil {
+			return nil, apiErr
+		}
+		log.Printf("获取K线数据失败,响应内容: %s", string(body))
+		return nil, fmt.Errorf("failed to unmarshal klines: %w, body: %s", err, string(body))
 	}
 
 	var klines []Kline

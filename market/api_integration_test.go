@@ -1,12 +1,25 @@
 package market
 
 import (
+	"os"
 	"testing"
 )
 
+// skipIfNoLiveTests skips the test if LIVE_TESTS environment variable is not set to "1".
+// This prevents CI from making external network requests to Binance API.
+func skipIfNoLiveTests(t *testing.T) {
+	t.Helper()
+	if os.Getenv("LIVE_TESTS") != "1" {
+		t.Skip("Skipping external Binance integration test; set LIVE_TESTS=1 to run")
+	}
+}
+
 // TestAPIClient_GetKlines_Integration tests fetching Klines from Binance API.
 // This is an integration test that requires network access.
+// Set LIVE_TESTS=1 to run this test.
 func TestAPIClient_GetKlines_Integration(t *testing.T) {
+	skipIfNoLiveTests(t)
+
 	client := NewAPIClient()
 
 	symbol := "BTCUSDT"
@@ -33,7 +46,10 @@ func TestAPIClient_GetKlines_Integration(t *testing.T) {
 }
 
 // TestAPIClient_GetExchangeInfo_Integration tests fetching Exchange Info.
+// Set LIVE_TESTS=1 to run this test.
 func TestAPIClient_GetExchangeInfo_Integration(t *testing.T) {
+	skipIfNoLiveTests(t)
+
 	client := NewAPIClient()
 
 	info, err := client.GetExchangeInfo()
