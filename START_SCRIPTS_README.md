@@ -78,6 +78,13 @@
 - Docker
 - Docker Compose
 
+#### 🚦 启动后自动测试（Docker 部署）
+- 默认关闭，使用 `./start_docker.sh start --with-tests` 或设置环境变量 `NOFX_AUTO_TEST_AFTER_START=true` 即可在容器完全就绪后自动执行 `go test ./config/... ./api/...`。
+- 可通过 `--test-packages "./config/... ./api/... ./manager/..."`、`--test-wait 180`、`--go-flags "-count=1 -timeout 8m"` 精细控制测试范围与超时。
+- `--allow-test-fail` 仅报警不中断（适合宽松环境或演示），默认会在测试失败时退出并提示使用 `scripts/docker/run_tests_after_start.sh` 复现。
+- 同样的参数/环境变量也适用于 `./start.sh start --with-tests`，便于兼容旧脚本或 CI。
+- CI 示例：`NOFX_AUTO_TEST_AFTER_START=true ./start_docker.sh start`，或显式 `./start_docker.sh start --with-tests --allow-test-fail`。
+
 **⚠️ 重要提示 - Paper Trading 显示问题:**
 
 如果在 Docker 模式下看不到 Paper Trading 交易所，有两种解决方案:
@@ -111,6 +118,8 @@ rm config.db
 # 查看帮助
 ./start.sh help
 ```
+
+同样可以添加 `--with-tests`、`--allow-test-fail` 等旗标，或通过 `NOFX_AUTO_TEST_AFTER_START=true` 控制启动后的自动测试流程。
 
 ---
 

@@ -1,0 +1,1013 @@
+2025/11/27 18:01:15 ⚠️  加载提示词模板失败: 提示词目录不存在: prompts
+=== RUN   TestAsterTrader_InterfaceCompliance
+--- PASS: TestAsterTrader_InterfaceCompliance (0.00s)
+=== RUN   TestAsterTrader_CommonInterface
+=== RUN   TestAsterTrader_CommonInterface/GetBalance
+=== RUN   TestAsterTrader_CommonInterface/成功获取余额
+=== RUN   TestAsterTrader_CommonInterface/GetPositions
+=== RUN   TestAsterTrader_CommonInterface/成功获取持仓列表
+=== RUN   TestAsterTrader_CommonInterface/GetMarketPrice
+=== RUN   TestAsterTrader_CommonInterface/成功获取BTC价格
+=== RUN   TestAsterTrader_CommonInterface/无效交易对返回错误
+=== RUN   TestAsterTrader_CommonInterface/SetLeverage
+=== RUN   TestAsterTrader_CommonInterface/设置10倍杠杆
+=== RUN   TestAsterTrader_CommonInterface/设置1倍杠杆
+=== RUN   TestAsterTrader_CommonInterface/SetMarginMode
+=== RUN   TestAsterTrader_CommonInterface/设置全仓模式
+2025/11/27 18:01:15   ✓ BTCUSDT 仓位模式已设置为 CROSSED
+=== RUN   TestAsterTrader_CommonInterface/设置逐仓模式
+2025/11/27 18:01:15   ✓ ETHUSDT 仓位模式已设置为 ISOLATED
+=== RUN   TestAsterTrader_CommonInterface/FormatQuantity
+=== RUN   TestAsterTrader_CommonInterface/格式化BTC数量
+=== RUN   TestAsterTrader_CommonInterface/格式化小数量
+=== RUN   TestAsterTrader_CommonInterface/OpenLong
+=== RUN   TestAsterTrader_CommonInterface/成功开多仓
+2025/11/27 18:01:15   📏 精度处理: 价格 50500.00000000 -> 50500 (精度=1), 数量 0.01000000 -> 0.01 (精度=3)
+=== RUN   TestAsterTrader_CommonInterface/小数量开仓
+2025/11/27 18:01:15   📏 精度处理: 价格 3030.00000000 -> 3030 (精度=2), 数量 0.00400000 -> 0.004 (精度=3)
+=== RUN   TestAsterTrader_CommonInterface/OpenShort
+=== RUN   TestAsterTrader_CommonInterface/成功开空仓
+2025/11/27 18:01:15   📏 精度处理: 价格 49500.00000000 -> 49500 (精度=1), 数量 0.01000000 -> 0.01 (精度=3)
+=== RUN   TestAsterTrader_CommonInterface/小数量开空仓
+2025/11/27 18:01:15   📏 精度处理: 价格 2970.00000000 -> 2970 (精度=2), 数量 0.00400000 -> 0.004 (精度=3)
+=== RUN   TestAsterTrader_CommonInterface/CloseLong
+=== RUN   TestAsterTrader_CommonInterface/平指定数量
+2025/11/27 18:01:15   📏 精度处理: 价格 49500.00000000 -> 49500 (精度=1), 数量 0.01000000 -> 0.01 (精度=3)
+2025/11/27 18:01:15 ✓ 平多仓成功: BTCUSDT 数量: 0.01
+=== RUN   TestAsterTrader_CommonInterface/全部平仓_quantity为0_无持仓返回错误
+=== RUN   TestAsterTrader_CommonInterface/CloseShort
+=== RUN   TestAsterTrader_CommonInterface/平指定数量#01
+2025/11/27 18:01:15   📏 精度处理: 价格 50500.00000000 -> 50500 (精度=1), 数量 0.01000000 -> 0.01 (精度=3)
+2025/11/27 18:01:15 ✓ 平空仓成功: BTCUSDT 数量: 0.01
+=== RUN   TestAsterTrader_CommonInterface/全部平仓_quantity为0_无持仓返回错误#01
+=== RUN   TestAsterTrader_CommonInterface/SetStopLoss
+=== RUN   TestAsterTrader_CommonInterface/多头止损
+=== RUN   TestAsterTrader_CommonInterface/空头止损
+=== RUN   TestAsterTrader_CommonInterface/SetTakeProfit
+=== RUN   TestAsterTrader_CommonInterface/多头止盈
+=== RUN   TestAsterTrader_CommonInterface/空头止盈
+=== RUN   TestAsterTrader_CommonInterface/CancelAllOrders
+=== RUN   TestAsterTrader_CommonInterface/取消BTC所有订单
+=== RUN   TestAsterTrader_CommonInterface/CancelStopOrders
+=== RUN   TestAsterTrader_CommonInterface/取消BTC止盈止损单
+2025/11/27 18:01:15   ℹ BTCUSDT 没有止盈/止损单需要取消
+=== RUN   TestAsterTrader_CommonInterface/CancelStopLossOrders
+=== RUN   TestAsterTrader_CommonInterface/取消BTC止损单
+2025/11/27 18:01:15   ℹ BTCUSDT 没有止损单需要取消
+=== RUN   TestAsterTrader_CommonInterface/CancelTakeProfitOrders
+=== RUN   TestAsterTrader_CommonInterface/取消BTC止盈单
+2025/11/27 18:01:15   ℹ BTCUSDT 没有止盈单需要取消
+--- PASS: TestAsterTrader_CommonInterface (0.01s)
+    --- PASS: TestAsterTrader_CommonInterface/成功获取余额 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/GetBalance (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/成功获取持仓列表 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/GetPositions (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/成功获取BTC价格 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/无效交易对返回错误 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/GetMarketPrice (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/设置10倍杠杆 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/设置1倍杠杆 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/SetLeverage (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/设置全仓模式 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/设置逐仓模式 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/SetMarginMode (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/格式化BTC数量 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/格式化小数量 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/FormatQuantity (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/成功开多仓 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/小数量开仓 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/OpenLong (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/成功开空仓 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/小数量开空仓 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/OpenShort (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/平指定数量 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/全部平仓_quantity为0_无持仓返回错误 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/CloseLong (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/平指定数量#01 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/全部平仓_quantity为0_无持仓返回错误#01 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/CloseShort (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/多头止损 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/空头止损 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/SetStopLoss (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/多头止盈 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/空头止盈 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/SetTakeProfit (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/取消BTC所有订单 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/CancelAllOrders (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/取消BTC止盈止损单 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/CancelStopOrders (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/取消BTC止损单 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/CancelStopLossOrders (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/取消BTC止盈单 (0.00s)
+    --- PASS: TestAsterTrader_CommonInterface/CancelTakeProfitOrders (0.00s)
+=== RUN   TestNewAsterTrader
+=== RUN   TestNewAsterTrader/成功创建
+2025/11/27 18:01:15 🔌 Do not find hook: NEW_ASTER_TRADER
+=== RUN   TestNewAsterTrader/无效私钥格式
+=== RUN   TestNewAsterTrader/带0x前缀的私钥
+2025/11/27 18:01:15 🔌 Do not find hook: NEW_ASTER_TRADER
+--- PASS: TestNewAsterTrader (0.00s)
+    --- PASS: TestNewAsterTrader/成功创建 (0.00s)
+    --- PASS: TestNewAsterTrader/无效私钥格式 (0.00s)
+    --- PASS: TestNewAsterTrader/带0x前缀的私钥 (0.00s)
+=== RUN   TestExecuteOpenLong
+2025/11/27 18:01:15   📈 开多仓: BTCUSDT
+2025/11/27 18:01:15   ✓ 开仓成功，订单ID: 12345, 数量: 0.0200
+--- PASS: TestExecuteOpenLong (0.00s)
+=== RUN   TestAnalyzeAndTrade
+2025/11/27 18:01:15 
+======================================================================
+2025/11/27 18:01:15 ⏰ 2025-11-27 18:01:15 - AI决策周期 #1
+2025/11/27 18:01:15 ======================================================================
+2025/11/27 18:01:15 📅 日盈亏已重置
+2025/11/27 18:01:15 📋 [] 使用自定义币种: 1个币种 [BTCUSDT]
+2025/11/27 18:01:15 ======================================================================
+2025/11/27 18:01:15 📊 账户净值: 10000.00 USDT | 可用: 10000.00 USDT | 持仓: 0
+2025/11/27 18:01:15 🤖 正在请求AI分析并决策... [模板: default]
+2025/11/27 18:01:15 ⚠️  提示词模板 'default' 不存在，使用 default: 提示词模板不存在: default
+2025/11/27 18:01:15 ❌ 无法加载任何提示词模板，使用内置简化版本
+2025/11/27 18:01:15 📡 [MCP] AI 请求配置:
+2025/11/27 18:01:15    Provider: custom
+2025/11/27 18:01:15    BaseURL: http://127.0.0.1:65221
+2025/11/27 18:01:15    Model: test-model
+2025/11/27 18:01:15    UseFullURL: false
+2025/11/27 18:01:15 📤 [MCP] Request Payload:
+{"max_tokens":8192,"messages":[{"content":"你是专业的加密货币交易AI。请根据市场数据做出交易决策。\n\n# 硬约束（风险控制）\n\n1. 风险回报比: 必须 ≥ 1:3（冒1%风险，赚3%+收益）\n2. 最多持仓: 3个币种（质量\u003e数量）\n3. 单币仓位: 山寨8000-15000 U | BTC/ETH 50000-100000 U\n4. 杠杆限制: **山寨币最大5x杠杆** | **BTC/ETH最大5x杠杆** (⚠️ 严格执行，不可超过)\n5. 保证金: 总使用率 ≤ 90%\n6. 开仓金额: 建议 **≥12 USDT** (交易所最小名义价值 10 USDT + 安全边际)\n7. **⚠️ 保证金约束**: 开仓所需保证金 = position_size_usd / leverage，**必须 ≤ 可用余额的 95%**（预留手续费）\n   - 例: 可用余额 3600 USDT，杠杆 10x → 最大 position_size_usd = 3600 * 0.95 * 10 = 34200 USDT\n\n# 输出格式 (严格遵守)\n\n**必须使用XML标签 \u003creasoning\u003e 和 \u003cdecision\u003e 标签分隔思维链和决策JSON，避免解析错误**\n\n## 格式要求\n\n\u003creasoning\u003e\n你的思维链分析...\n- 简洁分析你的思考过程 \n\u003c/reasoning\u003e\n\n\u003cdecision\u003e\n```json\n[\n  {\"symbol\": \"BTCUSDT\", \"action\": \"open_short\", \"leverage\": 5, \"position_size_usd\": 50000, \"stop_loss\": 97000, \"take_profit\": 91000, \"confidence\": 85, \"risk_usd\": 300, \"reasoning\": \"下跌趋势+MACD死叉\"},\n  {\"symbol\": \"ETHUSDT\", \"action\": \"close_long\", \"reasoning\": \"止盈离场\"}\n]\n```\n\u003c/decision\u003e\n\n## 字段说明\n\n- `action`: open_long | open_short | close_long | close_short | hold | wait\n- `confidence`: 0-100（开仓建议≥75）\n- 开仓时必填: leverage, position_size_usd, stop_loss, take_profit, confidence, risk_usd, reasoning\n\n\n\n# 📌 个性化交易策略\n\ntest prompt\n\n注意: 以上个性化策略是对基础规则的补充，不能违背基础风险控制原则。\n","role":"system"},{"content":"时间: 2025-11-27 18:01:15 | 周期: #1 | 运行: 0分钟\n\nBTC: 50000.00 (1h: +0.00%, 4h: +0.00%) | MACD: 0.0000 | RSI: 0.00\n\n账户: 净值10000.00 | 余额10000.00 (100.0%) | 盈亏+0.00% | 保证金0.0% | 持仓0个\n\n当前持仓: 无\n\n## 候选币种 (1个)\n\n### 1. BTCUSDT\n\ncurrent_price = 50000.00, current_ema20 = 0.000, current_macd = 0.000, current_rsi (7 period) = 0.000\n\nIn addition, here is the latest BTCUSDT open interest and funding rate for perps:\n\nFunding Rate: 0.00e+00\n\n\n\n## 📊 夏普比率: 0.00\n\n---\n\n现在请分析并输出决策（思维链 + JSON）\n","role":"user"}],"model":"test-model","temperature":0.5}
+2025/11/27 18:01:15 📡 [MCP] 请求 URL: http://127.0.0.1:65221/chat/completions
+2025/11/27 18:01:15 📥 [MCP] Response Payload:
+{"choices":[{"message":{"content":"```json\n[{\"symbol\": \"BTCUSDT\", \"action\": \"open_long\", \"leverage\": 5, \"position_size_usd\": 1000, \"stop_loss\": 49000, \"take_profit\": 55000, \"reasoning\": \"Test\"}]\n```"}}]}
+2025/11/27 18:01:15 ⚠️  使用旧版格式（JSON数组头分离）提取思维链
+2025/11/27 18:01:15 ⚠️  未找到 <decision> 标签，使用全文搜索JSON
+2025/11/27 18:01:15 
+2025/11/27 18:01:15 ----------------------------------------------------------------------
+2025/11/27 18:01:15 ----------------------------------------------------------------------
+2025/11/27 18:01:15 🔄 执行顺序（已优化）: 先平仓→后开仓
+2025/11/27 18:01:15   [1] BTCUSDT open_long
+2025/11/27 18:01:15 
+2025/11/27 18:01:15   📈 开多仓: BTCUSDT
+2025/11/27 18:01:15   ✓ 开仓成功，订单ID: 12345, 数量: 0.0200
+📝 决策记录已保存: decision_20251127_180116_cycle1.json
+--- PASS: TestAnalyzeAndTrade (1.02s)
+=== RUN   TestAutoTraderTestSuite
+=== RUN   TestAutoTraderTestSuite/TestBuildTradingContext
+2025/11/27 18:01:16 📋 [Test Trader] 使用数据库默认币种: 2个币种 [BTC ETH]
+=== RUN   TestAutoTraderTestSuite/TestCheckAndScaleMargin_DifferentLeverages
+=== RUN   TestAutoTraderTestSuite/TestCheckAndScaleMargin_DifferentLeverages/低杠杆_余额不足
+2025/11/27 18:01:16   ⚠️ 自动缩放仓位: 1000.00 → 470.25 USDT (杠杆 1x, 可用余额 500.00 USDT)
+=== RUN   TestAutoTraderTestSuite/TestCheckAndScaleMargin_DifferentLeverages/高杠杆_余额充足
+=== RUN   TestAutoTraderTestSuite/TestCheckAndScaleMargin_DifferentLeverages/高杠杆_余额不足
+2025/11/27 18:01:16   ⚠️ 自动缩放仓位: 50000.00 → 18810.00 USDT (杠杆 20x, 可用余额 1000.00 USDT)
+=== RUN   TestAutoTraderTestSuite/TestCheckAndScaleMargin_EdgeCase_ExactBalance
+=== RUN   TestAutoTraderTestSuite/TestCheckAndScaleMargin_InsufficientBalance_AutoScale
+2025/11/27 18:01:16   ⚠️ 自动缩放仓位: 7000.00 → 4702.50 USDT (杠杆 10x, 可用余额 500.00 USDT)
+=== RUN   TestAutoTraderTestSuite/TestCheckAndScaleMargin_SufficientBalance
+=== RUN   TestAutoTraderTestSuite/TestCheckAndScaleMargin_VeryLowBalance_Rejected
+=== RUN   TestAutoTraderTestSuite/TestCheckPositionDrawdown
+=== RUN   TestAutoTraderTestSuite/TestCheckPositionDrawdown/获取持仓失败_不panic
+2025/11/27 18:01:16 ❌ 回撤监控：获取持仓失败: failed to get positions
+=== RUN   TestAutoTraderTestSuite/TestCheckPositionDrawdown/无持仓_不panic
+=== RUN   TestAutoTraderTestSuite/TestCheckPositionDrawdown/收益不足5%_不触发平仓
+=== RUN   TestAutoTraderTestSuite/TestCheckPositionDrawdown/回撤不足40%_不触发平仓
+2025/11/27 18:01:16 📊 回撤监控: BTCUSDT long | 收益: 8.00% | 最高: 10.00% | 回撤: 20.00%
+=== RUN   TestAutoTraderTestSuite/TestCheckPositionDrawdown/多头_触发回撤平仓
+2025/11/27 18:01:16 🚨 触发回撤平仓条件: BTCUSDT long | 当前收益: 6.00% | 最高收益: 10.00% | 回撤: 40.00%
+2025/11/27 18:01:16 ✅ 紧急平多仓成功，订单ID: 123458
+2025/11/27 18:01:16 ✅ 回撤平仓成功: BTCUSDT long
+=== RUN   TestAutoTraderTestSuite/TestCheckPositionDrawdown/空头_触发回撤平仓
+2025/11/27 18:01:16 🚨 触发回撤平仓条件: ETHUSDT short | 当前收益: 6.00% | 最高收益: 10.00% | 回撤: 40.00%
+2025/11/27 18:01:16 ✅ 紧急平空仓成功，订单ID: 123459
+2025/11/27 18:01:16 ✅ 回撤平仓成功: ETHUSDT short
+=== RUN   TestAutoTraderTestSuite/TestCheckPositionDrawdown/多头_平仓失败_保留缓存
+2025/11/27 18:01:16 🚨 触发回撤平仓条件: BTCUSDT long | 当前收益: 6.00% | 最高收益: 10.00% | 回撤: 40.00%
+2025/11/27 18:01:16 ❌ 回撤平仓失败 (BTCUSDT long): failed to close long
+=== RUN   TestAutoTraderTestSuite/TestCheckPositionDrawdown/空头_平仓失败_保留缓存
+2025/11/27 18:01:16 🚨 触发回撤平仓条件: ETHUSDT short | 当前收益: 6.00% | 最高收益: 10.00% | 回撤: 40.00%
+2025/11/27 18:01:16 ❌ 回撤平仓失败 (ETHUSDT short): failed to close short
+=== RUN   TestAutoTraderTestSuite/TestExecuteClosePosition
+=== RUN   TestAutoTraderTestSuite/TestExecuteClosePosition/成功平多仓
+2025/11/27 18:01:16   🔄 平多仓: BTCUSDT
+2025/11/27 18:01:16   ✓ 平仓成功
+=== RUN   TestAutoTraderTestSuite/TestExecuteClosePosition/成功平空仓
+2025/11/27 18:01:16   🔄 平空仓: BTCUSDT
+2025/11/27 18:01:16   ✓ 平仓成功
+=== RUN   TestAutoTraderTestSuite/TestExecuteDecisionWithRecord
+=== RUN   TestAutoTraderTestSuite/TestExecuteDecisionWithRecord/路由到open_long
+2025/11/27 18:01:16   📈 开多仓: BTCUSDT
+2025/11/27 18:01:16   ✓ 开仓成功，订单ID: 123456, 数量: 0.0200
+=== RUN   TestAutoTraderTestSuite/TestExecuteDecisionWithRecord/路由到close_long
+2025/11/27 18:01:16   🔄 平多仓: BTCUSDT
+2025/11/27 18:01:16   ✓ 平仓成功
+=== RUN   TestAutoTraderTestSuite/TestExecuteDecisionWithRecord/路由到hold_不执行
+=== RUN   TestAutoTraderTestSuite/TestExecuteDecisionWithRecord/未知action返回错误
+=== RUN   TestAutoTraderTestSuite/TestExecuteOpenLong_InsufficientBalance_Rejected
+2025/11/27 18:01:16   📈 开多仓: BTCUSDT
+=== RUN   TestAutoTraderTestSuite/TestExecuteOpenLong_WithAutoScale
+2025/11/27 18:01:16   📈 开多仓: BTCUSDT
+2025/11/27 18:01:16   ⚠️ 自动缩放仓位: 5000.00 → 940.50 USDT (杠杆 10x, 可用余额 100.00 USDT)
+2025/11/27 18:01:16   ✓ 开仓成功（自动缩放），订单ID: 123456, 数量: 0.0188, 仓位: 5000.00 → 940.50 USDT
+=== RUN   TestAutoTraderTestSuite/TestExecuteOpenPosition
+=== RUN   TestAutoTraderTestSuite/TestExecuteOpenPosition/成功开多仓
+2025/11/27 18:01:16   📈 开多仓: BTCUSDT
+2025/11/27 18:01:16   ✓ 开仓成功，订单ID: 123456, 数量: 0.0200
+=== RUN   TestAutoTraderTestSuite/TestExecuteOpenPosition/成功开空仓
+2025/11/27 18:01:16   📉 开空仓: BTCUSDT
+2025/11/27 18:01:16   ✓ 开仓成功，订单ID: 123457, 数量: 0.0200
+=== RUN   TestAutoTraderTestSuite/TestExecuteOpenPosition/多仓_保证金不足
+2025/11/27 18:01:16   📈 开多仓: BTCUSDT
+=== RUN   TestAutoTraderTestSuite/TestExecuteOpenPosition/空仓_保证金不足
+2025/11/27 18:01:16   📉 开空仓: BTCUSDT
+=== RUN   TestAutoTraderTestSuite/TestExecuteOpenPosition/多仓_已有同方向持仓
+2025/11/27 18:01:16   📈 开多仓: BTCUSDT
+=== RUN   TestAutoTraderTestSuite/TestExecuteOpenPosition/空仓_已有同方向持仓
+2025/11/27 18:01:16   📉 开空仓: BTCUSDT
+=== RUN   TestAutoTraderTestSuite/TestExecuteOpenShort_WithAutoScale
+2025/11/27 18:01:16   📉 开空仓: ETHUSDT
+2025/11/27 18:01:16   ⚠️ 自动缩放仓位: 10000.00 → 940.50 USDT (杠杆 5x, 可用余额 200.00 USDT)
+2025/11/27 18:01:16   ✓ 开仓成功（自动缩放），订单ID: 123457, 数量: 0.0188, 仓位: 10000.00 → 940.50 USDT
+=== RUN   TestAutoTraderTestSuite/TestExecutePartialCloseWithRecord
+=== RUN   TestAutoTraderTestSuite/TestExecutePartialCloseWithRecord/成功部分平仓
+2025/11/27 18:01:16   📊 部分平仓: BTCUSDT 50.0%
+2025/11/27 18:01:16   ✓ 部分平仓成功: 平仓 0.0500 (50.0%), 剩余 0.0500
+2025/11/27 18:01:16   ⚠️⚠️⚠️ 警告: 部分平仓后AI未提供新的止盈止损价格
+2025/11/27 18:01:16   → 剩余仓位 0.0500 (价值 2600.00 USDT) 目前没有止盈止损保护
+2025/11/27 18:01:16   → 建议: 在 partial_close 决策中包含 new_stop_loss 和 new_take_profit 字段
+=== RUN   TestAutoTraderTestSuite/TestExecutePartialCloseWithRecord/无效的平仓百分比
+2025/11/27 18:01:16   📊 部分平仓: BTCUSDT 150.0%
+=== RUN   TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit
+=== RUN   TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/成功更新多头止损
+2025/11/27 18:01:16   🎯 调整止损: BTCUSDT → 51000.00
+2025/11/27 18:01:16   ✓ 止损已调整: 51000.00 (当前价格: 52000.00)
+=== RUN   TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/成功更新空头止损
+2025/11/27 18:01:16   🎯 调整止损: ETHUSDT → 2950.00
+2025/11/27 18:01:16   ✓ 止损已调整: 2950.00 (当前价格: 2900.00)
+=== RUN   TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/成功更新多头止盈
+2025/11/27 18:01:16   🎯 调整止盈: BTCUSDT → 55000.00
+2025/11/27 18:01:16   ✓ 止盈已调整: 55000.00 (当前价格: 52000.00)
+=== RUN   TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/成功更新空头止盈
+2025/11/27 18:01:16   🎯 调整止盈: ETHUSDT → 2800.00
+2025/11/27 18:01:16   ✓ 止盈已调整: 2800.00 (当前价格: 2900.00)
+=== RUN   TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/多头止损价格不合理
+2025/11/27 18:01:16   🎯 调整止损: BTCUSDT → 51000.00
+=== RUN   TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/多头止盈价格不合理
+2025/11/27 18:01:16   🎯 调整止盈: BTCUSDT → 49000.00
+=== RUN   TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/止损_持仓不存在
+2025/11/27 18:01:16   🎯 调整止损: BTCUSDT → 49000.00
+=== RUN   TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/止盈_持仓不存在
+2025/11/27 18:01:16   🎯 调整止盈: BTCUSDT → 55000.00
+=== RUN   TestAutoTraderTestSuite/TestGetAccountInfo
+2025/11/27 18:01:16 ⚠️ 未实现盈亏不一致: API=100.0000, 计算=0.0000, 差异=100.0000
+=== RUN   TestAutoTraderTestSuite/TestGetCandidateCoins
+=== RUN   TestAutoTraderTestSuite/TestGetCandidateCoins/使用数据库默认币种
+2025/11/27 18:01:16 📋 [Test Trader] 使用数据库默认币种: 3个币种 [BTC ETH BNB]
+=== RUN   TestAutoTraderTestSuite/TestGetCandidateCoins/使用自定义币种
+2025/11/27 18:01:16 📋 [Test Trader] 使用自定义币种: 2个币种 [SOL AVAX]
+=== RUN   TestAutoTraderTestSuite/TestGetCandidateCoins/使用AI500+OI作为fallback
+2025/11/27 18:01:16 📋 [Test Trader] 数据库无默认币种配置，使用AI500+OI Top: AI500前20 + OI_Top20 = 总计2个候选币种
+=== RUN   TestAutoTraderTestSuite/TestGetPositions
+=== RUN   TestAutoTraderTestSuite/TestGetPositions/空持仓
+=== RUN   TestAutoTraderTestSuite/TestGetPositions/有持仓
+=== RUN   TestAutoTraderTestSuite/TestGetStatus
+=== RUN   TestAutoTraderTestSuite/TestGettersAndSetters
+=== RUN   TestAutoTraderTestSuite/TestGettersAndSetters/GetID
+=== RUN   TestAutoTraderTestSuite/TestGettersAndSetters/GetName
+=== RUN   TestAutoTraderTestSuite/TestGettersAndSetters/SetSystemPromptTemplate
+=== RUN   TestAutoTraderTestSuite/TestGettersAndSetters/SetCustomPrompt
+=== RUN   TestAutoTraderTestSuite/TestNormalizeSymbol
+=== RUN   TestAutoTraderTestSuite/TestNormalizeSymbol/已经是标准格式
+=== RUN   TestAutoTraderTestSuite/TestNormalizeSymbol/小写转大写
+=== RUN   TestAutoTraderTestSuite/TestNormalizeSymbol/只有币种名称_添加USDT
+=== RUN   TestAutoTraderTestSuite/TestNormalizeSymbol/带空格_去除空格
+=== RUN   TestAutoTraderTestSuite/TestPeakPnLCache
+=== RUN   TestAutoTraderTestSuite/TestPeakPnLCache/UpdatePeakPnL_首次记录
+=== RUN   TestAutoTraderTestSuite/TestPeakPnLCache/UpdatePeakPnL_更新为更高值
+=== RUN   TestAutoTraderTestSuite/TestPeakPnLCache/UpdatePeakPnL_不更新为更低值
+=== RUN   TestAutoTraderTestSuite/TestPeakPnLCache/ClearPeakPnLCache
+=== RUN   TestAutoTraderTestSuite/TestSortDecisionsByPriority
+=== RUN   TestAutoTraderTestSuite/TestSortDecisionsByPriority/混合决策_验证优先级排序
+--- PASS: TestAutoTraderTestSuite (0.03s)
+    --- PASS: TestAutoTraderTestSuite/TestBuildTradingContext (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestCheckAndScaleMargin_DifferentLeverages (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestCheckAndScaleMargin_DifferentLeverages/低杠杆_余额不足 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestCheckAndScaleMargin_DifferentLeverages/高杠杆_余额充足 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestCheckAndScaleMargin_DifferentLeverages/高杠杆_余额不足 (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestCheckAndScaleMargin_EdgeCase_ExactBalance (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestCheckAndScaleMargin_InsufficientBalance_AutoScale (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestCheckAndScaleMargin_SufficientBalance (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestCheckAndScaleMargin_VeryLowBalance_Rejected (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestCheckPositionDrawdown (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestCheckPositionDrawdown/获取持仓失败_不panic (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestCheckPositionDrawdown/无持仓_不panic (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestCheckPositionDrawdown/收益不足5%_不触发平仓 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestCheckPositionDrawdown/回撤不足40%_不触发平仓 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestCheckPositionDrawdown/多头_触发回撤平仓 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestCheckPositionDrawdown/空头_触发回撤平仓 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestCheckPositionDrawdown/多头_平仓失败_保留缓存 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestCheckPositionDrawdown/空头_平仓失败_保留缓存 (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestExecuteClosePosition (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteClosePosition/成功平多仓 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteClosePosition/成功平空仓 (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestExecuteDecisionWithRecord (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteDecisionWithRecord/路由到open_long (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteDecisionWithRecord/路由到close_long (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteDecisionWithRecord/路由到hold_不执行 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteDecisionWithRecord/未知action返回错误 (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestExecuteOpenLong_InsufficientBalance_Rejected (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestExecuteOpenLong_WithAutoScale (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestExecuteOpenPosition (0.01s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteOpenPosition/成功开多仓 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteOpenPosition/成功开空仓 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteOpenPosition/多仓_保证金不足 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteOpenPosition/空仓_保证金不足 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteOpenPosition/多仓_已有同方向持仓 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteOpenPosition/空仓_已有同方向持仓 (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestExecuteOpenShort_WithAutoScale (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestExecutePartialCloseWithRecord (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecutePartialCloseWithRecord/成功部分平仓 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecutePartialCloseWithRecord/无效的平仓百分比 (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit (0.01s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/成功更新多头止损 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/成功更新空头止损 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/成功更新多头止盈 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/成功更新空头止盈 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/多头止损价格不合理 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/多头止盈价格不合理 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/止损_持仓不存在 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestExecuteUpdateStopOrTakeProfit/止盈_持仓不存在 (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestGetAccountInfo (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestGetCandidateCoins (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestGetCandidateCoins/使用数据库默认币种 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestGetCandidateCoins/使用自定义币种 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestGetCandidateCoins/使用AI500+OI作为fallback (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestGetPositions (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestGetPositions/空持仓 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestGetPositions/有持仓 (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestGetStatus (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestGettersAndSetters (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestGettersAndSetters/GetID (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestGettersAndSetters/GetName (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestGettersAndSetters/SetSystemPromptTemplate (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestGettersAndSetters/SetCustomPrompt (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestNormalizeSymbol (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestNormalizeSymbol/已经是标准格式 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestNormalizeSymbol/小写转大写 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestNormalizeSymbol/只有币种名称_添加USDT (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestNormalizeSymbol/带空格_去除空格 (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestPeakPnLCache (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestPeakPnLCache/UpdatePeakPnL_首次记录 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestPeakPnLCache/UpdatePeakPnL_更新为更高值 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestPeakPnLCache/UpdatePeakPnL_不更新为更低值 (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestPeakPnLCache/ClearPeakPnLCache (0.00s)
+    --- PASS: TestAutoTraderTestSuite/TestSortDecisionsByPriority (0.00s)
+        --- PASS: TestAutoTraderTestSuite/TestSortDecisionsByPriority/混合决策_验证优先级排序 (0.00s)
+=== RUN   TestCalculatePnLPercentage
+=== RUN   TestCalculatePnLPercentage/正常盈利_-_10倍杠杆
+=== RUN   TestCalculatePnLPercentage/正常亏损_-_10倍杠杆
+=== RUN   TestCalculatePnLPercentage/高杠杆盈利_-_价格上涨1%，20倍杠杆
+=== RUN   TestCalculatePnLPercentage/保证金为0_-_边界情况
+=== RUN   TestCalculatePnLPercentage/负保证金_-_边界情况
+=== RUN   TestCalculatePnLPercentage/盈亏为0
+=== RUN   TestCalculatePnLPercentage/小额交易
+=== RUN   TestCalculatePnLPercentage/大额盈利
+=== RUN   TestCalculatePnLPercentage/极小保证金
+--- PASS: TestCalculatePnLPercentage (0.00s)
+    --- PASS: TestCalculatePnLPercentage/正常盈利_-_10倍杠杆 (0.00s)
+    --- PASS: TestCalculatePnLPercentage/正常亏损_-_10倍杠杆 (0.00s)
+    --- PASS: TestCalculatePnLPercentage/高杠杆盈利_-_价格上涨1%，20倍杠杆 (0.00s)
+    --- PASS: TestCalculatePnLPercentage/保证金为0_-_边界情况 (0.00s)
+    --- PASS: TestCalculatePnLPercentage/负保证金_-_边界情况 (0.00s)
+    --- PASS: TestCalculatePnLPercentage/盈亏为0 (0.00s)
+    --- PASS: TestCalculatePnLPercentage/小额交易 (0.00s)
+    --- PASS: TestCalculatePnLPercentage/大额盈利 (0.00s)
+    --- PASS: TestCalculatePnLPercentage/极小保证金 (0.00s)
+=== RUN   TestCalculatePnLPercentage_RealWorldScenarios
+=== RUN   TestCalculatePnLPercentage_RealWorldScenarios/BTC_10倍杠杆，价格上涨2%
+=== RUN   TestCalculatePnLPercentage_RealWorldScenarios/ETH_5倍杠杆，价格下跌3%
+=== RUN   TestCalculatePnLPercentage_RealWorldScenarios/SOL_20倍杠杆，价格上涨0.5%
+--- PASS: TestCalculatePnLPercentage_RealWorldScenarios (0.00s)
+    --- PASS: TestCalculatePnLPercentage_RealWorldScenarios/BTC_10倍杠杆，价格上涨2% (0.00s)
+    --- PASS: TestCalculatePnLPercentage_RealWorldScenarios/ETH_5倍杠杆，价格下跌3% (0.00s)
+    --- PASS: TestCalculatePnLPercentage_RealWorldScenarios/SOL_20倍杠杆，价格上涨0.5% (0.00s)
+=== RUN   TestFuturesTrader_InterfaceCompliance
+--- PASS: TestFuturesTrader_InterfaceCompliance (0.00s)
+=== RUN   TestFuturesTrader_CommonInterface
+=== RUN   TestFuturesTrader_CommonInterface/GetBalance
+=== RUN   TestFuturesTrader_CommonInterface/成功获取余额
+2025/11/27 18:01:16 🔄 缓存过期，正在调用币安API获取账户余额...
+2025/11/27 18:01:16 ✓ 币安API返回: 总余额=10000.00, 可用=8000.00, 未实现盈亏=100.50
+=== RUN   TestFuturesTrader_CommonInterface/GetPositions
+=== RUN   TestFuturesTrader_CommonInterface/成功获取持仓列表
+2025/11/27 18:01:16 🔄 缓存过期，正在调用币安API获取持仓信息...
+=== RUN   TestFuturesTrader_CommonInterface/GetMarketPrice
+=== RUN   TestFuturesTrader_CommonInterface/成功获取BTC价格
+=== RUN   TestFuturesTrader_CommonInterface/无效交易对返回错误
+=== RUN   TestFuturesTrader_CommonInterface/SetLeverage
+=== RUN   TestFuturesTrader_CommonInterface/设置10倍杠杆
+2025/11/27 18:01:16 🔄 缓存过期，正在调用币安API获取持仓信息...
+2025/11/27 18:01:16   ✓ BTCUSDT 杠杆已是 10x，无需切换
+=== RUN   TestFuturesTrader_CommonInterface/设置1倍杠杆
+2025/11/27 18:01:16 🔄 缓存过期，正在调用币安API获取持仓信息...
+2025/11/27 18:01:16   ✓ ETHUSDT 杠杆已切换为 1x
+2025/11/27 18:01:16   ⏱ 等待5秒冷却期...
+=== RUN   TestFuturesTrader_CommonInterface/SetMarginMode
+=== RUN   TestFuturesTrader_CommonInterface/设置全仓模式
+2025/11/27 18:01:21   ✓ BTCUSDT 仓位模式已设置为 全仓
+=== RUN   TestFuturesTrader_CommonInterface/设置逐仓模式
+2025/11/27 18:01:21   ✓ ETHUSDT 仓位模式已设置为 逐仓
+=== RUN   TestFuturesTrader_CommonInterface/FormatQuantity
+=== RUN   TestFuturesTrader_CommonInterface/格式化BTC数量
+2025/11/27 18:01:21   BTCUSDT 数量精度: 3 (stepSize: 0.001)
+=== RUN   TestFuturesTrader_CommonInterface/格式化小数量
+2025/11/27 18:01:21   ETHUSDT 数量精度: 3 (stepSize: 0.001)
+=== RUN   TestFuturesTrader_CommonInterface/OpenLong
+=== RUN   TestFuturesTrader_CommonInterface/成功开多仓
+2025/11/27 18:01:21   ✓ 已取消 BTCUSDT 的所有挂单
+2025/11/27 18:01:21 🔄 缓存过期，正在调用币安API获取持仓信息...
+2025/11/27 18:01:21   ✓ BTCUSDT 杠杆已是 10x，无需切换
+2025/11/27 18:01:21   BTCUSDT 数量精度: 3 (stepSize: 0.001)
+2025/11/27 18:01:21 ✓ 开多仓成功: BTCUSDT 数量: 0.010
+2025/11/27 18:01:21   订单ID: 123456
+=== RUN   TestFuturesTrader_CommonInterface/小数量开仓
+2025/11/27 18:01:21   ✓ 已取消 ETHUSDT 的所有挂单
+2025/11/27 18:01:21 🔄 缓存过期，正在调用币安API获取持仓信息...
+2025/11/27 18:01:21   ✓ ETHUSDT 杠杆已切换为 5x
+2025/11/27 18:01:21   ⏱ 等待5秒冷却期...
+2025/11/27 18:01:26   ETHUSDT 数量精度: 3 (stepSize: 0.001)
+2025/11/27 18:01:26 ✓ 开多仓成功: ETHUSDT 数量: 0.004
+2025/11/27 18:01:26   订单ID: 123456
+=== RUN   TestFuturesTrader_CommonInterface/OpenShort
+=== RUN   TestFuturesTrader_CommonInterface/成功开空仓
+2025/11/27 18:01:26   ✓ 已取消 BTCUSDT 的所有挂单
+2025/11/27 18:01:26 🔄 缓存过期，正在调用币安API获取持仓信息...
+2025/11/27 18:01:26   ✓ BTCUSDT 杠杆已是 10x，无需切换
+2025/11/27 18:01:26   BTCUSDT 数量精度: 3 (stepSize: 0.001)
+2025/11/27 18:01:26 ✓ 开空仓成功: BTCUSDT 数量: 0.010
+2025/11/27 18:01:26   订单ID: 123456
+=== RUN   TestFuturesTrader_CommonInterface/小数量开空仓
+2025/11/27 18:01:26   ✓ 已取消 ETHUSDT 的所有挂单
+2025/11/27 18:01:26 🔄 缓存过期，正在调用币安API获取持仓信息...
+2025/11/27 18:01:26   ✓ ETHUSDT 杠杆已切换为 5x
+2025/11/27 18:01:26   ⏱ 等待5秒冷却期...
+2025/11/27 18:01:31   ETHUSDT 数量精度: 3 (stepSize: 0.001)
+2025/11/27 18:01:31 ✓ 开空仓成功: ETHUSDT 数量: 0.004
+2025/11/27 18:01:31   订单ID: 123456
+=== RUN   TestFuturesTrader_CommonInterface/CloseLong
+=== RUN   TestFuturesTrader_CommonInterface/平指定数量
+2025/11/27 18:01:31   BTCUSDT 数量精度: 3 (stepSize: 0.001)
+2025/11/27 18:01:31 ✓ 平多仓成功: BTCUSDT 数量: 0.010
+2025/11/27 18:01:31   ✓ 已取消 BTCUSDT 的所有挂单
+=== RUN   TestFuturesTrader_CommonInterface/全部平仓_quantity为0_无持仓返回错误
+2025/11/27 18:01:31 🔄 缓存过期，正在调用币安API获取持仓信息...
+=== RUN   TestFuturesTrader_CommonInterface/CloseShort
+=== RUN   TestFuturesTrader_CommonInterface/平指定数量#01
+2025/11/27 18:01:31   BTCUSDT 数量精度: 3 (stepSize: 0.001)
+2025/11/27 18:01:31 ✓ 平空仓成功: BTCUSDT 数量: 0.010
+2025/11/27 18:01:31   ✓ 已取消 BTCUSDT 的所有挂单
+=== RUN   TestFuturesTrader_CommonInterface/全部平仓_quantity为0_无持仓返回错误#01
+2025/11/27 18:01:31 🔄 缓存过期，正在调用币安API获取持仓信息...
+=== RUN   TestFuturesTrader_CommonInterface/SetStopLoss
+=== RUN   TestFuturesTrader_CommonInterface/多头止损
+2025/11/27 18:01:31   BTCUSDT 数量精度: 3 (stepSize: 0.001)
+2025/11/27 18:01:31   止损价设置: 45000.0000
+=== RUN   TestFuturesTrader_CommonInterface/空头止损
+2025/11/27 18:01:31   ETHUSDT 数量精度: 3 (stepSize: 0.001)
+2025/11/27 18:01:31   止损价设置: 3200.0000
+=== RUN   TestFuturesTrader_CommonInterface/SetTakeProfit
+=== RUN   TestFuturesTrader_CommonInterface/多头止盈
+2025/11/27 18:01:31   BTCUSDT 数量精度: 3 (stepSize: 0.001)
+2025/11/27 18:01:31   止盈价设置: 55000.0000
+=== RUN   TestFuturesTrader_CommonInterface/空头止盈
+2025/11/27 18:01:31   ETHUSDT 数量精度: 3 (stepSize: 0.001)
+2025/11/27 18:01:31   止盈价设置: 2800.0000
+=== RUN   TestFuturesTrader_CommonInterface/CancelAllOrders
+=== RUN   TestFuturesTrader_CommonInterface/取消BTC所有订单
+2025/11/27 18:01:31   ✓ 已取消 BTCUSDT 的所有挂单
+=== RUN   TestFuturesTrader_CommonInterface/CancelStopOrders
+=== RUN   TestFuturesTrader_CommonInterface/取消BTC止盈止损单
+2025/11/27 18:01:31   ℹ BTCUSDT 没有止盈/止损单需要取消
+=== RUN   TestFuturesTrader_CommonInterface/CancelStopLossOrders
+=== RUN   TestFuturesTrader_CommonInterface/取消BTC止损单
+2025/11/27 18:01:31   ℹ BTCUSDT 没有止损单需要取消
+=== RUN   TestFuturesTrader_CommonInterface/CancelTakeProfitOrders
+=== RUN   TestFuturesTrader_CommonInterface/取消BTC止盈单
+2025/11/27 18:01:31   ℹ BTCUSDT 没有止盈单需要取消
+--- PASS: TestFuturesTrader_CommonInterface (15.02s)
+    --- PASS: TestFuturesTrader_CommonInterface/成功获取余额 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/GetBalance (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/成功获取持仓列表 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/GetPositions (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/成功获取BTC价格 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/无效交易对返回错误 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/GetMarketPrice (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/设置10倍杠杆 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/设置1倍杠杆 (5.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/SetLeverage (5.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/设置全仓模式 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/设置逐仓模式 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/SetMarginMode (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/格式化BTC数量 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/格式化小数量 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/FormatQuantity (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/成功开多仓 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/小数量开仓 (5.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/OpenLong (5.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/成功开空仓 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/小数量开空仓 (5.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/OpenShort (5.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/平指定数量 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/全部平仓_quantity为0_无持仓返回错误 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/CloseLong (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/平指定数量#01 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/全部平仓_quantity为0_无持仓返回错误#01 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/CloseShort (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/多头止损 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/空头止损 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/SetStopLoss (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/多头止盈 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/空头止盈 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/SetTakeProfit (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/取消BTC所有订单 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/CancelAllOrders (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/取消BTC止盈止损单 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/CancelStopOrders (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/取消BTC止损单 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/CancelStopLossOrders (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/取消BTC止盈单 (0.00s)
+    --- PASS: TestFuturesTrader_CommonInterface/CancelTakeProfitOrders (0.00s)
+=== RUN   TestNewFuturesTrader
+2025/11/27 18:01:31 🔌 Do not find hook: NEW_BINANCE_TRADER
+2025/11/27 18:01:31 ⏱ 已同步币安服务器时间，偏移 -143ms
+2025/11/27 18:01:31 ⚠️ 设置双向持仓模式失败: <APIError> code=-2014, msg=API-key format invalid. (如果已是双向模式则忽略此警告)
+--- PASS: TestNewFuturesTrader (0.48s)
+=== RUN   TestCalculatePositionSize
+=== RUN   TestCalculatePositionSize/正常计算
+=== RUN   TestCalculatePositionSize/高杠杆
+=== RUN   TestCalculatePositionSize/低风险
+--- PASS: TestCalculatePositionSize (0.00s)
+    --- PASS: TestCalculatePositionSize/正常计算 (0.00s)
+    --- PASS: TestCalculatePositionSize/高杠杆 (0.00s)
+    --- PASS: TestCalculatePositionSize/低风险 (0.00s)
+=== RUN   TestGetBrOrderID
+--- PASS: TestGetBrOrderID (0.00s)
+=== RUN   TestBinanceSpotAPI
+    binance_spot_test.go:33: Skipping Binance Spot API test: BINANCE_API_KEY or BINANCE_SECRET_KEY not set
+--- SKIP: TestBinanceSpotAPI (0.00s)
+=== RUN   TestBybitTrader_InterfaceCompliance
+--- PASS: TestBybitTrader_InterfaceCompliance (0.00s)
+=== RUN   TestNewBybitTrader
+=== RUN   TestNewBybitTrader/成功创建
+2025/11/27 18:01:31 🔵 [Bybit] 交易器已初始化
+=== RUN   TestNewBybitTrader/空API_Key仍可创建
+2025/11/27 18:01:31 🔵 [Bybit] 交易器已初始化
+=== RUN   TestNewBybitTrader/空Secret_Key仍可创建
+2025/11/27 18:01:31 🔵 [Bybit] 交易器已初始化
+--- PASS: TestNewBybitTrader (0.00s)
+    --- PASS: TestNewBybitTrader/成功创建 (0.00s)
+    --- PASS: TestNewBybitTrader/空API_Key仍可创建 (0.00s)
+    --- PASS: TestNewBybitTrader/空Secret_Key仍可创建 (0.00s)
+=== RUN   TestBybitTrader_SymbolFormat
+=== RUN   TestBybitTrader_SymbolFormat/标准USDT合约
+=== RUN   TestBybitTrader_SymbolFormat/ETH合约
+=== RUN   TestBybitTrader_SymbolFormat/SOL合约
+--- PASS: TestBybitTrader_SymbolFormat (0.00s)
+    --- PASS: TestBybitTrader_SymbolFormat/标准USDT合约 (0.00s)
+    --- PASS: TestBybitTrader_SymbolFormat/ETH合约 (0.00s)
+    --- PASS: TestBybitTrader_SymbolFormat/SOL合约 (0.00s)
+=== RUN   TestBybitTrader_FormatQuantity
+2025/11/27 18:01:31 🔵 [Bybit] 交易器已初始化
+=== RUN   TestBybitTrader_FormatQuantity/BTC数量格式化
+=== RUN   TestBybitTrader_FormatQuantity/ETH数量格式化
+=== RUN   TestBybitTrader_FormatQuantity/整数数量
+--- PASS: TestBybitTrader_FormatQuantity (0.00s)
+    --- PASS: TestBybitTrader_FormatQuantity/BTC数量格式化 (0.00s)
+    --- PASS: TestBybitTrader_FormatQuantity/ETH数量格式化 (0.00s)
+    --- PASS: TestBybitTrader_FormatQuantity/整数数量 (0.00s)
+=== RUN   TestBybitTrader_ParseResponse
+=== RUN   TestBybitTrader_ParseResponse/成功响应
+=== RUN   TestBybitTrader_ParseResponse/API错误
+=== RUN   TestBybitTrader_ParseResponse/权限错误
+--- PASS: TestBybitTrader_ParseResponse (0.00s)
+    --- PASS: TestBybitTrader_ParseResponse/成功响应 (0.00s)
+    --- PASS: TestBybitTrader_ParseResponse/API错误 (0.00s)
+    --- PASS: TestBybitTrader_ParseResponse/权限错误 (0.00s)
+=== RUN   TestBybitTrader_PositionSideConversion
+=== RUN   TestBybitTrader_PositionSideConversion/Buy转Long
+=== RUN   TestBybitTrader_PositionSideConversion/Sell转Short
+=== RUN   TestBybitTrader_PositionSideConversion/其他值保持不变
+--- PASS: TestBybitTrader_PositionSideConversion (0.00s)
+    --- PASS: TestBybitTrader_PositionSideConversion/Buy转Long (0.00s)
+    --- PASS: TestBybitTrader_PositionSideConversion/Sell转Short (0.00s)
+    --- PASS: TestBybitTrader_PositionSideConversion/其他值保持不变 (0.00s)
+=== RUN   TestBybitTrader_CategoryLinear
+2025/11/27 18:01:31 🔵 [Bybit] 交易器已初始化
+--- PASS: TestBybitTrader_CategoryLinear (0.00s)
+=== RUN   TestBybitTrader_CacheDuration
+2025/11/27 18:01:31 🔵 [Bybit] 交易器已初始化
+--- PASS: TestBybitTrader_CacheDuration (0.00s)
+=== RUN   TestBybitTrader_MockServerGetBalance
+--- PASS: TestBybitTrader_MockServerGetBalance (0.00s)
+=== RUN   TestBybitTrader_MockServerGetPositions
+--- PASS: TestBybitTrader_MockServerGetPositions (0.00s)
+=== RUN   TestBybitTrader_MockServerPlaceOrder
+--- PASS: TestBybitTrader_MockServerPlaceOrder (0.00s)
+=== RUN   TestBybitTrader_MockServerSetLeverage
+--- PASS: TestBybitTrader_MockServerSetLeverage (0.00s)
+=== RUN   TestMetaConcurrentAccess
+--- PASS: TestMetaConcurrentAccess (0.00s)
+=== RUN   TestMetaConcurrentReadWrite
+    hyperliquid_trader_race_test.go:48: Skipping: HyperliquidTrader does not currently have mutex protection for meta field. Meta is only set once during initialization.
+--- SKIP: TestMetaConcurrentReadWrite (0.00s)
+=== RUN   TestGetSzDecimals_NilMeta
+2025/11/27 18:01:31 ⚠️  meta信息为空，使用默认精度4
+--- PASS: TestGetSzDecimals_NilMeta (0.00s)
+=== RUN   TestGetSzDecimals_ValidMeta
+=== RUN   TestGetSzDecimals_ValidMeta/BTC
+=== RUN   TestGetSzDecimals_ValidMeta/ETH
+=== RUN   TestGetSzDecimals_ValidMeta/SOL
+--- PASS: TestGetSzDecimals_ValidMeta (0.00s)
+    --- PASS: TestGetSzDecimals_ValidMeta/BTC (0.00s)
+    --- PASS: TestGetSzDecimals_ValidMeta/ETH (0.00s)
+    --- PASS: TestGetSzDecimals_ValidMeta/SOL (0.00s)
+=== RUN   TestMetaMutex_NoRaceCondition
+    hyperliquid_trader_race_test.go:101: Skipping: HyperliquidTrader does not currently have mutex protection for meta field. Meta is only set once during initialization.
+--- SKIP: TestMetaMutex_NoRaceCondition (0.00s)
+=== RUN   TestHyperliquidTrader_InterfaceCompliance
+--- PASS: TestHyperliquidTrader_InterfaceCompliance (0.00s)
+=== RUN   TestHyperliquidTrader_CommonInterface
+=== RUN   TestHyperliquidTrader_CommonInterface/GetBalance
+=== RUN   TestHyperliquidTrader_CommonInterface/成功获取余额
+2025/11/27 18:01:31 🔄 正在调用Hyperliquid API获取账户余额...
+2025/11/27 18:01:31 ✓ 发现 Spot 现货余额: 500.00 USDC
+2025/11/27 18:01:31 🔍 [DEBUG] Hyperliquid API CrossMarginSummary (全仓) 完整数据:
+2025/11/27 18:01:31 {
+    "accountValue": "10000.00",
+    "totalMarginUsed": "2000.00",
+    "totalNtlPos": "",
+    "totalRawUsd": ""
+  }
+2025/11/27 18:01:31 ✓ 使用 Withdrawable 作为可用余额: 8000.00
+2025/11/27 18:01:31 ✓ Hyperliquid 完整账户:
+2025/11/27 18:01:31   • Spot 现货余额: 500.00 USDC （需手动转账到 Perpetuals 才能开仓）
+2025/11/27 18:01:31   • Perpetuals 合约净值: 10000.00 USDC (钱包9899.50 + 未实现100.50)
+2025/11/27 18:01:31   • Perpetuals 可用余额: 8000.00 USDC （可直接用于开仓）
+2025/11/27 18:01:31   • 保证金占用: 2000.00 USDC
+2025/11/27 18:01:31   • 总资产 (Perp+Spot): 10399.50 USDC
+2025/11/27 18:01:31   ⭐ 总资产: 10399.50 USDC | Perp 可用: 8000.00 USDC | Spot 余额: 500.00 USDC
+=== RUN   TestHyperliquidTrader_CommonInterface/GetPositions
+=== RUN   TestHyperliquidTrader_CommonInterface/成功获取持仓列表
+=== RUN   TestHyperliquidTrader_CommonInterface/GetMarketPrice
+=== RUN   TestHyperliquidTrader_CommonInterface/成功获取BTC价格
+=== RUN   TestHyperliquidTrader_CommonInterface/无效交易对返回错误
+=== RUN   TestHyperliquidTrader_CommonInterface/SetLeverage
+=== RUN   TestHyperliquidTrader_CommonInterface/设置10倍杠杆
+🔍 DEBUG actionHash msgpack: 84a474797065ae7570646174654c65766572616765a5617373657400a7697343726f7373c3a86c657665726167650a
+[DEBUG] SignL1Action - ActionHash: 188021f732b2d0b76a40a06065fd2bfeb6547a972877e76b5a726f4324fb301d
+2025/11/27 18:01:31   ✓ BTCUSDT 杠杆已切换为 10x
+=== RUN   TestHyperliquidTrader_CommonInterface/设置1倍杠杆
+🔍 DEBUG actionHash msgpack: 84a474797065ae7570646174654c65766572616765a5617373657401a7697343726f7373c3a86c6576657261676501
+[DEBUG] SignL1Action - ActionHash: 9f1149b2ebbfdf2a792238cbff3f0a1c4a18be4538aa7b6a7875c7749f424b57
+2025/11/27 18:01:31   ✓ ETHUSDT 杠杆已切换为 1x
+=== RUN   TestHyperliquidTrader_CommonInterface/SetMarginMode
+=== RUN   TestHyperliquidTrader_CommonInterface/设置全仓模式
+2025/11/27 18:01:31   ✓ BTCUSDT 将使用 全仓 模式
+=== RUN   TestHyperliquidTrader_CommonInterface/设置逐仓模式
+2025/11/27 18:01:31   ✓ ETHUSDT 将使用 逐仓 模式
+=== RUN   TestHyperliquidTrader_CommonInterface/FormatQuantity
+=== RUN   TestHyperliquidTrader_CommonInterface/格式化BTC数量
+=== RUN   TestHyperliquidTrader_CommonInterface/格式化小数量
+=== RUN   TestHyperliquidTrader_CommonInterface/OpenLong
+=== RUN   TestHyperliquidTrader_CommonInterface/成功开多仓
+2025/11/27 18:01:31   ✓ 已取消 BTCUSDT 的所有挂单
+🔍 DEBUG actionHash msgpack: 84a474797065ae7570646174654c65766572616765a5617373657400a7697343726f7373c2a86c657665726167650a
+[DEBUG] SignL1Action - ActionHash: 4475cdaa4b4f542f1c45c870f0ff59803f4351bfbf4ecfeb146f1ec6f59cb2cb
+2025/11/27 18:01:31   ✓ BTCUSDT 杠杆已切换为 10x
+2025/11/27 18:01:31   📏 数量精度处理: 0.01000000 -> 0.01000000 (szDecimals=4)
+2025/11/27 18:01:31   💰 价格精度处理: 50500.00000000 -> 50500.00000000 (5位有效数字)
+🔍 DEBUG actionHash msgpack: 83a474797065a56f72646572a66f72646572739186a16100a162c3a170a53530353030a173a4302e3031a172c2a17481a56c696d697481a3746966a3496f63a867726f7570696e67a26e61
+[DEBUG] SignL1Action - ActionHash: 7ba42a13f4eecbd09094a932f4e434633183d941ce26621d0311810a542bb1bf
+2025/11/27 18:01:31 ✓ 开多仓成功: BTCUSDT 数量: 0.0100
+=== RUN   TestHyperliquidTrader_CommonInterface/小数量开仓
+2025/11/27 18:01:31   ✓ 已取消 ETHUSDT 的所有挂单
+🔍 DEBUG actionHash msgpack: 84a474797065ae7570646174654c65766572616765a5617373657401a7697343726f7373c2a86c6576657261676505
+[DEBUG] SignL1Action - ActionHash: e467898db63bdfc18c40612b27e7d931d74018b4954037fa362de9c0631c8d02
+2025/11/27 18:01:31   ✓ ETHUSDT 杠杆已切换为 5x
+2025/11/27 18:01:31   📏 数量精度处理: 0.00400000 -> 0.00400000 (szDecimals=3)
+2025/11/27 18:01:31   💰 价格精度处理: 3030.00000000 -> 3030.00000000 (5位有效数字)
+🔍 DEBUG actionHash msgpack: 83a474797065a56f72646572a66f72646572739186a16101a162c3a170a433303330a173a5302e303034a172c2a17481a56c696d697481a3746966a3496f63a867726f7570696e67a26e61
+[DEBUG] SignL1Action - ActionHash: 6900355b036a3a5e82902350783fc6cce3ba662e75d3a9159ddff7fca6c1073c
+2025/11/27 18:01:31 ✓ 开多仓成功: ETHUSDT 数量: 0.0040
+=== RUN   TestHyperliquidTrader_CommonInterface/OpenShort
+=== RUN   TestHyperliquidTrader_CommonInterface/成功开空仓
+2025/11/27 18:01:31   ✓ 已取消 BTCUSDT 的所有挂单
+🔍 DEBUG actionHash msgpack: 84a474797065ae7570646174654c65766572616765a5617373657400a7697343726f7373c2a86c657665726167650a
+[DEBUG] SignL1Action - ActionHash: b6fc20c368994c3c2eb1f1e494d5f4d52121430f6aa981c59b85c8b6c5f6fee7
+2025/11/27 18:01:31   ✓ BTCUSDT 杠杆已切换为 10x
+2025/11/27 18:01:31   📏 数量精度处理: 0.01000000 -> 0.01000000 (szDecimals=4)
+2025/11/27 18:01:31   💰 价格精度处理: 49500.00000000 -> 49500.00000000 (5位有效数字)
+🔍 DEBUG actionHash msgpack: 83a474797065a56f72646572a66f72646572739186a16100a162c2a170a53439353030a173a4302e3031a172c2a17481a56c696d697481a3746966a3496f63a867726f7570696e67a26e61
+[DEBUG] SignL1Action - ActionHash: 7811e194294b18873d672f824195f1a9acf698dea08ab6408c3a5994469159e9
+2025/11/27 18:01:31 ✓ 开空仓成功: BTCUSDT 数量: 0.0100
+=== RUN   TestHyperliquidTrader_CommonInterface/小数量开空仓
+2025/11/27 18:01:31   ✓ 已取消 ETHUSDT 的所有挂单
+🔍 DEBUG actionHash msgpack: 84a474797065ae7570646174654c65766572616765a5617373657401a7697343726f7373c2a86c6576657261676505
+[DEBUG] SignL1Action - ActionHash: 29b4064fe37fbc4a41d26a80e55965ed1629c3e5ad66d5242339d6ce6cd286a9
+2025/11/27 18:01:31   ✓ ETHUSDT 杠杆已切换为 5x
+2025/11/27 18:01:31   📏 数量精度处理: 0.00400000 -> 0.00400000 (szDecimals=3)
+2025/11/27 18:01:31   💰 价格精度处理: 2970.00000000 -> 2970.00000000 (5位有效数字)
+🔍 DEBUG actionHash msgpack: 83a474797065a56f72646572a66f72646572739186a16101a162c2a170a432393730a173a5302e303034a172c2a17481a56c696d697481a3746966a3496f63a867726f7570696e67a26e61
+[DEBUG] SignL1Action - ActionHash: 0b62841362c48b9aded627975bb899053a3b271c28031cf28974b2e22badaefd
+2025/11/27 18:01:31 ✓ 开空仓成功: ETHUSDT 数量: 0.0040
+=== RUN   TestHyperliquidTrader_CommonInterface/CloseLong
+=== RUN   TestHyperliquidTrader_CommonInterface/平指定数量
+2025/11/27 18:01:31   📏 数量精度处理: 0.01000000 -> 0.01000000 (szDecimals=4)
+2025/11/27 18:01:31   💰 价格精度处理: 49500.00000000 -> 49500.00000000 (5位有效数字)
+🔍 DEBUG actionHash msgpack: 83a474797065a56f72646572a66f72646572739186a16100a162c2a170a53439353030a173a4302e3031a172c3a17481a56c696d697481a3746966a3496f63a867726f7570696e67a26e61
+[DEBUG] SignL1Action - ActionHash: 6622f2aaa38372057884c42829e1cae0bd8cf57a208757fbc712845ea5cafbc7
+2025/11/27 18:01:31 ✓ 平多仓成功: BTCUSDT 数量: 0.0100
+2025/11/27 18:01:31   ✓ 已取消 BTCUSDT 的所有挂单
+=== RUN   TestHyperliquidTrader_CommonInterface/全部平仓_quantity为0_无持仓返回错误
+=== RUN   TestHyperliquidTrader_CommonInterface/CloseShort
+=== RUN   TestHyperliquidTrader_CommonInterface/平指定数量#01
+2025/11/27 18:01:31   📏 数量精度处理: 0.01000000 -> 0.01000000 (szDecimals=4)
+2025/11/27 18:01:31   💰 价格精度处理: 50500.00000000 -> 50500.00000000 (5位有效数字)
+🔍 DEBUG actionHash msgpack: 83a474797065a56f72646572a66f72646572739186a16100a162c3a170a53530353030a173a4302e3031a172c3a17481a56c696d697481a3746966a3496f63a867726f7570696e67a26e61
+[DEBUG] SignL1Action - ActionHash: 1c2aa1faa7ef6b8b80070ffbe323393a29365667f80a300c5e84bd36ff90d95e
+2025/11/27 18:01:31 ✓ 平空仓成功: BTCUSDT 数量: 0.0100
+2025/11/27 18:01:31   ✓ 已取消 BTCUSDT 的所有挂单
+=== RUN   TestHyperliquidTrader_CommonInterface/全部平仓_quantity为0_无持仓返回错误#01
+=== RUN   TestHyperliquidTrader_CommonInterface/SetStopLoss
+=== RUN   TestHyperliquidTrader_CommonInterface/多头止损
+🔍 DEBUG actionHash msgpack: 83a474797065a56f72646572a66f72646572739186a16100a162c2a170a53435303030a173a4302e3031a172c3a17481a77472696767657283a869734d61726b6574c3a9747269676765725078a53435303030a47470736ca2736ca867726f7570696e67a26e61
+[DEBUG] SignL1Action - ActionHash: 8c26601968cd7ca7084974b519d7a972045ee7c4a96d681a26dbd2de2c8313b8
+2025/11/27 18:01:31   止损价设置: 45000.0000
+=== RUN   TestHyperliquidTrader_CommonInterface/空头止损
+🔍 DEBUG actionHash msgpack: 83a474797065a56f72646572a66f72646572739186a16101a162c3a170a433323030a173a3302e31a172c3a17481a77472696767657283a869734d61726b6574c3a9747269676765725078a433323030a47470736ca2736ca867726f7570696e67a26e61
+[DEBUG] SignL1Action - ActionHash: f69010695e61bcf92461d0c551fe45f7529becea92a3ae26ce5d2ee549b5ee0e
+2025/11/27 18:01:31   止损价设置: 3200.0000
+=== RUN   TestHyperliquidTrader_CommonInterface/SetTakeProfit
+=== RUN   TestHyperliquidTrader_CommonInterface/多头止盈
+🔍 DEBUG actionHash msgpack: 83a474797065a56f72646572a66f72646572739186a16100a162c2a170a53535303030a173a4302e3031a172c3a17481a77472696767657283a869734d61726b6574c3a9747269676765725078a53535303030a47470736ca27470a867726f7570696e67a26e61
+[DEBUG] SignL1Action - ActionHash: 6489151eed1fcc3c2345268a5e7dec3b28f5142fb19fb2792a4d8ec2375b6fb2
+2025/11/27 18:01:31   止盈价设置: 55000.0000
+=== RUN   TestHyperliquidTrader_CommonInterface/空头止盈
+🔍 DEBUG actionHash msgpack: 83a474797065a56f72646572a66f72646572739186a16101a162c3a170a432383030a173a3302e31a172c3a17481a77472696767657283a869734d61726b6574c3a9747269676765725078a432383030a47470736ca27470a867726f7570696e67a26e61
+[DEBUG] SignL1Action - ActionHash: 0bbc60b868ef8e9b12c5d78be6025817a89c4cee61bfc71b7f791bd3be37e208
+2025/11/27 18:01:31   止盈价设置: 2800.0000
+=== RUN   TestHyperliquidTrader_CommonInterface/CancelAllOrders
+=== RUN   TestHyperliquidTrader_CommonInterface/取消BTC所有订单
+2025/11/27 18:01:31   ✓ 已取消 BTCUSDT 的所有挂单
+=== RUN   TestHyperliquidTrader_CommonInterface/CancelStopOrders
+=== RUN   TestHyperliquidTrader_CommonInterface/取消BTC止盈止损单
+2025/11/27 18:01:31   ℹ BTCUSDT 没有挂单需要取消
+=== RUN   TestHyperliquidTrader_CommonInterface/CancelStopLossOrders
+=== RUN   TestHyperliquidTrader_CommonInterface/取消BTC止损单
+2025/11/27 18:01:31   ⚠️ Hyperliquid 无法区分止损/止盈单，将取消所有挂单
+2025/11/27 18:01:31   ℹ BTCUSDT 没有挂单需要取消
+=== RUN   TestHyperliquidTrader_CommonInterface/CancelTakeProfitOrders
+=== RUN   TestHyperliquidTrader_CommonInterface/取消BTC止盈单
+2025/11/27 18:01:31   ⚠️ Hyperliquid 无法区分止损/止盈单，将取消所有挂单
+2025/11/27 18:01:31   ℹ BTCUSDT 没有挂单需要取消
+--- PASS: TestHyperliquidTrader_CommonInterface (0.01s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/成功获取余额 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/GetBalance (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/成功获取持仓列表 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/GetPositions (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/成功获取BTC价格 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/无效交易对返回错误 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/GetMarketPrice (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/设置10倍杠杆 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/设置1倍杠杆 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/SetLeverage (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/设置全仓模式 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/设置逐仓模式 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/SetMarginMode (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/格式化BTC数量 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/格式化小数量 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/FormatQuantity (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/成功开多仓 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/小数量开仓 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/OpenLong (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/成功开空仓 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/小数量开空仓 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/OpenShort (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/平指定数量 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/全部平仓_quantity为0_无持仓返回错误 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/CloseLong (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/平指定数量#01 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/全部平仓_quantity为0_无持仓返回错误#01 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/CloseShort (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/多头止损 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/空头止损 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/SetStopLoss (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/多头止盈 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/空头止盈 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/SetTakeProfit (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/取消BTC所有订单 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/CancelAllOrders (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/取消BTC止盈止损单 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/CancelStopOrders (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/取消BTC止损单 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/CancelStopLossOrders (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/取消BTC止盈单 (0.00s)
+    --- PASS: TestHyperliquidTrader_CommonInterface/CancelTakeProfitOrders (0.00s)
+=== RUN   TestNewHyperliquidTrader
+=== RUN   TestNewHyperliquidTrader/无效私钥格式
+=== RUN   TestNewHyperliquidTrader/钱包地址为空
+--- PASS: TestNewHyperliquidTrader (0.00s)
+    --- PASS: TestNewHyperliquidTrader/无效私钥格式 (0.00s)
+    --- PASS: TestNewHyperliquidTrader/钱包地址为空 (0.00s)
+=== RUN   TestNewHyperliquidTrader_Success
+    hyperliquid_trader_test.go:378: 跳过此测试：hyperliquid SDK 在构造时会调用真实 API，无法注入 mock URL
+--- SKIP: TestNewHyperliquidTrader_Success (0.00s)
+=== RUN   TestConvertSymbolToHyperliquid
+=== RUN   TestConvertSymbolToHyperliquid/BTCUSDT转换
+=== RUN   TestConvertSymbolToHyperliquid/ETHUSDT转换
+=== RUN   TestConvertSymbolToHyperliquid/无USDT后缀
+--- PASS: TestConvertSymbolToHyperliquid (0.00s)
+    --- PASS: TestConvertSymbolToHyperliquid/BTCUSDT转换 (0.00s)
+    --- PASS: TestConvertSymbolToHyperliquid/ETHUSDT转换 (0.00s)
+    --- PASS: TestConvertSymbolToHyperliquid/无USDT后缀 (0.00s)
+=== RUN   TestAbsFloat
+=== RUN   TestAbsFloat/正数
+=== RUN   TestAbsFloat/负数
+=== RUN   TestAbsFloat/零
+--- PASS: TestAbsFloat (0.00s)
+    --- PASS: TestAbsFloat/正数 (0.00s)
+    --- PASS: TestAbsFloat/负数 (0.00s)
+    --- PASS: TestAbsFloat/零 (0.00s)
+=== RUN   TestHyperliquidTrader_RoundToSzDecimals
+=== RUN   TestHyperliquidTrader_RoundToSzDecimals/BTC_四舍五入到4位
+=== RUN   TestHyperliquidTrader_RoundToSzDecimals/ETH_四舍五入到3位
+=== RUN   TestHyperliquidTrader_RoundToSzDecimals/未知币种_使用默认精度4位
+2025/11/27 18:01:31 ⚠️  未找到 UNKNOWN 的精度信息，使用默认精度4
+--- PASS: TestHyperliquidTrader_RoundToSzDecimals (0.00s)
+    --- PASS: TestHyperliquidTrader_RoundToSzDecimals/BTC_四舍五入到4位 (0.00s)
+    --- PASS: TestHyperliquidTrader_RoundToSzDecimals/ETH_四舍五入到3位 (0.00s)
+    --- PASS: TestHyperliquidTrader_RoundToSzDecimals/未知币种_使用默认精度4位 (0.00s)
+=== RUN   TestHyperliquidTrader_RoundPriceToSigfigs
+=== RUN   TestHyperliquidTrader_RoundPriceToSigfigs/BTC价格_5位有效数字
+=== RUN   TestHyperliquidTrader_RoundPriceToSigfigs/小数价格_5位有效数字
+=== RUN   TestHyperliquidTrader_RoundPriceToSigfigs/零价格
+--- PASS: TestHyperliquidTrader_RoundPriceToSigfigs (0.00s)
+    --- PASS: TestHyperliquidTrader_RoundPriceToSigfigs/BTC价格_5位有效数字 (0.00s)
+    --- PASS: TestHyperliquidTrader_RoundPriceToSigfigs/小数价格_5位有效数字 (0.00s)
+    --- PASS: TestHyperliquidTrader_RoundPriceToSigfigs/零价格 (0.00s)
+=== RUN   TestHyperliquidTrader_GetSzDecimals
+=== RUN   TestHyperliquidTrader_GetSzDecimals/meta为nil_返回默认精度
+2025/11/27 18:01:31 ⚠️  meta信息为空，使用默认精度4
+=== RUN   TestHyperliquidTrader_GetSzDecimals/找到BTC_返回正确精度
+=== RUN   TestHyperliquidTrader_GetSzDecimals/未找到币种_返回默认精度
+2025/11/27 18:01:31 ⚠️  未找到 BTC 的精度信息，使用默认精度4
+--- PASS: TestHyperliquidTrader_GetSzDecimals (0.00s)
+    --- PASS: TestHyperliquidTrader_GetSzDecimals/meta为nil_返回默认精度 (0.00s)
+    --- PASS: TestHyperliquidTrader_GetSzDecimals/找到BTC_返回正确精度 (0.00s)
+    --- PASS: TestHyperliquidTrader_GetSzDecimals/未找到币种_返回默认精度 (0.00s)
+=== RUN   TestHyperliquidTrader_SetMarginMode
+=== RUN   TestHyperliquidTrader_SetMarginMode/设置为全仓模式
+2025/11/27 18:01:31   ✓ BTCUSDT 将使用 全仓 模式
+=== RUN   TestHyperliquidTrader_SetMarginMode/设置为逐仓模式
+2025/11/27 18:01:31   ✓ ETHUSDT 将使用 逐仓 模式
+--- PASS: TestHyperliquidTrader_SetMarginMode (0.00s)
+    --- PASS: TestHyperliquidTrader_SetMarginMode/设置为全仓模式 (0.00s)
+    --- PASS: TestHyperliquidTrader_SetMarginMode/设置为逐仓模式 (0.00s)
+=== RUN   TestNewHyperliquidTrader_PrivateKeyProcessing
+=== RUN   TestNewHyperliquidTrader_PrivateKeyProcessing/带0x前缀的私钥
+=== RUN   TestNewHyperliquidTrader_PrivateKeyProcessing/无前缀的私钥
+--- PASS: TestNewHyperliquidTrader_PrivateKeyProcessing (0.00s)
+    --- PASS: TestNewHyperliquidTrader_PrivateKeyProcessing/带0x前缀的私钥 (0.00s)
+    --- PASS: TestNewHyperliquidTrader_PrivateKeyProcessing/无前缀的私钥 (0.00s)
+=== RUN   TestLighterTrader_NewTrader
+=== RUN   TestLighterTrader_NewTrader/无效私钥
+    lighter_trader_test.go:24: ✅ Invalid private key correctly rejected
+=== RUN   TestLighterTrader_NewTrader/有效私钥格式验证
+    lighter_trader_test.go:36: ✅ Valid private key format: wallet=0xFCAd0B19bB29D4674531d6f115237E16AfCE377c
+--- PASS: TestLighterTrader_NewTrader (0.00s)
+    --- PASS: TestLighterTrader_NewTrader/无效私钥 (0.00s)
+    --- PASS: TestLighterTrader_NewTrader/有效私钥格式验证 (0.00s)
+=== RUN   TestLighterTrader_GetBalance
+2025/11/27 18:01:31 🔄 认证令牌即将过期，刷新中...
+2025/11/27 18:01:31 ✓ 认证令牌已生成（有效期至: 2025-11-28T02:01:31+08:00）
+    lighter_trader_test.go:143: ✅ GetBalance: map[available_balance:8000 maintenance_margin:500 margin_used:2000 total_equity:10000 unrealized_pnl:100.5]
+--- PASS: TestLighterTrader_GetBalance (0.00s)
+=== RUN   TestLighterTrader_GetPositions
+2025/11/27 18:01:31 🔄 认证令牌即将过期，刷新中...
+2025/11/27 18:01:31 ✓ 认证令牌已生成（有效期至: 2025-11-28T02:01:31+08:00）
+    lighter_trader_test.go:157: ✅ GetPositions: found 1 positions
+--- PASS: TestLighterTrader_GetPositions (0.00s)
+=== RUN   TestLighterTrader_GetMarketPrice
+    lighter_trader_test.go:171: ✅ GetMarketPrice(BTC): 50000.00
+--- PASS: TestLighterTrader_GetMarketPrice (0.00s)
+=== RUN   TestLighterTrader_FormatQuantity
+    lighter_trader_test.go:185: ✅ FormatQuantity: 0.1235
+--- PASS: TestLighterTrader_FormatQuantity (0.00s)
+=== RUN   TestLighterTrader_GetExchangeType
+    lighter_trader_test.go:198: ✅ GetExchangeType: lighter
+--- PASS: TestLighterTrader_GetExchangeType (0.00s)
+=== RUN   TestLighterTrader_InvalidQuantity
+    lighter_trader_test.go:216: ✅ Invalid quantity validation working
+--- PASS: TestLighterTrader_InvalidQuantity (0.00s)
+=== RUN   TestLighterTrader_InvalidLeverage
+    lighter_trader_test.go:234: ✅ Invalid leverage validation working
+--- PASS: TestLighterTrader_InvalidLeverage (0.00s)
+=== RUN   TestLighterTrader_HelperFunctions
+    lighter_trader_test.go:261: ✅ Helper functions working correctly
+--- PASS: TestLighterTrader_HelperFunctions (0.00s)
+=== RUN   TestLiveIntegration
+    live_integration_test.go:10: Skipping live integration test. Set LIVE_TESTS=1 to run.
+--- SKIP: TestLiveIntegration (0.00s)
+=== RUN   TestPaperTradingBaseURL
+2025/11/27 18:01:31 🔧 [MCP] DeepSeek 使用默认 BaseURL: https://api.deepseek.com/v1
+2025/11/27 18:01:31 🔧 [MCP] DeepSeek 使用默认 Model: deepseek-chat
+2025/11/27 18:01:31 🔧 [MCP] DeepSeek API Key: test..._key
+2025/11/27 18:01:31 🤖 [Test Paper Trading] 使用DeepSeek AI
+2025/11/27 18:01:31 📊 [Test Paper Trading] 仓位模式: 逐仓
+2025/11/27 18:01:31 🧪 [Test Paper Trading] 使用 Paper Trading (Binance Testnet)
+2025/11/27 18:01:31 🔌 Do not find hook: NEW_BINANCE_TRADER
+2025/11/27 18:01:32 ⏱ 已同步币安服务器时间，偏移 -159ms
+2025/11/27 18:01:32 ⚠️ 设置双向持仓模式失败: <APIError> code=-2014, msg=API-key format invalid. (如果已是双向模式则忽略此警告)
+2025/11/27 18:01:32 🧪 [Test Paper Trading] Paper Trading 使用 Futures Testnet API: https://testnet.binancefuture.com
+    paper_trading_test.go:39: ✓ Paper Trading BaseURL 验证通过
+    paper_trading_test.go:40:   - BaseURL: https://testnet.binancefuture.com
+    paper_trading_test.go:41:   - Exchange: paper_trading
+--- PASS: TestPaperTradingBaseURL (0.46s)
+=== RUN   TestPartialCloseMinPositionCheck
+=== RUN   TestPartialCloseMinPositionCheck/正常部分平倉_剩餘價值充足
+=== RUN   TestPartialCloseMinPositionCheck/部分平倉_剩餘價值小於10USDT_應該全平
+=== RUN   TestPartialCloseMinPositionCheck/部分平倉_剩餘價值剛好10USDT_應該全平
+=== RUN   TestPartialCloseMinPositionCheck/部分平倉_剩餘價值11USDT_不應全平
+=== RUN   TestPartialCloseMinPositionCheck/大倉位部分平倉_剩餘價值遠大於10USDT
+--- PASS: TestPartialCloseMinPositionCheck (0.00s)
+    --- PASS: TestPartialCloseMinPositionCheck/正常部分平倉_剩餘價值充足 (0.00s)
+    --- PASS: TestPartialCloseMinPositionCheck/部分平倉_剩餘價值小於10USDT_應該全平 (0.00s)
+    --- PASS: TestPartialCloseMinPositionCheck/部分平倉_剩餘價值剛好10USDT_應該全平 (0.00s)
+    --- PASS: TestPartialCloseMinPositionCheck/部分平倉_剩餘價值11USDT_不應全平 (0.00s)
+    --- PASS: TestPartialCloseMinPositionCheck/大倉位部分平倉_剩餘價值遠大於10USDT (0.00s)
+=== RUN   TestPartialCloseWithStopLossTakeProfitRecovery
+=== RUN   TestPartialCloseWithStopLossTakeProfitRecovery/有新止損和止盈_應該恢復兩者
+=== RUN   TestPartialCloseWithStopLossTakeProfitRecovery/只有新止損_僅恢復止損
+=== RUN   TestPartialCloseWithStopLossTakeProfitRecovery/只有新止盈_僅恢復止盈
+=== RUN   TestPartialCloseWithStopLossTakeProfitRecovery/沒有新止損止盈_不恢復
+--- PASS: TestPartialCloseWithStopLossTakeProfitRecovery (0.00s)
+    --- PASS: TestPartialCloseWithStopLossTakeProfitRecovery/有新止損和止盈_應該恢復兩者 (0.00s)
+    --- PASS: TestPartialCloseWithStopLossTakeProfitRecovery/只有新止損_僅恢復止損 (0.00s)
+    --- PASS: TestPartialCloseWithStopLossTakeProfitRecovery/只有新止盈_僅恢復止盈 (0.00s)
+    --- PASS: TestPartialCloseWithStopLossTakeProfitRecovery/沒有新止損止盈_不恢復 (0.00s)
+=== RUN   TestPartialCloseEdgeCases
+=== RUN   TestPartialCloseEdgeCases/平倉百分比為0_應該報錯
+=== RUN   TestPartialCloseEdgeCases/平倉百分比超過100_應該報錯
+=== RUN   TestPartialCloseEdgeCases/平倉百分比為負數_應該報錯
+=== RUN   TestPartialCloseEdgeCases/正常範圍_不應報錯
+--- PASS: TestPartialCloseEdgeCases (0.00s)
+    --- PASS: TestPartialCloseEdgeCases/平倉百分比為0_應該報錯 (0.00s)
+    --- PASS: TestPartialCloseEdgeCases/平倉百分比超過100_應該報錯 (0.00s)
+    --- PASS: TestPartialCloseEdgeCases/平倉百分比為負數_應該報錯 (0.00s)
+    --- PASS: TestPartialCloseEdgeCases/正常範圍_不應報錯 (0.00s)
+=== RUN   TestPartialCloseIntegration
+=== RUN   TestPartialCloseIntegration/LONG倉_正常部分平倉_有止盈止損
+=== RUN   TestPartialCloseIntegration/SHORT倉_剩餘價值過小_應自動全平
+--- PASS: TestPartialCloseIntegration (0.00s)
+    --- PASS: TestPartialCloseIntegration/LONG倉_正常部分平倉_有止盈止損 (0.00s)
+    --- PASS: TestPartialCloseIntegration/SHORT倉_剩餘價值過小_應自動全平 (0.00s)
+=== RUN   TestCheckLeverage
+=== RUN   TestCheckLeverage/BTC_within_limit
+=== RUN   TestCheckLeverage/BTC_exceeds_limit
+=== RUN   TestCheckLeverage/ETH_within_limit
+=== RUN   TestCheckLeverage/ETH_exceeds_limit
+=== RUN   TestCheckLeverage/Alt_within_limit
+=== RUN   TestCheckLeverage/Alt_exceeds_limit
+--- PASS: TestCheckLeverage (0.00s)
+    --- PASS: TestCheckLeverage/BTC_within_limit (0.00s)
+    --- PASS: TestCheckLeverage/BTC_exceeds_limit (0.00s)
+    --- PASS: TestCheckLeverage/ETH_within_limit (0.00s)
+    --- PASS: TestCheckLeverage/ETH_exceeds_limit (0.00s)
+    --- PASS: TestCheckLeverage/Alt_within_limit (0.00s)
+    --- PASS: TestCheckLeverage/Alt_exceeds_limit (0.00s)
+=== RUN   TestCheckPositionSize
+=== RUN   TestCheckPositionSize/BTC_within_limit_(10x)
+=== RUN   TestCheckPositionSize/BTC_exceeds_limit
+=== RUN   TestCheckPositionSize/Alt_within_limit_(1.5x)
+=== RUN   TestCheckPositionSize/Alt_exceeds_limit
+=== RUN   TestCheckPositionSize/Zero_equity
+--- PASS: TestCheckPositionSize (0.00s)
+    --- PASS: TestCheckPositionSize/BTC_within_limit_(10x) (0.00s)
+    --- PASS: TestCheckPositionSize/BTC_exceeds_limit (0.00s)
+    --- PASS: TestCheckPositionSize/Alt_within_limit_(1.5x) (0.00s)
+    --- PASS: TestCheckPositionSize/Alt_exceeds_limit (0.00s)
+    --- PASS: TestCheckPositionSize/Zero_equity (0.00s)
+=== RUN   TestCheckRiskReward
+=== RUN   TestCheckRiskReward/Long_Valid_R:R_2.0
+=== RUN   TestCheckRiskReward/Long_Invalid_R:R_1.5
+=== RUN   TestCheckRiskReward/Short_Valid_R:R_2.0
+=== RUN   TestCheckRiskReward/Short_Invalid_R:R_1.0
+=== RUN   TestCheckRiskReward/Invalid_Side
+=== RUN   TestCheckRiskReward/Long_Invalid_StopLoss
+=== RUN   TestCheckRiskReward/Short_Invalid_StopLoss
+--- PASS: TestCheckRiskReward (0.00s)
+    --- PASS: TestCheckRiskReward/Long_Valid_R:R_2.0 (0.00s)
+    --- PASS: TestCheckRiskReward/Long_Invalid_R:R_1.5 (0.00s)
+    --- PASS: TestCheckRiskReward/Short_Valid_R:R_2.0 (0.00s)
+    --- PASS: TestCheckRiskReward/Short_Invalid_R:R_1.0 (0.00s)
+    --- PASS: TestCheckRiskReward/Invalid_Side (0.00s)
+    --- PASS: TestCheckRiskReward/Long_Invalid_StopLoss (0.00s)
+    --- PASS: TestCheckRiskReward/Short_Invalid_StopLoss (0.00s)
+PASS
+ok  	nofx/trader	17.971s

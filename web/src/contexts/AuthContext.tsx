@@ -97,8 +97,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Listen for unauthorized events from httpClient (401 responses)
   useEffect(() => {
-    const handleUnauthorized = () => {
-      console.log('Unauthorized event received - clearing auth state')
+    const handleUnauthorized = (event: Event) => {
+      // Cast to CustomEvent to access detail
+      const customEvent = event as CustomEvent<{ triggerToken?: string }>
+      const triggerToken = customEvent.detail?.triggerToken
+
+      // Get current token from localStorage (most reliable source of truth)
+      const currentToken = localStorage.getItem('auth_token')
+
+      console.error('[AuthContext] 🚨 Unauthorized event received', {
+        triggerToken: triggerToken
+          ? `${triggerToken.substring(0, 10)}...`
+          : 'null',
+        currentToken: currentToken
+          ? `${currentToken.substring(0, 10)}...`
+          : 'null',
+        match: triggerToken === currentToken,
+      })
+
+      // Guard logic:
+      // If the event carries a triggerToken, we MUST verify it matches the current token.
+      // If they don't match, it means the 401 came from a request using an old token.
+      if (triggerToken && currentToken && triggerToken !== currentToken) {
+        console.error(
+          '[AuthContext] 🛑 BLOCKED: Ignoring unauthorized event from stale token'
+        )
+        return
+      }
+
+      console.error('[AuthContext] ✅ CONFIRMED: Clearing auth state')
       // Clear auth state when 401 is detected
       setUser(null)
       setToken(null)
@@ -139,10 +166,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           // 登录成功，保存token和用户信息
           const userInfo = { id: data.user_id, email: data.email }
-          setToken(data.token)
-          setUser(userInfo)
           localStorage.setItem('auth_token', data.token)
           localStorage.setItem('auth_user', JSON.stringify(userInfo))
+          setToken(data.token)
+          setUser(userInfo)
 
           // Check and redirect to returnUrl if exists
           const returnUrl = sessionStorage.getItem('returnUrl')
@@ -182,10 +209,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: data.user_id || 'admin',
           email: data.email || 'admin@localhost',
         }
-        setToken(data.token)
-        setUser(userInfo)
         localStorage.setItem('auth_token', data.token)
         localStorage.setItem('auth_user', JSON.stringify(userInfo))
+        setToken(data.token)
+        setUser(userInfo)
 
         // Check and redirect to returnUrl if exists
         const returnUrl = sessionStorage.getItem('returnUrl')
@@ -303,10 +330,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // 注册完成，保存token和用户信息
         const userInfo = { id: data.user_id, email: data.email }
-        setToken(data.token)
-        setUser(userInfo)
         localStorage.setItem('auth_token', data.token)
         localStorage.setItem('auth_user', JSON.stringify(userInfo))
+        setToken(data.token)
+        setUser(userInfo)
 
         // 跳转到配置页面
         window.history.pushState({}, '', '/traders')
@@ -339,10 +366,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // 登录成功，保存token和用户信息
         const userInfo = { id: data.user_id, email: data.email }
-        setToken(data.token)
-        setUser(userInfo)
         localStorage.setItem('auth_token', data.token)
         localStorage.setItem('auth_user', JSON.stringify(userInfo))
+        setToken(data.token)
+        setUser(userInfo)
 
         // Check and redirect to returnUrl if exists
         const returnUrl = sessionStorage.getItem('returnUrl')

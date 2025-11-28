@@ -90,35 +90,68 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
     const loadConfigs = async () => {
       if (!user || !token) {
         // 未登录时只加载公开的支持模型和交易所
+        // 使用 Promise.allSettled 确保一个请求失败不影响其他请求
         try {
-          const [supportedModels, supportedExchanges] = await Promise.all([
+          const results = await Promise.allSettled([
             api.getSupportedModels(),
             api.getSupportedExchanges(),
           ])
-          setSupportedModels(supportedModels)
-          setSupportedExchanges(supportedExchanges)
+
+          if (results[0].status === 'fulfilled') {
+            setSupportedModels(results[0].value)
+          } else {
+            console.error('Failed to load supported models:', results[0].reason)
+          }
+
+          if (results[1].status === 'fulfilled') {
+            setSupportedExchanges(results[1].value)
+          } else {
+            console.error(
+              'Failed to load supported exchanges:',
+              results[1].reason
+            )
+          }
         } catch (err) {
           console.error('Failed to load supported configs:', err)
         }
         return
       }
 
+      // 登录后使用 Promise.allSettled 确保部分失败不影响整体
       try {
-        const [
-          modelConfigs,
-          exchangeConfigs,
-          supportedModels,
-          supportedExchanges,
-        ] = await Promise.all([
+        const results = await Promise.allSettled([
           api.getModelConfigs(),
           api.getExchangeConfigs(),
           api.getSupportedModels(),
           api.getSupportedExchanges(),
         ])
-        setAllModels(modelConfigs)
-        setAllExchanges(exchangeConfigs)
-        setSupportedModels(supportedModels)
-        setSupportedExchanges(supportedExchanges)
+
+        if (results[0].status === 'fulfilled') {
+          setAllModels(results[0].value)
+        } else {
+          console.error('Failed to load model configs:', results[0].reason)
+        }
+
+        if (results[1].status === 'fulfilled') {
+          setAllExchanges(results[1].value)
+        } else {
+          console.error('Failed to load exchange configs:', results[1].reason)
+        }
+
+        if (results[2].status === 'fulfilled') {
+          setSupportedModels(results[2].value)
+        } else {
+          console.error('Failed to load supported models:', results[2].reason)
+        }
+
+        if (results[3].status === 'fulfilled') {
+          setSupportedExchanges(results[3].value)
+        } else {
+          console.error(
+            'Failed to load supported exchanges:',
+            results[3].reason
+          )
+        }
 
         // 加载用户信号源配置
         try {
@@ -367,12 +400,12 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
       const traderNames = usingTraders.map((t) => t.trader_name).join(', ')
       alert(
         t(config.cannotDeleteKey, language) +
-        '\n\n' +
-        t('tradersUsing', language) +
-        ': ' +
-        traderNames +
-        '\n\n' +
-        t('pleaseDeleteTradersFirst', language)
+          '\n\n' +
+          t('tradersUsing', language) +
+          ': ' +
+          traderNames +
+          '\n\n' +
+          t('pleaseDeleteTradersFirst', language)
       )
       return
     }
@@ -467,12 +500,12 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
           allModels?.map((m) =>
             m.id === modelId
               ? {
-                ...m,
-                apiKey,
-                customApiUrl: customApiUrl || '',
-                customModelName: customModelName || '',
-                enabled: true,
-              }
+                  ...m,
+                  apiKey,
+                  customApiUrl: customApiUrl || '',
+                  customModelName: customModelName || '',
+                  enabled: true,
+                }
               : m
           ) || []
       } else {
@@ -595,16 +628,16 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
           allExchanges?.map((e) =>
             e.id === exchangeId
               ? {
-                ...e,
-                apiKey,
-                secretKey,
-                testnet,
-                hyperliquidWalletAddr,
-                asterUser,
-                asterSigner,
-                asterPrivateKey,
-                enabled: true,
-              }
+                  ...e,
+                  apiKey,
+                  secretKey,
+                  testnet,
+                  hyperliquidWalletAddr,
+                  asterUser,
+                  asterSigner,
+                  asterPrivateKey,
+                  enabled: true,
+                }
               : e
           ) || []
       } else {
@@ -846,10 +879,11 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
               return (
                 <div
                   key={model.id}
-                  className={`flex items-center justify-between p-2 md:p-3 rounded transition-all ${inUse
-                    ? 'cursor-not-allowed'
-                    : 'cursor-pointer hover:bg-gray-700'
-                    }`}
+                  className={`flex items-center justify-between p-2 md:p-3 rounded transition-all ${
+                    inUse
+                      ? 'cursor-not-allowed'
+                      : 'cursor-pointer hover:bg-gray-700'
+                  }`}
                   style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
                   onClick={() => handleModelClick(model.id)}
                 >
@@ -859,17 +893,17 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
                         width: 28,
                         height: 28,
                       }) || (
-                          <div
-                            className="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-bold"
-                            style={{
-                              background:
-                                model.id === 'deepseek' ? '#60a5fa' : '#c084fc',
-                              color: '#fff',
-                            }}
-                          >
-                            {getShortName(model.name)[0]}
-                          </div>
-                        )}
+                        <div
+                          className="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-bold"
+                          style={{
+                            background:
+                              model.id === 'deepseek' ? '#60a5fa' : '#c084fc',
+                            color: '#fff',
+                          }}
+                        >
+                          {getShortName(model.name)[0]}
+                        </div>
+                      )}
                     </div>
                     <div className="min-w-0">
                       <div
@@ -925,10 +959,11 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
               return (
                 <div
                   key={exchange.id}
-                  className={`flex items-center justify-between p-2 md:p-3 rounded transition-all ${inUse
-                    ? 'cursor-not-allowed'
-                    : 'cursor-pointer hover:bg-gray-700'
-                    }`}
+                  className={`flex items-center justify-between p-2 md:p-3 rounded transition-all ${
+                    inUse
+                      ? 'cursor-not-allowed'
+                      : 'cursor-pointer hover:bg-gray-700'
+                  }`}
                   style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
                   onClick={() => handleExchangeClick(exchange.id)}
                 >
@@ -1039,20 +1074,21 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
                       {t('status', language)}
                     </div>
                     <div
-                      className={`px-2 md:px-3 py-1 rounded text-xs font-bold ${trader.is_running
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                        }`}
+                      className={`px-2 md:px-3 py-1 rounded text-xs font-bold ${
+                        trader.is_running
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
                       style={
                         trader.is_running
                           ? {
-                            background: 'rgba(14, 203, 129, 0.1)',
-                            color: '#0ECB81',
-                          }
+                              background: 'rgba(14, 203, 129, 0.1)',
+                              color: '#0ECB81',
+                            }
                           : {
-                            background: 'rgba(246, 70, 93, 0.1)',
-                            color: '#F6465D',
-                          }
+                              background: 'rgba(246, 70, 93, 0.1)',
+                              color: '#F6465D',
+                            }
                       }
                     >
                       {trader.is_running
@@ -1100,13 +1136,13 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
                       style={
                         trader.is_running
                           ? {
-                            background: 'rgba(246, 70, 93, 0.1)',
-                            color: '#F6465D',
-                          }
+                              background: 'rgba(246, 70, 93, 0.1)',
+                              color: '#F6465D',
+                            }
                           : {
-                            background: 'rgba(14, 203, 129, 0.1)',
-                            color: '#0ECB81',
-                          }
+                              background: 'rgba(14, 203, 129, 0.1)',
+                              color: '#0ECB81',
+                            }
                       }
                     >
                       {trader.is_running
@@ -1143,15 +1179,15 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
             </div>
             {(configuredModels.length === 0 ||
               configuredExchanges.length === 0) && (
-                <div className="text-xs md:text-sm text-yellow-500">
-                  {configuredModels.length === 0 &&
-                    configuredExchanges.length === 0
-                    ? t('configureModelsAndExchangesFirst', language)
-                    : configuredModels.length === 0
-                      ? t('configureModelsFirst', language)
-                      : t('configureExchangesFirst', language)}
-                </div>
-              )}
+              <div className="text-xs md:text-sm text-yellow-500">
+                {configuredModels.length === 0 &&
+                configuredExchanges.length === 0
+                  ? t('configureModelsAndExchangesFirst', language)
+                  : configuredModels.length === 0
+                    ? t('configureModelsFirst', language)
+                    : t('configureExchangesFirst', language)}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1521,19 +1557,19 @@ function ModelConfigModal({
                     width: 32,
                     height: 32,
                   }) || (
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-                        style={{
-                          background:
-                            selectedModel.id === 'deepseek'
-                              ? '#60a5fa'
-                              : '#c084fc',
-                          color: '#fff',
-                        }}
-                      >
-                        {selectedModel.name[0]}
-                      </div>
-                    )}
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                      style={{
+                        background:
+                          selectedModel.id === 'deepseek'
+                            ? '#60a5fa'
+                            : '#c084fc',
+                        color: '#fff',
+                      }}
+                    >
+                      {selectedModel.name[0]}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <div className="font-semibold" style={{ color: '#EAECEF' }}>

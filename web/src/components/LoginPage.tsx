@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { t } from '../i18n/translations'
@@ -23,13 +22,15 @@ export function LoginPage() {
   const adminMode = false
   const { config: systemConfig } = useSystemConfig()
   const registrationEnabled = systemConfig?.registration_enabled !== false
-  const [expiredToastId, setExpiredToastId] = useState<string | number | null>(null)
+  const [expiredToastId, setExpiredToastId] = useState<string | number | null>(
+    null
+  )
 
   // Show notification if user was redirected here due to 401
   useEffect(() => {
     if (sessionStorage.getItem('from401') === 'true') {
       const id = toast.warning(t('sessionExpired', language), {
-        duration: Infinity // Keep showing until user dismisses or logs in
+        duration: Infinity, // Keep showing until user dismisses or logs in
       })
       setExpiredToastId(id)
       sessionStorage.removeItem('from401')

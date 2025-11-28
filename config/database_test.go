@@ -32,6 +32,8 @@ func TestUpdateExchange_EmptyValuesShouldNotOverwrite(t *testing.T) {
 		"",
 		"",
 		"",
+		"",
+		"",
 	)
 	if err != nil {
 		t.Fatalf("初始化失败: %v", err)
@@ -61,9 +63,11 @@ func TestUpdateExchange_EmptyValuesShouldNotOverwrite(t *testing.T) {
 		"",    // 空 secretKey - 不应该覆盖
 		true,  // 改变 testnet 状态
 		"0xWalletAddress",
-		"",
-		"",
 		"", // 空 aster_private_key - 不应该覆盖
+		"",
+		"",
+		"",
+		"",
 	)
 	if err != nil {
 		t.Fatalf("更新失败: %v", err)
@@ -99,7 +103,7 @@ func TestUpdateExchange_AsterEmptyValuesShouldNotOverwrite(t *testing.T) {
 
 	userID := "test-user-002"
 
-	// 步骤 1: 创建 Aster 配置
+	// 步骤 1: 创建初始配置
 	initialAsterKey := "aster-private-key-xyz123"
 
 	err := db.UpdateExchange(
@@ -113,6 +117,8 @@ func TestUpdateExchange_AsterEmptyValuesShouldNotOverwrite(t *testing.T) {
 		"0xAsterUser",
 		"0xAsterSigner",
 		initialAsterKey,
+		"",
+		"",
 	)
 	if err != nil {
 		t.Fatalf("初始化 Aster 失败: %v", err)
@@ -130,6 +136,8 @@ func TestUpdateExchange_AsterEmptyValuesShouldNotOverwrite(t *testing.T) {
 		"0xAsterUser",
 		"0xAsterSigner",
 		"", // 空 aster_private_key
+		"",
+		"",
 	)
 	if err != nil {
 		t.Fatalf("更新失败: %v", err)
@@ -165,6 +173,8 @@ func TestUpdateExchange_NonEmptyValuesShouldUpdate(t *testing.T) {
 		"",
 		"",
 		"",
+		"",
+		"",
 	)
 	if err != nil {
 		t.Fatalf("初始化失败: %v", err)
@@ -182,6 +192,8 @@ func TestUpdateExchange_NonEmptyValuesShouldUpdate(t *testing.T) {
 		newSecretKey,
 		false,
 		"0xNewWallet",
+		"",
+		"",
 		"",
 		"",
 		"",
@@ -223,6 +235,9 @@ func TestUpdateExchange_PartialUpdateShouldWork(t *testing.T) {
 		"secret-key-456",
 		false,
 		"0xWallet1",
+
+		"",
+		"",
 		"",
 		"",
 		"",
@@ -240,6 +255,8 @@ func TestUpdateExchange_PartialUpdateShouldWork(t *testing.T) {
 		"", // 留空
 		true,
 		"0xWallet2",
+		"",
+		"",
 		"",
 		"",
 		"",
@@ -305,6 +322,8 @@ func TestUpdateExchange_MultipleExchangeTypes(t *testing.T) {
 				"",
 				"",
 				"",
+				"",
+				"",
 			)
 			if err != nil {
 				t.Fatalf("创建 %s 失败: %v", tc.exchangeID, err)
@@ -359,6 +378,8 @@ func TestUpdateExchange_MixedSensitiveFields(t *testing.T) {
 		"",
 		"",
 		"",
+		"",
+		"",
 	)
 	if err != nil {
 		t.Fatalf("初始化失败: %v", err)
@@ -373,6 +394,8 @@ func TestUpdateExchange_MixedSensitiveFields(t *testing.T) {
 		"", // 留空
 		true,
 		"0xNewWallet",
+		"",
+		"",
 		"",
 		"",
 		"",
@@ -398,6 +421,8 @@ func TestUpdateExchange_MixedSensitiveFields(t *testing.T) {
 		"new-secret-key",
 		false,
 		"0xFinalWallet",
+		"",
+		"",
 		"",
 		"",
 		"",
@@ -440,6 +465,8 @@ func TestUpdateExchange_OnlyNonSensitiveFields(t *testing.T) {
 		"0xUser1",
 		"0xSigner1",
 		"aster-private-key-1",
+		"",
+		"",
 	)
 	if err != nil {
 		t.Fatalf("初始化失败: %v", err)
@@ -456,6 +483,8 @@ func TestUpdateExchange_OnlyNonSensitiveFields(t *testing.T) {
 		"",
 		"0xUser2",
 		"0xSigner2",
+		"",
+		"",
 		"",
 	)
 	if err != nil {
@@ -508,6 +537,8 @@ func TestUpdateExchange_AllSensitiveFieldsUpdate(t *testing.T) {
 		"",
 		"",
 		"old-aster-key",
+		"",
+		"",
 	)
 	if err != nil {
 		t.Fatalf("初始化失败: %v", err)
@@ -525,6 +556,8 @@ func TestUpdateExchange_AllSensitiveFieldsUpdate(t *testing.T) {
 		"0xUser",
 		"0xSigner",
 		"new-aster-key",
+		"",
+		"",
 	)
 	if err != nil {
 		t.Fatalf("更新失败: %v", err)
@@ -659,6 +692,7 @@ func TestDataPersistenceAcrossReopen(t *testing.T) {
 		if err != nil {
 			t.Fatalf("第一次创建数据库失败: %v", err)
 		}
+
 		db.SetCryptoService(cryptoService)
 
 		// 写入交易所配置
@@ -669,6 +703,8 @@ func TestDataPersistenceAcrossReopen(t *testing.T) {
 			testAPIKey,
 			testSecretKey,
 			false,
+			"",
+			"",
 			"",
 			"",
 			"",
@@ -748,6 +784,8 @@ func TestConcurrentWritesWithWAL(t *testing.T) {
 				"",
 				"",
 				"",
+				"",
+				"",
 			)
 			if err != nil {
 				errors <- err
@@ -769,6 +807,8 @@ func TestConcurrentWritesWithWAL(t *testing.T) {
 				"secret2",
 				false,
 				"0xWallet",
+				"",
+				"",
 				"",
 				"",
 				"",

@@ -9,7 +9,6 @@ import type {
 import { useLanguage } from '../contexts/LanguageContext'
 import { t } from '../i18n/translations'
 import { IndicatorConfigPanel } from './IndicatorConfigPanel'
-import { Pencil, Plus, X as IconX } from 'lucide-react'
 import { httpClient } from '../lib/httpClient'
 
 // 提取下划线后面的名称部分
@@ -259,7 +258,7 @@ export function TraderConfigModal({
     try {
       const initialBalanceValue =
         typeof formData.initial_balance === 'number' &&
-          formData.initial_balance > 0
+        formData.initial_balance > 0
           ? formData.initial_balance
           : 1000
 
@@ -280,7 +279,6 @@ export function TraderConfigModal({
         initial_balance: initialBalanceValue,
         indicator_config: indicatorConfig,
       }
-
 
       await toast.promise(onSave(saveData), {
         loading: '正在保存…',
@@ -446,10 +444,11 @@ export function TraderConfigModal({
                     <button
                       type="button"
                       onClick={() => handleInputChange('is_cross_margin', true)}
-                      className={`flex-1 px-3 py-2 rounded text-sm ${formData.is_cross_margin
-                        ? 'bg-[#F0B90B] text-black'
-                        : 'bg-[#0B0E11] text-[#848E9C] border border-[#2B3139]'
-                        }`}
+                      className={`flex-1 px-3 py-2 rounded text-sm ${
+                        formData.is_cross_margin
+                          ? 'bg-[#F0B90B] text-black'
+                          : 'bg-[#0B0E11] text-[#848E9C] border border-[#2B3139]'
+                      }`}
                     >
                       全仓
                     </button>
@@ -458,10 +457,11 @@ export function TraderConfigModal({
                       onClick={() =>
                         handleInputChange('is_cross_margin', false)
                       }
-                      className={`flex-1 px-3 py-2 rounded text-sm ${!formData.is_cross_margin
-                        ? 'bg-[#F0B90B] text-black'
-                        : 'bg-[#0B0E11] text-[#848E9C] border border-[#2B3139]'
-                        }`}
+                      className={`flex-1 px-3 py-2 rounded text-sm ${
+                        !formData.is_cross_margin
+                          ? 'bg-[#F0B90B] text-black'
+                          : 'bg-[#0B0E11] text-[#848E9C] border border-[#2B3139]'
+                      }`}
                     >
                       逐仓
                     </button>
@@ -644,10 +644,11 @@ export function TraderConfigModal({
                           key={coin}
                           type="button"
                           onClick={() => handleCoinToggle(coin)}
-                          className={`px-2 py-1 text-xs rounded transition-colors ${selectedCoins.includes(coin)
-                            ? 'bg-[#F0B90B] text-black'
-                            : 'bg-[#1E2329] text-[#848E9C] border border-[#2B3139] hover:border-[#F0B90B]'
-                            }`}
+                          className={`px-2 py-1 text-xs rounded transition-colors ${
+                            selectedCoins.includes(coin)
+                              ? 'bg-[#F0B90B] text-black'
+                              : 'bg-[#1E2329] text-[#848E9C] border border-[#2B3139] hover:border-[#F0B90B]'
+                          }`}
                         >
                           {coin.replace('USDT', '')}
                         </button>

@@ -100,6 +100,81 @@ export class HttpClient {
 
     // Handle 401 Unauthorized
     if (status === 401) {
+      // Check if this 401 comes from a request with the CURRENT token
+      // If the request used an old token (or no token), we should ignore this 401 (race condition)
+      const currentToken = localStorage.getItem('auth_token')
+
+      // Robustly get the Authorization header from the request config
+      // Handle AxiosHeaders object (Axios v1.x) or plain object, and case-insensitivity
+      let requestTokenHeader: string | undefined
+      const headers = error.config?.headers
+
+      if (headers) {
+        // Check for 'Authorization' or 'authorization'
+        // If it's an AxiosHeaders object, it might have a get method, but we can also treat it as an object
+        // We cast to any to avoid strict type checks on the specific Axios header type which might vary
+        const h = headers as any
+
+        if (typeof h.get === 'function') {
+          requestTokenHeader = h.get('Authorization')
+        } else {
+          requestTokenHeader = h['Authorization'] || h['authorization']
+        }
+      }
+
+      const requestUrl = error.config?.url || 'unknown-url'
+
+      console.debug('[httpClient][401]', {
+        requestUrl,
+        currentToken: currentToken
+          ? `${currentToken.substring(0, 10)}...`
+          : 'null',
+        requestTokenHeader: requestTokenHeader
+          ? `${String(requestTokenHeader).substring(0, 15)}...`
+          : 'null',
+      })
+
+      // Race condition protection:
+      // 1. If we now have a token but the request had NO token (undefined/null),
+      //    this is a stale request from before login - ignore it.
+      // 2. If we now have a token but the request used a DIFFERENT token,
+      //    this is a stale request with old token - ignore it.
+      // 3. Only proceed to clear if: no current token, OR request token matches current token.
+      if (currentToken) {
+        const expectedHeader = `Bearer ${currentToken}`
+
+        // Request had no token, but we now have one - stale request from before login
+        if (!requestTokenHeader) {
+          console.error(
+            '[httpClient][401] 🛑 BLOCKED: Request had no token, but new token exists.',
+            { requestUrl }
+          )
+          return Promise.reject(error)
+        }
+
+        // Strict comparison: ensure we are comparing strings
+        // Axios headers might be objects in some versions/cases, so we force String() conversion
+        const headerValue = String(requestTokenHeader)
+
+        // Request used a different token - stale request with old token
+        if (headerValue !== expectedHeader) {
+          console.error(
+            '[httpClient][401] 🛑 BLOCKED: Token mismatch.',
+            {
+              requestUrl,
+              headerValue: headerValue.substring(0, 20) + '...',
+              expectedHeader: expectedHeader.substring(0, 20) + '...',
+              match: headerValue === expectedHeader
+            }
+          )
+          return Promise.reject(error)
+        }
+
+        console.error('[httpClient][401] ✅ MATCH: Token matches, proceeding to logout.', { requestUrl })
+      } else {
+        console.error('[httpClient][401] ⚠️ No current token, proceeding to logout.', { requestUrl })
+      }
+
       if (HttpClient.isHandling401) {
         throw new Error('Session expired')
       }
@@ -110,8 +185,16 @@ export class HttpClient {
       localStorage.removeItem('auth_token')
       localStorage.removeItem('auth_user')
 
-      // Notify global listeners
-      window.dispatchEvent(new Event('unauthorized'))
+      // Notify global listeners with CustomEvent containing the token that triggered this
+      // This allows listeners to also perform double-checks
+      const event = new CustomEvent('unauthorized', {
+        detail: {
+          triggerToken: requestTokenHeader
+            ? String(requestTokenHeader).replace('Bearer ', '')
+            : null,
+        },
+      })
+      window.dispatchEvent(event)
 
       // Only redirect if not already on login page
       if (!window.location.pathname.includes('/login')) {
@@ -124,7 +207,7 @@ export class HttpClient {
         window.location.href = '/login'
 
         // Return pending promise
-        return new Promise(() => {})
+        return new Promise(() => { })
       }
 
       throw new Error('Session expired')

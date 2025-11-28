@@ -14,6 +14,7 @@ import (
 	"nofx/logger"
 	"nofx/market"
 	"nofx/mcp"
+	"nofx/mockllm"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -163,6 +164,15 @@ func buildRealTestContext() *Context {
 }
 
 func newRealMCPClient(t *testing.T) *mcp.Client {
+	// Default to using a fast local mock to avoid external LLM calls during CI or
+	// regular developer runs. To explicitly exercise a real LLM set
+	// RUN_REAL_LLM_TESTS=true and provide LLM_API_KEY in your environment or .env.
+	if v := strings.ToLower(strings.TrimSpace(os.Getenv("RUN_REAL_LLM_TESTS"))); v != "true" {
+		// Return a deterministic mock response which contains a valid decision JSON block
+		assistantContent := "<reasoning>Mocked reasoning for tests</reasoning>\n\n<decision>```json\n[{\"symbol\": \"BTCUSDT\", \"action\": \"wait\", \"confidence\": 100, \"reasoning\": \"mock response\"}]\n```</decision>"
+		return mockllm.NewMCPClientFromMockServer(t, assistantContent)
+	}
+
 	cfg := loadLLMConfigFromEnv(t)
 	client := mcp.New()
 
@@ -200,9 +210,15 @@ func newRealMCPClient(t *testing.T) *mcp.Client {
 }
 
 func newFailingMCPClient(t *testing.T) *mcp.Client {
-	client := newRealMCPClient(t)
-	client.Timeout = time.Nanosecond
-	return client
+	// similar opt-in semantics: if RUN_REAL_LLM_TESTS=true then try to use a
+	// real client and force a timeout; otherwise use a failing mock server.
+	if v := strings.ToLower(strings.TrimSpace(os.Getenv("RUN_REAL_LLM_TESTS"))); v == "true" {
+		client := newRealMCPClient(t)
+		client.Timeout = time.Nanosecond
+		return client
+	}
+
+	return mockllm.NewFailingMCPClientFromMockServer(t)
 }
 
 func loadLLMConfigFromEnv(t *testing.T) llmEnvConfig {
@@ -216,7 +232,7 @@ func loadLLMConfigFromEnv(t *testing.T) llmEnvConfig {
 
 	provider := strings.ToLower(strings.TrimSpace(os.Getenv("LLM_PROVIDER")))
 	if provider == "" {
-		provider = "deepseek"  // 默认使用 deepseek
+		provider = "deepseek" // 默认使用 deepseek
 	}
 
 	apiURL := strings.TrimSpace(os.Getenv("LLM_API_URL"))
@@ -225,7 +241,7 @@ func loadLLMConfigFromEnv(t *testing.T) llmEnvConfig {
 	// 如果没有设置 provider，但从 API URL 推断出来
 	if provider == "deepseek" && apiURL != "" {
 		if strings.Contains(apiURL, "bigmodel.cn") {
-			provider = "glm"  // 智谱 GLM
+			provider = "glm" // 智谱 GLM
 		}
 	}
 
@@ -248,11 +264,11 @@ func loadDotEnvIfNeeded(t *testing.T) {
 
 	// 尝试多个可能的 .env 位置
 	possibleEnvPaths := []string{
-		".env",                 // 当前目录
-		"../.env",              // 父目录
-		"../../.env",           // 父父目录
-		"./.env",               // 显式当前目录
-		"../../../.env",        // 更上层目录
+		".env",          // 当前目录
+		"../.env",       // 父目录
+		"../../.env",    // 父父目录
+		"./.env",        // 显式当前目录
+		"../../../.env", // 更上层目录
 	}
 
 	// 获取当前工作目录用于调试

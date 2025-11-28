@@ -7,6 +7,7 @@ import (
 	"nofx/decision"
 	"nofx/market"
 	"nofx/mcp"
+	"nofx/mockllm"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,11 +25,11 @@ func loadRealEnv(t *testing.T) {
 
 	// Try multiple possible .env locations
 	envPaths := []string{
-		".env",                 // 当前目录
-		"../.env",              // 父目录
-		"../../.env",           // 父父目录
-		"./.env",               // 显式当前目录
-		"../../../.env",        // 更上层目录
+		".env",          // 当前目录
+		"../.env",       // 父目录
+		"../../.env",    // 父父目录
+		"./.env",        // 显式当前目录
+		"../../../.env", // 更上层目录
 	}
 
 	// Get current working directory for debugging
@@ -125,6 +126,17 @@ func loadRealEnv(t *testing.T) {
 	t.Logf("🎯 Environment validation successful for %s", loadedPath)
 }
 
+// loadRealEnvIfRequested wraps loadRealEnv and only loads/passes through when
+// runReal is true. This lets tests default to mock mode while still allowing
+// an explicit opt-in to real LLM runs.
+func loadRealEnvIfRequested(t *testing.T, runReal bool) {
+	if runReal {
+		loadRealEnv(t)
+	} else {
+		t.Log("RUN_REAL_BACKTESTS not enabled; using mock mode for backtest tests")
+	}
+}
+
 // setupPromptsDir sets up the prompts directory for testing
 func setupPromptsDir(t *testing.T) {
 	// Find the project root by looking for go.mod
@@ -162,14 +174,12 @@ func setupPromptsDir(t *testing.T) {
 // TestRealBacktestWithRealLLMAnd4HourData 运行一个真实的回测测试
 // 使用真实的LLM API和过去4小时的历史数据
 func TestRealBacktestWithRealLLMAnd4HourData(t *testing.T) {
-	// 1. 加载环境变量
-	loadRealEnv(t)
+	// Default to fast mock mode to avoid long-running tests and external LLM
+	// calls during normal `go test ./...`. Opt-in to real LLM backtests by
+	// setting RUN_REAL_BACKTESTS=true and providing LLM_API_KEY in env/.env.
+	runReal := strings.ToLower(strings.TrimSpace(os.Getenv("RUN_REAL_BACKTESTS"))) == "true"
+	loadRealEnvIfRequested(t, runReal)
 	setupPromptsDir(t)
-
-	apiKey := os.Getenv("LLM_API_KEY")
-	if apiKey == "" {
-		t.Skip("Skipping real backtest: LLM_API_KEY not set")
-	}
 
 	// 2. 设置数据库
 	tempDir := t.TempDir()
@@ -185,7 +195,15 @@ func TestRealBacktestWithRealLLMAnd4HourData(t *testing.T) {
 	}()
 
 	// 3. 设置MCP客户端，使用智能提供商检测
-	mcpClient := mcp.New()
+	// choose between mock or real LLM client
+	var mcpClient *mcp.Client
+	if runReal && os.Getenv("LLM_API_KEY") != "" {
+		mcpClient = mcp.New()
+	} else {
+		// Use MockMode for the engine and a local mock client to avoid external calls
+		mcpClient = mockllm.NewMCPClientFromMockServer(t, "<reasoning>Mocked reasoning</reasoning>\n\n<decision>```json\n[{\"symbol\": \"BTCUSDT\", \"action\": \"wait\", \"confidence\": 100, \"reasoning\": \"mock backtest\"}]\n```</decision>")
+	}
+	apiKey := os.Getenv("LLM_API_KEY")
 	llmURL := os.Getenv("LLM_API_URL")
 	llmModel := os.Getenv("LLM_MODEL")
 	llmProvider := strings.ToLower(os.Getenv("LLM_PROVIDER"))
@@ -239,13 +257,13 @@ func TestRealBacktestWithRealLLMAnd4HourData(t *testing.T) {
 		UserID:         "real_user",
 		StartTime:      startTime,
 		EndTime:        endTime,
-		InitialBalance: 5000.0, // 较小的初始资金用于快速测试
-		ScanInterval:   30 * time.Minute, // 30分钟扫描一次，4小时约8个周期
+		InitialBalance: 5000.0,                                    // 较小的初始资金用于快速测试
+		ScanInterval:   30 * time.Minute,                          // 30分钟扫描一次，4小时约8个周期
 		TradingSymbols: []string{"BTCUSDT", "ETHUSDT", "SOLUSDT"}, // 多个交易对
-		Slippage:       10, // 0.1%滑点
+		Slippage:       10,                                        // 0.1%滑点
 
-		// 使用真实LLM，关闭Mock模式
-		MockMode:             false,
+		// Default to mock mode unless a developer intentionally opts in
+		MockMode:             !runReal,
 		UseTraderConfig:      false,
 		IndicatorConfig:      market.GetDefaultIndicatorConfig(),
 		BTCETHLeverage:       3,  // BTC/ETH使用3倍杠杆
@@ -366,8 +384,9 @@ func TestRealBacktestWithRealLLMAnd4HourData(t *testing.T) {
 
 // TestRealBacktestWithMultipleSymbols 测试多个交易对的真实回测
 func TestRealBacktestWithMultipleSymbols(t *testing.T) {
-	// 加载环境变量
-	loadRealEnv(t)
+	// Default to fast mock mode unless explicitly enabled with RUN_REAL_BACKTESTS
+	runReal := strings.ToLower(strings.TrimSpace(os.Getenv("RUN_REAL_BACKTESTS"))) == "true"
+	loadRealEnvIfRequested(t, runReal)
 	setupPromptsDir(t)
 
 	apiKey := os.Getenv("LLM_API_KEY")
@@ -389,7 +408,12 @@ func TestRealBacktestWithMultipleSymbols(t *testing.T) {
 	}()
 
 	// 设置MCP客户端
-	mcpClient := mcp.New()
+	var mcpClient *mcp.Client
+	if runReal && os.Getenv("LLM_API_KEY") != "" {
+		mcpClient = mcp.New()
+	} else {
+		mcpClient = mockllm.NewMCPClientFromMockServer(t, "<reasoning>Mocked reasoning (multi-symbol)</reasoning>\n\n<decision>```json\n[{\"symbol\": \"BTCUSDT\", \"action\": \"wait\", \"confidence\": 100, \"reasoning\": \"mock multi\"}]\n```</decision>")
+	}
 	llmURL := os.Getenv("LLM_API_URL")
 	llmModel := os.Getenv("LLM_MODEL")
 	llmProvider := strings.ToLower(os.Getenv("LLM_PROVIDER"))
@@ -423,15 +447,15 @@ func TestRealBacktestWithMultipleSymbols(t *testing.T) {
 		StartTime:      startTime,
 		EndTime:        endTime,
 		InitialBalance: 8000.0,
-		ScanInterval:   20 * time.Minute, // 更频繁的扫描
+		ScanInterval:   20 * time.Minute,                                     // 更频繁的扫描
 		TradingSymbols: []string{"BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"}, // 4个主流币种
 		Slippage:       10,
 
-		MockMode:             false,
-		UseTraderConfig:      false,
-		IndicatorConfig:      market.GetDefaultIndicatorConfig(),
-		BTCETHLeverage:       2,  // 保守杠杆
-		AltcoinLeverage:      3,  // 山寨币保守杠杆
+		MockMode:        !runReal,
+		UseTraderConfig: false,
+		IndicatorConfig: market.GetDefaultIndicatorConfig(),
+		BTCETHLeverage:  2, // 保守杠杆
+		AltcoinLeverage: 3, // 山寨币保守杠杆
 	}
 
 	// 创建并运行回测

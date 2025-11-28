@@ -78,36 +78,65 @@ export const useTradersConfigStore = create<TradersConfigState>((set, get) => ({
   loadConfigs: async (user, token) => {
     if (!user || !token) {
       // 未登录时只加载公开的支持模型和交易所
+      // 使用 Promise.allSettled 确保一个请求失败不影响其他请求
       try {
-        const [supportedModels, supportedExchanges] = await Promise.all([
+        const results = await Promise.allSettled([
           api.getSupportedModels(),
           api.getSupportedExchanges(),
         ])
-        get().setSupportedModels(supportedModels)
-        get().setSupportedExchanges(supportedExchanges)
+
+        if (results[0].status === 'fulfilled') {
+          get().setSupportedModels(results[0].value)
+        } else {
+          console.error('Failed to load supported models:', results[0].reason)
+        }
+
+        if (results[1].status === 'fulfilled') {
+          get().setSupportedExchanges(results[1].value)
+        } else {
+          console.error(
+            'Failed to load supported exchanges:',
+            results[1].reason
+          )
+        }
       } catch (err) {
         console.error('Failed to load supported configs:', err)
       }
       return
     }
 
+    // 登录后使用 Promise.allSettled 确保部分失败不影响整体
     try {
-      const [
-        modelConfigs,
-        exchangeConfigs,
-        supportedModels,
-        supportedExchanges,
-      ] = await Promise.all([
+      const results = await Promise.allSettled([
         api.getModelConfigs(),
         api.getExchangeConfigs(),
         api.getSupportedModels(),
         api.getSupportedExchanges(),
       ])
 
-      get().setAllModels(modelConfigs)
-      get().setAllExchanges(exchangeConfigs)
-      get().setSupportedModels(supportedModels)
-      get().setSupportedExchanges(supportedExchanges)
+      if (results[0].status === 'fulfilled') {
+        get().setAllModels(results[0].value)
+      } else {
+        console.error('Failed to load model configs:', results[0].reason)
+      }
+
+      if (results[1].status === 'fulfilled') {
+        get().setAllExchanges(results[1].value)
+      } else {
+        console.error('Failed to load exchange configs:', results[1].reason)
+      }
+
+      if (results[2].status === 'fulfilled') {
+        get().setSupportedModels(results[2].value)
+      } else {
+        console.error('Failed to load supported models:', results[2].reason)
+      }
+
+      if (results[3].status === 'fulfilled') {
+        get().setSupportedExchanges(results[3].value)
+      } else {
+        console.error('Failed to load supported exchanges:', results[3].reason)
+      }
 
       // 加载用户信号源配置
       try {

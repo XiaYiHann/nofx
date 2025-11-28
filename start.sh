@@ -24,6 +24,99 @@ print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+normalize_bool() {
+    local value="${1:-false}"
+    # Convert to lowercase using tr for compatibility with Bash 3.2 (macOS)
+    value=$(echo "$value" | tr '[:upper:]' '[:lower:]')
+    case "$value" in
+        1|true|yes|on)
+            echo "true"
+            ;;
+        *)
+            echo "false"
+            ;;
+    esac
+}
+
+# ------------------------------------------------------------------------
+# Post-start test configuration (shared with start_docker.sh)
+# ------------------------------------------------------------------------
+AUTO_TEST_SCRIPT="./scripts/docker/run_tests_after_start.sh"
+AUTO_TEST_DEFAULT_PACKAGES="./config/... ./api/..."
+AUTO_TEST_ENABLED="false"
+AUTO_TEST_ALLOW_FAIL="false"
+AUTO_TEST_PACKAGES="$AUTO_TEST_DEFAULT_PACKAGES"
+AUTO_TEST_WAIT="120"
+AUTO_TEST_GOFLAGS="-count=1 -timeout 5m"
+reset_auto_test_config() {
+    AUTO_TEST_PACKAGES="${NOFX_AUTO_TEST_PACKAGES:-$AUTO_TEST_DEFAULT_PACKAGES}"
+    AUTO_TEST_WAIT="${NOFX_AUTO_TEST_WAIT:-120}"
+    AUTO_TEST_GOFLAGS="${NOFX_AUTO_TEST_GOFLAGS:--count=1 -timeout 5m}"
+    AUTO_TEST_ENABLED="$(normalize_bool "${NOFX_AUTO_TEST_AFTER_START:-false}")"
+    AUTO_TEST_ALLOW_FAIL="$(normalize_bool "${NOFX_AUTO_TEST_ALLOW_FAIL:-false}")"
+}
+
+parse_auto_test_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --with-tests)
+                AUTO_TEST_ENABLED="true"
+                shift
+                ;;
+            --no-tests)
+                AUTO_TEST_ENABLED="false"
+                shift
+                ;;
+            --allow-test-fail)
+                AUTO_TEST_ALLOW_FAIL="true"
+                shift
+                ;;
+            --test-wait)
+                AUTO_TEST_WAIT="${2:-$AUTO_TEST_WAIT}"
+                shift 2
+                ;;
+            --test-packages)
+                AUTO_TEST_PACKAGES="${2:-$AUTO_TEST_PACKAGES}"
+                shift 2
+                ;;
+            --go-flags)
+                AUTO_TEST_GOFLAGS="${2:-$AUTO_TEST_GOFLAGS}"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+}
+
+maybe_run_post_start_tests() {
+    if [ "$AUTO_TEST_ENABLED" != "true" ]; then
+        return
+    fi
+
+    if [ ! -x "$AUTO_TEST_SCRIPT" ]; then
+        print_warning "未找到自动测试脚本 $AUTO_TEST_SCRIPT，跳过部署后测试"
+        return
+    fi
+
+    local opts=("--wait" "$AUTO_TEST_WAIT" "--packages" "$AUTO_TEST_PACKAGES" "--go-flags" "$AUTO_TEST_GOFLAGS")
+    if [ "$AUTO_TEST_ALLOW_FAIL" = "true" ]; then
+        opts+=("--allow-test-fail")
+    fi
+
+    print_info "🚦 自动测试已启用，等待服务就绪后执行 Go 测试"
+    if ! "$AUTO_TEST_SCRIPT" "${opts[@]}"; then
+        local rerun_cmd="$AUTO_TEST_SCRIPT --wait $AUTO_TEST_WAIT --packages \"$AUTO_TEST_PACKAGES\" --go-flags \"$AUTO_TEST_GOFLAGS\""
+        if [ "$AUTO_TEST_ALLOW_FAIL" = "true" ]; then
+            rerun_cmd="$rerun_cmd --allow-test-fail"
+        fi
+        print_error "部署后自动测试失败"
+        print_info "可手动重跑: $rerun_cmd"
+        exit 1
+    fi
+}
+
 # ------------------------------------------------------------------------
 # Check Docker Availability
 # ------------------------------------------------------------------------
@@ -132,6 +225,9 @@ EOF
 # Commands
 # ------------------------------------------------------------------------
 start() {
+    reset_auto_test_config
+    parse_auto_test_args "$@"
+
     check_docker
     check_config
     
@@ -140,6 +236,7 @@ start() {
 
     print_success "✅ 服务已启动！"
     show_access_info
+    maybe_run_post_start_tests
 }
 
 stop() {
@@ -150,9 +247,10 @@ stop() {
 }
 
 restart() {
+    local restart_args=("$@")
     stop
     sleep 1
-    start
+    start "${restart_args[@]}"
 }
 
 logs() {
@@ -200,35 +298,46 @@ show_help() {
     echo "  build       重新构建镜像"
     echo "  status      查看容器状态"
     echo "  help        显示此帮助"
+    echo ""
+    echo "Start/Restart 相关选项:"
+    echo "  --with-tests           启动完成后在容器内执行 go test"
+    echo "  --no-tests             显式关闭自动测试 (覆盖 NOFX_AUTO_TEST_AFTER_START)"
+    echo "  --allow-test-fail      测试失败仅报警不中断"
+    echo "  --test-wait SECONDS    健康检查等待秒数"
+    echo "  --test-packages \"PKGS\"  指定测试包"
+    echo "  --go-flags \"FLAGS\"     自定义 go test 参数"
 }
 
 # ------------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------------
-case "${1:-start}" in
+COMMAND="${1:-start}"
+shift || true
+
+case "$COMMAND" in
     start)
-        start
+        start "$@"
         ;;
     stop)
-        stop
+        stop "$@"
         ;;
     restart)
-        restart
+        restart "$@"
         ;;
     logs)
-        logs
+        logs "$@"
         ;;
     build)
-        build
+        build "$@"
         ;;
     status)
-        status
+        status "$@"
         ;;
     help|--help|-h)
         show_help
         ;;
     *)
-        print_error "未知命令: $1"
+        print_error "未知命令: $COMMAND"
         show_help
         exit 1
         ;;

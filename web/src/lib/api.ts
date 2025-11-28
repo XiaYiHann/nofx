@@ -16,6 +16,11 @@ import type {
 import { CryptoService } from './crypto'
 import { httpClient } from './httpClient'
 
+export const getAuthHeaders = (): Record<string, string> => {
+  const token = localStorage.getItem('auth_token')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 const API_BASE = '/api'
 
 export const api = {
@@ -92,9 +97,21 @@ export const api = {
 
   // AI模型配置接口
   async getModelConfigs(): Promise<AIModel[]> {
-    const result = await httpClient.get<AIModel[]>(`${API_BASE}/models`)
+    const result = await httpClient.get<any[]>(`${API_BASE}/models`)
     if (!result.success) throw new Error('获取模型配置失败')
-    return result.data!
+
+    // 后端 SafeModelConfig 已使用 camelCase 字段名（如 customApiUrl）
+    // 不需要映射，直接返回即可
+    return result.data!.map((m: any) => ({
+      id: m.id,
+      name: m.name,
+      provider: m.provider,
+      enabled: m.enabled,
+      // 后端返回的是 camelCase，直接使用
+      customApiUrl: m.customApiUrl || '',
+      customModelName: m.customModelName || '',
+      // apiKey 不会从后端返回（敏感信息）
+    }))
   },
 
   // 获取系统支持的AI模型列表（无需认证）
@@ -131,9 +148,24 @@ export const api = {
 
   // 交易所配置接口
   async getExchangeConfigs(): Promise<Exchange[]> {
-    const result = await httpClient.get<Exchange[]>(`${API_BASE}/exchanges`)
+    const result = await httpClient.get<any[]>(`${API_BASE}/exchanges`)
     if (!result.success) throw new Error('获取交易所配置失败')
-    return result.data!
+
+    // 后端 SafeExchangeConfig 已使用 camelCase 字段名
+    // 不需要映射，直接返回即可
+    return result.data!.map((e: any) => ({
+      id: e.id,
+      name: e.name,
+      type: e.type,
+      enabled: e.enabled,
+      testnet: e.testnet || false,
+      // 后端返回的是 camelCase，直接使用
+      hyperliquidWalletAddr: e.hyperliquidWalletAddr || '',
+      asterUser: e.asterUser || '',
+      asterSigner: e.asterSigner || '',
+      // 以下敏感字段不会从后端返回
+      // apiKey, secretKey, asterPrivateKey, lighterPrivateKey 等
+    }))
   },
 
   // 获取系统支持的交易所列表（无需认证）
@@ -344,18 +376,23 @@ export const api = {
 
   // 回测相关接口
   async getBacktests(): Promise<any[]> {
-    const res = await httpClient.get(`${API_BASE}/backtests`, getAuthHeaders())
-    if (!res.ok) throw new Error('获取回测列表失败')
-    return res.json()
+    const res = await httpClient.get(
+      `${API_BASE}/backtests`,
+      undefined,
+      getAuthHeaders()
+    )
+    if (!res.success) throw new Error('获取回测列表失败')
+    return res.data!
   },
 
   async getBacktest(backtestId: string): Promise<any> {
     const res = await httpClient.get(
       `${API_BASE}/backtest/${backtestId}`,
+      undefined,
       getAuthHeaders()
     )
-    if (!res.ok) throw new Error('获取回测详情失败')
-    return res.json()
+    if (!res.success) throw new Error('获取回测详情失败')
+    return res.data!
   },
 
   async createBacktest(request: {
@@ -371,35 +408,38 @@ export const api = {
       request,
       getAuthHeaders()
     )
-    if (!res.ok) throw new Error('创建回测失败')
-    return res.json()
+    if (!res.success) throw new Error('创建回测失败')
+    return res.data!
   },
 
   async getBacktestEquityHistory(backtestId: string): Promise<any[]> {
     const res = await httpClient.get(
       `${API_BASE}/backtest/${backtestId}/equity-history`,
+      undefined,
       getAuthHeaders()
     )
-    if (!res.ok) throw new Error('获取回测净值历史失败')
-    return res.json()
+    if (!res.success) throw new Error('获取回测净值历史失败')
+    return res.data!
   },
 
   async getBacktestTrades(backtestId: string): Promise<any[]> {
     const res = await httpClient.get(
       `${API_BASE}/backtest/${backtestId}/trades`,
+      undefined,
       getAuthHeaders()
     )
-    if (!res.ok) throw new Error('获取回测交易记录失败')
-    return res.json()
+    if (!res.success) throw new Error('获取回测交易记录失败')
+    return res.data!
   },
 
   async getBacktestDecisions(backtestId: string): Promise<any[]> {
     const res = await httpClient.get(
       `${API_BASE}/backtest/${backtestId}/decisions`,
+      undefined,
       getAuthHeaders()
     )
-    if (!res.ok) throw new Error('获取回测决策记录失败')
-    return res.json()
+    if (!res.success) throw new Error('获取回测决策记录失败')
+    return res.data!
   },
 
   async deleteBacktest(backtestId: string): Promise<void> {
@@ -407,6 +447,6 @@ export const api = {
       `${API_BASE}/backtest/${backtestId}`,
       getAuthHeaders()
     )
-    if (!res.ok) throw new Error('删除回测失败')
+    if (!res.success) throw new Error('删除回测失败')
   },
 }

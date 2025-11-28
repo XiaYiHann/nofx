@@ -160,7 +160,8 @@ export function DecisionCard({
               {/* Auto-scaling metadata (from server-side safety) */}
               {action.auto_scaled && (
                 <div className="text-xs ml-2" style={{ color: '#60a5fa' }}>
-                  Auto-scaled: {action.original_position_size_usd?.toFixed(2)} → {action.scaled_position_size_usd?.toFixed(2)} USDT
+                  Auto-scaled: {action.original_position_size_usd?.toFixed(2)} →{' '}
+                  {action.scaled_position_size_usd?.toFixed(2)} USDT
                   {action.scale_reason && (
                     <div className="text-xs mt-1" style={{ color: '#9FB4D8' }}>
                       {action.scale_reason}

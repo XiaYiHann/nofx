@@ -253,6 +253,7 @@ jobs:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_PROVIDER: ${{ secrets.LLM_PROVIDER || 'deepseek' }}
           LLM_MODEL: ${{ secrets.LLM_MODEL || 'deepseek-chat' }}
+          RUN_REAL_LLM_TESTS: "true"
           # NEVER enable live exchange tests in CI
           LIVE_TESTS: "0"
 

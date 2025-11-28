@@ -425,12 +425,21 @@ func (d *Database) initDefaultData() error {
 
 	for _, exchange := range exchanges {
 		_, err := d.db.Exec(`
-			INSERT OR IGNORE INTO exchanges (id, user_id, name, type, enabled) 
-			VALUES (?, 'default', ?, ?, 0)
+			INSERT OR IGNORE INTO exchanges (id, user_id, name, type, enabled, created_at, updated_at) 
+			VALUES (?, 'default', ?, ?, 0, datetime('now'), datetime('now'))
 		`, exchange.id, exchange.name, exchange.typ)
 		if err != nil {
 			return fmt.Errorf("初始化交易所失败: %w", err)
 		}
+	}
+
+	// 修复旧记录的空时间戳
+	_, err := d.db.Exec(`
+		UPDATE exchanges SET created_at = datetime('now'), updated_at = datetime('now') 
+		WHERE created_at = '' OR created_at IS NULL
+	`)
+	if err != nil {
+		log.Printf("⚠️ 修复交易所时间戳警告: %v", err)
 	}
 
 	// 初始化系统配置 - 创建所有字段，设置默认值，后续由config.json同步更新
@@ -589,11 +598,11 @@ type ExchangeConfig struct {
 	AsterSigner     string `json:"asterSigner"`
 	AsterPrivateKey string `json:"asterPrivateKey"`
 	// LIGHTER 特定字段
-	LighterWalletAddr       string `json:"lighterWalletAddr"`       // Ethereum 钱包地址 (L1)
-	LighterPrivateKey       string `json:"lighterPrivateKey"`       // L1私钥（用于识别账户）
-	LighterAPIKeyPrivateKey string `json:"lighterAPIKeyPrivateKey"` // API Key私钥（40字节，用于签名交易）
-	CreatedAt          time.Time `json:"created_at"`
-	UpdatedAt          time.Time `json:"updated_at"`
+	LighterWalletAddr       string    `json:"lighterWalletAddr"`       // Ethereum 钱包地址 (L1)
+	LighterPrivateKey       string    `json:"lighterPrivateKey"`       // L1私钥（用于识别账户）
+	LighterAPIKeyPrivateKey string    `json:"lighterAPIKeyPrivateKey"` // API Key私钥（40字节，用于签名交易）
+	CreatedAt               time.Time `json:"created_at"`
+	UpdatedAt               time.Time `json:"updated_at"`
 }
 
 // TraderRecord 交易员配置（数据库实体）
@@ -1380,6 +1389,11 @@ func (d *Database) GetCustomCoins() []string {
 // Close 关闭数据库连接
 func (d *Database) Close() error {
 	return d.db.Close()
+}
+
+// GetDB 返回底层 sql.DB 实例（仅用于测试目的）
+func (d *Database) GetDB() *sql.DB {
+	return d.db
 }
 
 // LoadBetaCodesFromFile 从文件加载内测码到数据库

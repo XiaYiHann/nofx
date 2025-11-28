@@ -69,14 +69,8 @@ const BybitIcon: React.FC<IconProps> = ({
       d="M149.5 53.3H124.5L100 77.8V122.2L124.5 146.7H149.5V53.3Z"
       fill="#F7A600"
     />
-    <path
-      d="M75.5 53.3H124.5V77.8H75.5V53.3Z"
-      fill="#F7A600"
-    />
-    <path
-      d="M75.5 122.2H124.5V146.7H75.5V122.2Z"
-      fill="#F7A600"
-    />
+    <path d="M75.5 53.3H124.5V77.8H75.5V53.3Z" fill="#F7A600" />
+    <path d="M75.5 122.2H124.5V146.7H75.5V122.2Z" fill="#F7A600" />
   </svg>
 )
 

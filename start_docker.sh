@@ -25,6 +25,38 @@ print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+normalize_bool() {
+    local value="${1:-false}"
+    case "${value,,}" in
+        1|true|yes|on)
+            echo "true"
+            ;;
+        *)
+            echo "false"
+            ;;
+    esac
+}
+
+# ------------------------------------------------------------------------
+# Post-start test configuration (defaults, can be overridden later)
+# ------------------------------------------------------------------------
+AUTO_TEST_SCRIPT="./scripts/docker/run_tests_after_start.sh"
+AUTO_TEST_DEFAULT_PACKAGES="./config/... ./api/..."
+AUTO_TEST_ENABLED="false"
+AUTO_TEST_ALLOW_FAIL="false"
+AUTO_TEST_PACKAGES="$AUTO_TEST_DEFAULT_PACKAGES"
+AUTO_TEST_WAIT="120"
+AUTO_TEST_GOFLAGS="-count=1 -timeout 5m"
+DEV_MODE_FLAG=""
+
+reset_auto_test_config() {
+    AUTO_TEST_PACKAGES="${NOFX_AUTO_TEST_PACKAGES:-$AUTO_TEST_DEFAULT_PACKAGES}"
+    AUTO_TEST_WAIT="${NOFX_AUTO_TEST_WAIT:-120}"
+    AUTO_TEST_GOFLAGS="${NOFX_AUTO_TEST_GOFLAGS:--count=1 -timeout 5m}"
+    AUTO_TEST_ENABLED="$(normalize_bool "${NOFX_AUTO_TEST_AFTER_START:-false}")"
+    AUTO_TEST_ALLOW_FAIL="$(normalize_bool "${NOFX_AUTO_TEST_ALLOW_FAIL:-false}")"
+}
+
 # ------------------------------------------------------------------------
 # Detect Docker Compose Command
 # ------------------------------------------------------------------------
@@ -175,6 +207,33 @@ EOF
     chmod 700 secrets
 }
 
+maybe_run_post_start_tests() {
+    if [ "$AUTO_TEST_ENABLED" != "true" ]; then
+        return
+    fi
+
+    if [ ! -x "$AUTO_TEST_SCRIPT" ]; then
+        print_warning "未找到自动测试脚本 $AUTO_TEST_SCRIPT，跳过部署后测试"
+        return
+    fi
+
+    local opts=("--wait" "$AUTO_TEST_WAIT" "--packages" "$AUTO_TEST_PACKAGES" "--go-flags" "$AUTO_TEST_GOFLAGS")
+    if [ "$AUTO_TEST_ALLOW_FAIL" = "true" ]; then
+        opts+=("--allow-test-fail")
+    fi
+
+    print_info "🚦 自动测试已启用，等待服务就绪后执行 Go 测试"
+    if ! "$AUTO_TEST_SCRIPT" "${opts[@]}"; then
+        local rerun_cmd="$AUTO_TEST_SCRIPT --wait $AUTO_TEST_WAIT --packages \"$AUTO_TEST_PACKAGES\" --go-flags \"$AUTO_TEST_GOFLAGS\""
+        if [ "$AUTO_TEST_ALLOW_FAIL" = "true" ]; then
+            rerun_cmd="$rerun_cmd --allow-test-fail"
+        fi
+        print_error "部署后自动测试失败"
+        print_info "可手动重跑: $rerun_cmd"
+        exit 1
+    fi
+}
+
 # ------------------------------------------------------------------------
 # Build Docker Images
 # ------------------------------------------------------------------------
@@ -274,6 +333,8 @@ start_services() {
     echo "   • 如果看不到 Paper Trading，请删除 config.db 后重启"
     echo "   • 命令: rm config.db && ./start_docker.sh restart"
     echo ""
+
+    maybe_run_post_start_tests
 }
 
 # ------------------------------------------------------------------------
@@ -422,8 +483,18 @@ show_help() {
     echo "  rebuild-fresh   删除数据库并重新构建（修复 Paper Trading 缺失问题）"
     echo "  help            显示此帮助"
     echo ""
+    echo "Start/Restart 相关选项:"
+    echo "  --with-tests           启用部署后自动测试（也可设置 NOFX_AUTO_TEST_AFTER_START=true）"
+    echo "  --no-tests             显式关闭自动测试"
+    echo "  --allow-test-fail      测试失败仅报警不中断"
+    echo "  --test-wait SECONDS    设置健康检查等待秒数"
+    echo "  --test-packages \"PKGS\"  指定 go test 包列表"
+    echo "  --go-flags \"FLAGS\"     覆盖 go test 额外参数"
+    echo ""
     echo "Examples:"
     echo "  $0 start                    # 启动服务"
+    echo "  $0 start --with-tests       # 启动后自动在容器内运行 go test"
+    echo "  $0 start --with-tests --allow-test-fail"
     echo "  $0 update                   # 更新代码并重启"
     echo "  $0 logs                     # 查看所有日志"
     echo "  $0 logs nofx                # 只查看后端日志"
@@ -441,35 +512,89 @@ show_help() {
 # ------------------------------------------------------------------------
 main() {
     local command=${1:-start}
-    local arg2=$2
-    
-    # 检查 Docker
+    shift || true
+
+    reset_auto_test_config
+    DEV_MODE_FLAG=""
+    local positional_args=()
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --dev)
+                DEV_MODE_FLAG="--dev"
+                shift
+                ;;
+            --with-tests)
+                AUTO_TEST_ENABLED="true"
+                shift
+                ;;
+            --no-tests)
+                AUTO_TEST_ENABLED="false"
+                shift
+                ;;
+            --allow-test-fail)
+                AUTO_TEST_ALLOW_FAIL="true"
+                shift
+                ;;
+            --test-wait)
+                AUTO_TEST_WAIT="${2:-$AUTO_TEST_WAIT}"
+                shift 2
+                ;;
+            --test-packages)
+                AUTO_TEST_PACKAGES="${2:-$AUTO_TEST_PACKAGES}"
+                shift 2
+                ;;
+            --go-flags)
+                AUTO_TEST_GOFLAGS="${2:-$AUTO_TEST_GOFLAGS}"
+                shift 2
+                ;;
+            --)
+                shift
+                while [[ $# -gt 0 ]]; do
+                    positional_args+=("$1")
+                    shift
+                done
+                ;;
+            *)
+                positional_args+=("$1")
+                shift
+                ;;
+        esac
+    done
+
     check_docker
-    
+
     case "$command" in
         start)
             setup_environment
-            start_services "$arg2"
+            local start_arg="$DEV_MODE_FLAG"
+            if [ -z "$start_arg" ] && [ ${#positional_args[@]} -gt 0 ]; then
+                start_arg="${positional_args[0]}"
+            fi
+            start_services "$start_arg"
             ;;
         stop)
             stop_services
             ;;
         restart)
-            restart_services "$arg2"
+            restart_services "$DEV_MODE_FLAG"
             ;;
         status)
             check_status
             ;;
         logs)
-            view_logs "$arg2"
+            local service="${positional_args[0]:-}"
+            view_logs "$service"
             ;;
         build)
-            build_images "$arg2"
+            local build_arg="${positional_args[0]:-}"
+            build_images "$build_arg"
             ;;
         update)
+            local build_arg="${positional_args[0]:-}"
             print_info "开始更新流程 (保留数据)..."
-            build_images
-            restart_services "$arg2"
+            build_images "$build_arg"
+            restart_services "$DEV_MODE_FLAG"
             ;;
         rebuild-fresh)
             rebuild_fresh

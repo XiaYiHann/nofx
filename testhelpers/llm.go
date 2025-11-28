@@ -31,3 +31,15 @@ func SetupMockLLMServer(t *testing.T, responseContent string) *httptest.Server {
 
 	return server
 }
+
+// SetupFailingMockLLMServer creates a mock LLM server that always returns 500 Internal Server Error.
+func SetupFailingMockLLMServer(t *testing.T) *httptest.Server {
+	t.Helper()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Internal Server Error"))
+	}))
+
+	return server
+}

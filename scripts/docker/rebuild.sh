@@ -229,7 +229,7 @@ run_tests() {
         fi
         
         print_info "Running: go test ./decision/... -v -run TestRealLLM -count=1"
-        go test ./decision/... -v -run "TestRealLLM" -count=1 -timeout 10m || {
+        RUN_REAL_LLM_TESTS=true go test ./decision/... -v -run "TestRealLLM" -count=1 -timeout 10m || {
             print_error "Integration tests failed!"
             exit 1
         }

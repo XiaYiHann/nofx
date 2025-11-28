@@ -269,7 +269,7 @@ func (tm *TraderManager) addTraderFromDB(traderCfg *config.TraderRecord, aiModel
 	if exchangeCfg.ID == "binance" {
 		traderConfig.BinanceAPIKey = exchangeCfg.APIKey
 		traderConfig.BinanceSecretKey = exchangeCfg.SecretKey
-<<<<<<< HEAD
+
 	} else if exchangeCfg.ID == "paper_trading" {
 		// Paper Trading 使用 Binance Testnet API
 		traderConfig.BinanceAPIKey = exchangeCfg.APIKey
@@ -408,7 +408,7 @@ func (tm *TraderManager) AddTraderFromDB(traderCfg *config.TraderRecord, aiModel
 	if exchangeCfg.ID == "binance" {
 		traderConfig.BinanceAPIKey = exchangeCfg.APIKey
 		traderConfig.BinanceSecretKey = exchangeCfg.SecretKey
-<<<<<<< HEAD
+
 	} else if exchangeCfg.ID == "paper_trading" {
 		// Paper Trading 使用 Binance Testnet API
 		traderConfig.BinanceAPIKey = exchangeCfg.APIKey
@@ -1139,7 +1139,7 @@ func (tm *TraderManager) loadSingleTrader(traderCfg *config.TraderRecord, aiMode
 	if exchangeCfg.ID == "binance" {
 		traderConfig.BinanceAPIKey = exchangeCfg.APIKey
 		traderConfig.BinanceSecretKey = exchangeCfg.SecretKey
-<<<<<<< HEAD
+
 	} else if exchangeCfg.ID == "paper_trading" {
 		// Paper Trading 使用 Binance Testnet API
 		traderConfig.BinanceAPIKey = exchangeCfg.APIKey
