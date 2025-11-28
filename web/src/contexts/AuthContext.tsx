@@ -70,7 +70,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // 先检查是否为管理员模式（使用带缓存的系统配置获取）
     getSystemConfig()
-      .then(() => {
+      .then((cfg) => {
+        // 检查是否为开发模式（测试模式）
+        const isDevMode = cfg.dev_mode === true
+        if (isDevMode) {
+          // 开发模式下自动设置测试用户，无需登录
+          const devUser = { id: 'dev-user', email: 'dev@localhost' }
+          localStorage.setItem('auth_user', JSON.stringify(devUser))
+          // 不设置 auth_token，因为后端在 dev 模式下会忽略 Authorization 头
+          setUser(devUser)
+          setToken(null) // 保持 token 为 null，依赖后端 dev 模式中间件忽略 Authorization 头
+          console.log('[AuthContext] 🚧 开发模式已启用，自动登录测试用户')
+          setIsLoading(false)
+          return
+        }
+
         // 不再在管理员模式下模拟登录；统一检查本地存储
         const savedToken = localStorage.getItem('auth_token')
         const savedUser = localStorage.getItem('auth_user')

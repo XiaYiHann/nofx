@@ -83,6 +83,26 @@ parse_auto_test_args() {
                 AUTO_TEST_GOFLAGS="${2:-$AUTO_TEST_GOFLAGS}"
                 shift 2
                 ;;
+            --dev)
+                # 开发模式参数在此处不处理，但需要识别以避免被忽略
+                shift
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+}
+
+# 解析 --dev 参数并设置 NOFX_DEV_MODE
+parse_dev_mode_arg() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --dev)
+                export NOFX_DEV_MODE=true
+                print_warning "🚧 测试模式已启用 (--dev)"
+                shift
+                ;;
             *)
                 shift
                 ;;
@@ -227,14 +247,31 @@ EOF
 start() {
     reset_auto_test_config
     parse_auto_test_args "$@"
+    parse_dev_mode_arg "$@"
 
     check_docker
     check_config
     
     print_info "🚀 正在启动 NOFX (Docker)..."
-    $DOCKER_COMPOSE_CMD up -d --remove-orphans
+    
+    # 如果启用了开发模式，通过环境变量传递给 docker compose
+    if [ "$NOFX_DEV_MODE" = "true" ]; then
+        NOFX_DEV_MODE=true $DOCKER_COMPOSE_CMD up -d --remove-orphans
+    else
+        $DOCKER_COMPOSE_CMD up -d --remove-orphans
+    fi
 
     print_success "✅ 服务已启动！"
+    
+    # 开发模式下显示额外提示
+    if [ "$NOFX_DEV_MODE" = "true" ]; then
+        echo ""
+        print_warning "⚠️  测试模式注意事项："
+        print_warning "   • JWT 鉴权已绕过，前端将自动登录测试用户"
+        print_warning "   • 仅用于本地开发和测试，请勿在生产环境使用"
+        echo ""
+    fi
+    
     show_access_info
     maybe_run_post_start_tests
 }
@@ -288,7 +325,7 @@ show_access_info() {
 show_help() {
     echo "NOFX AI Trading System - Docker 管理脚本"
     echo ""
-    echo "用法: ./start.sh [command]"
+    echo "用法: ./start.sh [command] [options]"
     echo ""
     echo "命令:"
     echo "  start       启动服务 (默认)"
@@ -300,12 +337,18 @@ show_help() {
     echo "  help        显示此帮助"
     echo ""
     echo "Start/Restart 相关选项:"
+    echo "  --dev                  启用测试模式（免登录调试）"
     echo "  --with-tests           启动完成后在容器内执行 go test"
     echo "  --no-tests             显式关闭自动测试 (覆盖 NOFX_AUTO_TEST_AFTER_START)"
     echo "  --allow-test-fail      测试失败仅报警不中断"
     echo "  --test-wait SECONDS    健康检查等待秒数"
     echo "  --test-packages \"PKGS\"  指定测试包"
     echo "  --go-flags \"FLAGS\"     自定义 go test 参数"
+    echo ""
+    echo "测试模式说明:"
+    echo "  使用 --dev 参数启动时，系统将："
+    echo "  • 绕过 JWT 鉴权，前端自动登录测试用户"
+    echo "  • 仅用于本地开发测试，请勿在生产环境使用"
 }
 
 # ------------------------------------------------------------------------

@@ -75,9 +75,10 @@ export const useTradersConfigStore = create<TradersConfigState>((set, get) => ({
   setSupportedExchanges: (exchanges) => set({ supportedExchanges: exchanges }),
   setUserSignalSource: (source) => set({ userSignalSource: source }),
 
-  loadConfigs: async (user, token) => {
-    if (!user || !token) {
-      // 未登录时只加载公开的支持模型和交易所
+  loadConfigs: async (user, _token) => {
+    // 未登录且非测试模式时，只加载公开的支持模型和交易所
+    // 测试模式下：user 存在但 token 为 null，此时也应加载完整配置
+    if (!user) {
       // 使用 Promise.allSettled 确保一个请求失败不影响其他请求
       try {
         const results = await Promise.allSettled([
@@ -105,7 +106,7 @@ export const useTradersConfigStore = create<TradersConfigState>((set, get) => ({
       return
     }
 
-    // 登录后使用 Promise.allSettled 确保部分失败不影响整体
+    // 登录后（或测试模式下有 user）使用 Promise.allSettled 确保部分失败不影响整体
     try {
       const results = await Promise.allSettled([
         api.getModelConfigs(),

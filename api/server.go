@@ -36,6 +36,8 @@ type Server struct {
 	cryptoHandler *CryptoHandler
 	port          int
 	disableOTP    bool
+	devMode       bool   // 开发模式（免登录调试）
+	devUserID     string // 开发模式下的测试用户 ID
 }
 
 // NewServer 创建API服务器
@@ -51,7 +53,9 @@ func NewServer(traderManager *manager.TraderManager, database *config.Database, 
 	// 创建加密处理器
 	cryptoHandler := NewCryptoHandler(cryptoService)
 
+	// 解析可变参数：disableOTP[0] 为 OTP 禁用标志，disableOTP[1] 为 devMode 标志
 	otpDisabled := len(disableOTP) > 0 && disableOTP[0]
+	devMode := len(disableOTP) > 1 && disableOTP[1]
 
 	s := &Server{
 		router:        router,
@@ -60,6 +64,8 @@ func NewServer(traderManager *manager.TraderManager, database *config.Database, 
 		cryptoHandler: cryptoHandler,
 		port:          port,
 		disableOTP:    otpDisabled,
+		devMode:       devMode,
+		devUserID:     "dev-user", // 固定的测试用户 ID
 	}
 
 	// 设置路由
@@ -239,6 +245,7 @@ func (s *Server) handleGetSystemConfig(c *gin.Context) {
 		"btc_eth_leverage":     btcEthLeverage,
 		"altcoin_leverage":     altcoinLeverage,
 		"registration_enabled": registrationEnabled,
+		"dev_mode":             s.devMode, // 向前端暴露 dev 模式状态（仅供前端检测是否启用测试模式，生产环境请确保为 false）
 	})
 }
 
@@ -1659,6 +1666,14 @@ func (s *Server) handlePerformance(c *gin.Context) {
 // authMiddleware JWT认证中间件
 func (s *Server) authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// 开发模式下绕过 JWT 校验，直接注入固定用户上下文
+		if s.devMode {
+			c.Set("user_id", s.devUserID)
+			c.Set("email", "dev@localhost")
+			c.Next()
+			return
+		}
+
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "缺少Authorization头"})

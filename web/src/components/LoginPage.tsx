@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { t } from '../i18n/translations'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, AlertTriangle } from 'lucide-react'
 import { Input } from './ui/input'
 import { toast } from 'sonner'
 import { useSystemConfig } from '../hooks/useSystemConfig'
@@ -22,6 +22,7 @@ export function LoginPage() {
   const adminMode = false
   const { config: systemConfig } = useSystemConfig()
   const registrationEnabled = systemConfig?.registration_enabled !== false
+  const devMode = systemConfig?.dev_mode === true
   const [expiredToastId, setExpiredToastId] = useState<string | number | null>(
     null
   )
@@ -140,6 +141,46 @@ export function LoginPage() {
             border: '1px solid var(--panel-border)',
           }}
         >
+          {/* 测试模式提示 */}
+          {devMode && (
+            <div
+              className="mb-4 p-3 rounded-lg flex items-start gap-2"
+              style={{
+                background: 'rgba(240, 185, 11, 0.1)',
+                border: '1px solid var(--brand-yellow)',
+              }}
+            >
+              <AlertTriangle
+                size={20}
+                style={{ color: 'var(--brand-yellow)', flexShrink: 0 }}
+              />
+              <div>
+                <p
+                  className="text-sm font-semibold"
+                  style={{ color: 'var(--brand-yellow)' }}
+                >
+                  🚧 测试模式已启用
+                </p>
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  无需登录即可使用全部功能。
+                </p>
+                <button
+                  onClick={() => (window.location.href = '/traders')}
+                  className="mt-2 px-3 py-1.5 rounded text-xs font-semibold transition-all hover:scale-105"
+                  style={{
+                    background: 'var(--brand-yellow)',
+                    color: 'var(--brand-black)',
+                  }}
+                >
+                  直接进入系统 →
+                </button>
+              </div>
+            </div>
+          )}
+
           {adminMode ? (
             <form onSubmit={handleAdminLogin} className="space-y-4">
               <div>

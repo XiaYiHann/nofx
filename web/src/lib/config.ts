@@ -1,6 +1,7 @@
 export interface SystemConfig {
   beta_mode: boolean
   registration_enabled?: boolean
+  dev_mode?: boolean // 测试模式标志（仅用于前端检测是否启用免登录调试）
 }
 
 let configPromise: Promise<SystemConfig> | null = null
