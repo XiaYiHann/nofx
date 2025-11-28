@@ -62,8 +62,9 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
   } = useTradersModalStore()
 
   // SWR for traders data
+  // 放宽条件：只要有 user 就可以请求（测试模式下 token 可能为 null，后端会自动放行）
   const { data: traders, mutate: mutateTraders } = useSWR(
-    user && token ? 'traders' : null,
+    user ? 'traders' : null,
     api.getTraders,
     { refreshInterval: 5000 }
   )

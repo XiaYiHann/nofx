@@ -24,6 +24,7 @@ services:
       - AI_MAX_TOKENS=8192  # AI响应的最大token数（默认8192，支持思维链和长上下文）
       - DATA_ENCRYPTION_KEY=${DATA_ENCRYPTION_KEY}  # 数据库加密密钥
       - JWT_SECRET=${JWT_SECRET}  # JWT认证密钥
+      - NOFX_DEV_MODE=${NOFX_DEV_MODE:-false}  # 开发模式（免登录调试）
       # 代理配置 (可选) - 如果需要代理访问外网，请在 .env 中配置 HTTP_PROXY
       - HTTP_PROXY=${HTTP_PROXY}
       - HTTPS_PROXY=${HTTPS_PROXY}

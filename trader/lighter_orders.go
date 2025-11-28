@@ -11,14 +11,14 @@ import (
 
 // CreateOrderRequest 创建订单请求
 type CreateOrderRequest struct {
-	Symbol       string  `json:"symbol"`        // 交易对，如 "BTC-PERP"
-	Side         string  `json:"side"`          // "buy" 或 "sell"
-	OrderType    string  `json:"order_type"`    // "market" 或 "limit"
-	Quantity     float64 `json:"quantity"`      // 数量
-	Price        float64 `json:"price"`         // 价格（限价单必填）
-	ReduceOnly   bool    `json:"reduce_only"`   // 是否只减仓
-	TimeInForce  string  `json:"time_in_force"` // "GTC", "IOC", "FOK"
-	PostOnly     bool    `json:"post_only"`     // 是否只做Maker
+	Symbol      string  `json:"symbol"`        // 交易对，如 "BTC-PERP"
+	Side        string  `json:"side"`          // "buy" 或 "sell"
+	OrderType   string  `json:"order_type"`    // "market" 或 "limit"
+	Quantity    float64 `json:"quantity"`      // 数量
+	Price       float64 `json:"price"`         // 价格（限价单必填）
+	ReduceOnly  bool    `json:"reduce_only"`   // 是否只减仓
+	TimeInForce string  `json:"time_in_force"` // "GTC", "IOC", "FOK"
+	PostOnly    bool    `json:"post_only"`     // 是否只做Maker
 }
 
 // OrderResponse 订单响应
@@ -303,4 +303,28 @@ func (t *LighterTrader) CancelStopOrders(symbol string) error {
 
 	log.Printf("✓ LIGHTER - 已取消 %d 个止盈止损单", canceledCount)
 	return nil
+}
+
+// GetOpenOrders 获取未完成订单列表
+// symbol: 币种符号，如果为空字符串则获取所有币种的订单
+func (t *LighterTrader) GetOpenOrders(symbol string) ([]map[string]interface{}, error) {
+	orders, err := t.GetActiveOrders(symbol)
+	if err != nil {
+		return nil, fmt.Errorf("获取未完成订单失败: %w", err)
+	}
+
+	result := make([]map[string]interface{}, 0, len(orders))
+	for _, order := range orders {
+		result = append(result, map[string]interface{}{
+			"orderId":   order.OrderID,
+			"symbol":    order.Symbol,
+			"side":      order.Side,
+			"orderType": order.OrderType,
+			"quantity":  order.Quantity,
+			"price":     order.Price,
+			"status":    order.Status,
+		})
+	}
+
+	return result, nil
 }

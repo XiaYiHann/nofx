@@ -23,11 +23,11 @@ func loadEnv(t *testing.T) {
 
 	// Try multiple possible .env locations
 	envPaths := []string{
-		".env",                 // 当前目录
-		"../.env",              // 父目录
-		"../../.env",           // 父父目录
-		"./.env",               // 显式当前目录
-		"../../../.env",        // 更上层目录
+		".env",          // 当前目录
+		"../.env",       // 父目录
+		"../../.env",    // 父父目录
+		"./.env",        // 显式当前目录
+		"../../../.env", // 更上层目录
 	}
 
 	// Get current working directory for debugging
@@ -158,7 +158,7 @@ func TestFullBacktestIntegration(t *testing.T) {
 		if strings.Contains(llmURL, "bigmodel.cn") {
 			llmProvider = "glm"
 		} else {
-			llmProvider = "deepseek"  // default
+			llmProvider = "deepseek" // default
 		}
 	}
 

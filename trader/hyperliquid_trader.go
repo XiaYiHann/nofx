@@ -721,6 +721,42 @@ func (t *HyperliquidTrader) CancelStopOrders(symbol string) error {
 	return nil
 }
 
+// GetOpenOrders 获取未完成订单列表
+// symbol: 币种符号，如果为空字符串则获取所有币种的订单
+func (t *HyperliquidTrader) GetOpenOrders(symbol string) ([]map[string]interface{}, error) {
+	// 获取所有挂单
+	openOrders, err := t.exchange.Info().OpenOrders(t.ctx, t.walletAddr)
+	if err != nil {
+		return nil, fmt.Errorf("获取未完成订单失败: %w", err)
+	}
+
+	// 如果指定了 symbol，需要转换为 Hyperliquid 格式进行过滤
+	var filterCoin string
+	if symbol != "" {
+		filterCoin = convertSymbolToHyperliquid(symbol)
+	}
+
+	result := make([]map[string]interface{}, 0)
+	for _, order := range openOrders {
+		// 如果指定了币种，过滤其他币种的订单
+		if filterCoin != "" && order.Coin != filterCoin {
+			continue
+		}
+
+		// 转换 Hyperliquid 格式的 coin 为标准格式
+		standardSymbol := convertSymbolFromHyperliquid(order.Coin)
+
+		result = append(result, map[string]interface{}{
+			"orderId": order.Oid,
+			"symbol":  standardSymbol,
+			"side":    order.Side,
+			"limitPx": order.LimitPx,
+		})
+	}
+
+	return result, nil
+}
+
 // GetMarketPrice 获取市场价格
 func (t *HyperliquidTrader) GetMarketPrice(symbol string) (float64, error) {
 	coin := convertSymbolToHyperliquid(symbol)
@@ -909,6 +945,16 @@ func convertSymbolToHyperliquid(symbol string) string {
 		return symbol[:len(symbol)-4]
 	}
 	return symbol
+}
+
+// convertSymbolFromHyperliquid 将Hyperliquid格式转换为标准symbol
+// 例如: "BTC" -> "BTCUSDT"
+func convertSymbolFromHyperliquid(coin string) string {
+	// 如果已经包含USDT后缀，直接返回
+	if len(coin) > 4 && coin[len(coin)-4:] == "USDT" {
+		return coin
+	}
+	return coin + "USDT"
 }
 
 // absFloat 返回浮点数的绝对值

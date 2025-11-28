@@ -2,8 +2,8 @@ package trader
 
 import (
 	"context"
-	"encoding/json"
 	"encoding/hex"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"

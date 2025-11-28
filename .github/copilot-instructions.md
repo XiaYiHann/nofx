@@ -8,6 +8,7 @@ Tip:永远用中文回答
 - 所有 HTTP 请求由 `api/server.go` 处理，数据流依次经过 auth 中间件 → `manager` → `trader` → `trader.*` 交换机实现，再通过 `decision/engine.go`、`market`、`mcp/client.go` 调用 AI + 市场数据。
 - `market/` 提供统一的多时间框架 K 线和技术指标（TA-Lib），`decision_logs/` 按 `decision_logger.go` 格式写出每次决策的 JSON 记录，`config/database.go` 管理 SQLite 表结构。
 - `web/` 前端通过 `web/src/lib/api.ts` 讲 REST 接口封装，`stores/` 使用 Zustand 管理状态，UI 与 `api/` 的 `/api/traders`、`/api/decisions`、`/api/positions` 等端点保持同步。
+- '/github/memory.md' 记录了每次变更的设计思路和修改意图，便于后续回顾和理解决策背景。
 
 ## 二、运行与验证流程
 

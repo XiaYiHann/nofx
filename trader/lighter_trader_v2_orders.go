@@ -173,9 +173,9 @@ func (t *LighterTraderV2) GetActiveOrders(symbol string) ([]OrderResponse, error
 
 	// 解析響應
 	var apiResp struct {
-		Code    int              `json:"code"`
-		Message string           `json:"message"`
-		Data    []OrderResponse  `json:"data"`
+		Code    int             `json:"code"`
+		Message string          `json:"message"`
+		Data    []OrderResponse `json:"data"`
 	}
 
 	if err := json.Unmarshal(body, &apiResp); err != nil {
@@ -292,5 +292,27 @@ func (t *LighterTraderV2) submitCancelOrder(signedTx []byte) (map[string]interfa
 	}
 
 	log.Printf("✓ 取消訂單已提交到 LIGHTER - tx_hash: %v", sendResp.Data["tx_hash"])
+	return result, nil
+}
+
+// GetOpenOrders 获取未完成订单列表
+// symbol: 币种符号，如果为空字符串则获取所有币种的订单
+func (t *LighterTraderV2) GetOpenOrders(symbol string) ([]map[string]interface{}, error) {
+	orders, err := t.GetActiveOrders(symbol)
+	if err != nil {
+		return nil, fmt.Errorf("获取未完成订单失败: %w", err)
+	}
+
+	result := make([]map[string]interface{}, 0, len(orders))
+	for _, order := range orders {
+		result = append(result, map[string]interface{}{
+			"orderId": order.OrderID,
+			"symbol":  order.Symbol,
+			"side":    order.Side,
+			"price":   order.Price,
+			"status":  order.Status,
+		})
+	}
+
 	return result, nil
 }

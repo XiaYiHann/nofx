@@ -1,11 +1,11 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
-	"crypto/rand"
-	"encoding/hex"
 	"nofx/api"
 	"nofx/auth"
 	"nofx/config"
@@ -163,8 +163,16 @@ func main() {
 	// In Docker Compose, variables are injected by the runtime and this is harmless.
 	_ = godotenv.Load()
 
+	// Check if dev mode is enabled (test mode with bypassed auth)
+	devModeEnv := strings.ToLower(os.Getenv("NOFX_DEV_MODE"))
+	devMode := devModeEnv == "true" || devModeEnv == "1"
+	if devMode {
+		log.Printf("🚧 NOFX_DEV_MODE=true: 启用测试模式 (JWT 鉴权已绕过，仅用于本地/测试)")
+	}
+
 	// Check if OTP should be disabled in development mode
-	disableOTP := os.Getenv("DISABLE_OTP") == "true"
+	// 在 dev 模式下自动禁用 OTP
+	disableOTP := os.Getenv("DISABLE_OTP") == "true" || devMode
 	if disableOTP {
 		log.Printf("🚫 OTP已禁用 (开发模式)")
 	}
@@ -355,7 +363,7 @@ func main() {
 	}
 
 	// 创建并启动API服务器
-	apiServer := api.NewServer(traderManager, database, cryptoService, apiPort, disableOTP)
+	apiServer := api.NewServer(traderManager, database, cryptoService, apiPort, disableOTP, devMode)
 	go func() {
 		if err := apiServer.Start(); err != nil {
 			log.Printf("❌ API服务器错误: %v", err)

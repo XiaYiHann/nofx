@@ -704,6 +704,39 @@ func (t *FuturesTrader) CancelStopOrders(symbol string) error {
 	return nil
 }
 
+// GetOpenOrders 获取未完成订单列表
+// symbol: 币种符号，如果为空字符串则获取所有币种的订单
+func (t *FuturesTrader) GetOpenOrders(symbol string) ([]map[string]interface{}, error) {
+	service := t.client.NewListOpenOrdersService()
+	if symbol != "" {
+		service = service.Symbol(symbol)
+	}
+
+	orders, err := service.Do(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("获取未完成订单失败: %w", err)
+	}
+
+	result := make([]map[string]interface{}, 0, len(orders))
+	for _, order := range orders {
+		result = append(result, map[string]interface{}{
+			"orderId":      order.OrderID,
+			"symbol":       order.Symbol,
+			"side":         string(order.Side),
+			"positionSide": string(order.PositionSide),
+			"type":         string(order.Type),
+			"origQty":      order.OrigQuantity,
+			"price":        order.Price,
+			"stopPrice":    order.StopPrice,
+			"status":       string(order.Status),
+			"time":         order.Time,
+			"updateTime":   order.UpdateTime,
+		})
+	}
+
+	return result, nil
+}
+
 // GetMarketPrice 获取市场价格
 func (t *FuturesTrader) GetMarketPrice(symbol string) (float64, error) {
 	prices, err := t.client.NewListPricesService().Symbol(symbol).Do(context.Background())
