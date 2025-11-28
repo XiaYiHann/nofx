@@ -52,7 +52,7 @@ function getModelDisplayName(modelId: string): string {
 
 function App() {
   const { language, setLanguage } = useLanguage()
-  const { user, token, logout, isLoading } = useAuth()
+  const { user, logout, isLoading } = useAuth()
   const { loading: configLoading } = useSystemConfig()
   const [route, setRoute] = useState(window.location.pathname)
 
@@ -116,7 +116,7 @@ function App() {
 
   // 获取trader列表（仅在用户登录时）
   const { data: traders, error: tradersError } = useSWR<TraderInfo[]>(
-    user && token ? 'traders' : null,
+    user ? 'traders' : null,
     api.getTraders,
     {
       refreshInterval: 10000,
@@ -354,7 +354,7 @@ function App() {
 
   // Backtest routes
   if (route.startsWith('/backtest')) {
-    if (!user || !token) {
+    if (!user) {
       window.location.href = '/login'
       return null
     }
@@ -508,7 +508,7 @@ function App() {
 
   // Handle traders page
   if (route === '/traders') {
-    if (!user || !token) {
+    if (!user) {
       window.location.href = '/login'
       return null
     }
@@ -562,7 +562,7 @@ function App() {
 
   // Handle dashboard page
   if (route === '/dashboard') {
-    if (!user || !token) {
+    if (!user) {
       window.location.href = '/login'
       return null
     }
@@ -633,7 +633,7 @@ function App() {
   }
 
   // Show main app for authenticated users on other routes
-  if (!user || !token) {
+  if (!user) {
     // Default to landing page when not authenticated and no specific route
     return <LandingPage />
   }
