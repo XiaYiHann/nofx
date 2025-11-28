@@ -23,8 +23,8 @@ type Config struct {
 	OverrideBasePrompt   bool                    // 是否覆盖基础提示词
 	SystemPromptTemplate string                  // 系统提示词模板
 	BTCETHLeverage       int                     // BTC/ETH杠杆
-	AltcoinLeverage      float64 `json:"altcoin_leverage"`
-	MockMode             bool    `json:"mock_mode"` // If true, AI always returns LONG                     // 山寨币杠杆
+	AltcoinLeverage      float64                 `json:"altcoin_leverage"`
+	MockMode             bool                    `json:"mock_mode"` // If true, AI always returns LONG                     // 山寨币杠杆
 }
 
 // Result 回测结果

@@ -1,11 +1,11 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
-	"crypto/rand"
-	"encoding/hex"
 	"nofx/api"
 	"nofx/auth"
 	"nofx/config"
