@@ -99,6 +99,14 @@ func (m *MockTraderTestify) FormatQuantity(symbol string, quantity float64) (str
 	return args.String(0), args.Error(1)
 }
 
+func (m *MockTraderTestify) GetOpenOrders(symbol string) ([]map[string]interface{}, error) {
+	args := m.Called(symbol)
+	if args.Get(0) == nil {
+		return []map[string]interface{}{}, args.Error(1)
+	}
+	return args.Get(0).([]map[string]interface{}), args.Error(1)
+}
+
 func TestExecuteOpenLong(t *testing.T) {
 	mockTrader := new(MockTraderTestify)
 
@@ -219,6 +227,7 @@ func TestAnalyzeAndTrade(t *testing.T) {
 		"availableBalance":      10000.0,
 	}, nil)
 	mockTrader.On("GetPositions").Return([]map[string]interface{}{}, nil)
+	mockTrader.On("GetOpenOrders", "").Return([]map[string]interface{}{}, nil)
 
 	// Mock calls for execution (same as TestExecuteOpenLong)
 	mockTrader.On("SetMarginMode", "BTCUSDT", false).Return(nil)

@@ -95,3 +95,7 @@ func (m *MockTrader) CancelStopOrders(symbol string) error {
 func (m *MockTrader) FormatQuantity(symbol string, quantity float64) (string, error) {
 	return fmt.Sprintf("%.3f", quantity), nil
 }
+
+func (m *MockTrader) GetOpenOrders(symbol string) ([]map[string]interface{}, error) {
+	return []map[string]interface{}{}, nil
+}

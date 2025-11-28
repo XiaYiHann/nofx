@@ -572,6 +572,46 @@ func (t *BybitTrader) FormatQuantity(symbol string, quantity float64) (string, e
 	return fmt.Sprintf("%.3f", quantity), nil
 }
 
+// GetOpenOrders 获取未完成订单列表
+// symbol: 币种符号，如果为空字符串则获取所有币种的订单
+func (t *BybitTrader) GetOpenOrders(symbol string) ([]map[string]interface{}, error) {
+	params := map[string]interface{}{
+		"category": "linear",
+	}
+	if symbol != "" {
+		params["symbol"] = symbol
+	}
+
+	result, err := t.client.NewUtaBybitServiceWithParams(params).GetOpenOrders(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("获取未完成订单失败: %w", err)
+	}
+
+	if result.RetCode != 0 {
+		return nil, fmt.Errorf("获取未完成订单失败: %s", result.RetMsg)
+	}
+
+	// 解析返回结果
+	resultData, ok := result.Result.(map[string]interface{})
+	if !ok {
+		return []map[string]interface{}{}, nil
+	}
+
+	list, ok := resultData["list"].([]interface{})
+	if !ok {
+		return []map[string]interface{}{}, nil
+	}
+
+	orders := make([]map[string]interface{}, 0, len(list))
+	for _, item := range list {
+		if order, ok := item.(map[string]interface{}); ok {
+			orders = append(orders, order)
+		}
+	}
+
+	return orders, nil
+}
+
 // 辅助方法
 
 func (t *BybitTrader) clearCache() {
