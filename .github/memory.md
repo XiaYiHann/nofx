@@ -1,6 +1,87 @@
+### 2025-11-29 17:50:00 CST
+
+**变更摘要**: 确保 News 功能在 fresh clone / 系统重启后可见且稳健 —— 将 News 相关文件纳入版本库、修复前端路由与编译问题、为后端服务与处理器以及前端页面补充全面测试并完成 lint/build/test 验证。
+
+- 已暂存 / 新增（待提交）: `api/news_handler.go`, `api/news_handler_test.go`, `market/news/` (client.go, service.go, types.go, client_test.go, service_test.go), `web/src/pages/NewsPage.tsx`, `web/src/pages/NewsPage.test.tsx`
+- 未暂存 / 修改中: `web/src/App.tsx`, `web/src/components/landing/HeaderBar.tsx`, `web/src/components/HeaderBar.tsx`, `web/src/routes/index.tsx`, `web/src/lib/httpClient.ts`, `.github/memory.md` 等（含格式化与集成适配）
+
+**设计思路**:
+
+- 兼容现有路由体系：发现仓库同时存在两套路由实现（`App.tsx` 的老式路由与 `routes/index.tsx` 的 React Router），优先在 `App.tsx` / `landing/HeaderBar.tsx` 中补足 `news` 路由以保证在当前入口（`main.tsx -> App.tsx`）下页面可见；避免大规模迁移引入回归。
+- 跨层测试覆盖：在后端采用接口注入（`NewsServiceInterface`）来便于 Mock；为服务层、handler 和前端页面分别添加单元/集成测试，覆盖成功/加载/错误/空结果等场景，确保未来变更不破坏可见性。
+- 可观测与可部署：修复编译/格式化问题、运行 lint/build/test 全量验证，确保在 fresh clone + build + run 的流程中功能可见且 CI 可验证。
+
+**修改意图**:
+
+- 立即解决用户反馈：重启或新环境下缺失 News 页面问题（原因：关键文件曾为 untracked 或构建错误），保证 `/news` 在本地/开发环境可访问。
+- 防止回归：通过把 News 相关文件纳入版本库并补充端到端测试，降低未来遗失或未提交造成的功能丢失风险。
+- 提高维护性：通过接口与测试拆分 (Service interface + handler + frontend) 提升可测试性和可扩展性，后续可更容易地添加/替换新闻来源。
+
+
+**变更摘要**: 完善 News 功能的测试覆盖，确保前端在 fresh clone + build + run 后功能可见且健壮。
+
+**设计思路**:
+
+- **后端测试**: 为 `handleGetNews` 添加单元测试（`api/news_handler_test.go`），覆盖成功获取所有新闻、按类别筛选、JSON 结构验证、服务错误处理、空结果返回等场景。引入 `NewsServiceInterface` 接口支持 mock 注入，避免测试时依赖真实网络请求。
+- **服务层测试**: 为 `market/news.Service` 添加测试（`market/news/service_test.go`），覆盖缓存命中、过期刷新、按类别筛选、日期排序、并发源获取、部分失败容错、并发安全等场景。
+- **前端测试**: 为 `NewsPage` 添加 Vitest + testing-library 测试（`web/src/pages/NewsPage.test.tsx`），覆盖加载态骨架屏、成功渲染新闻列表（title/summary/source/score/time）、错误状态友好提示、空结果处理、Tab 切换、页面标题等场景（共 14 个测试用例）。
+- **代码重构**: 将 `Server.newsService` 从具体类型 `*news.Service` 改为接口 `NewsServiceInterface`，便于测试时注入 mock 实现。
+
+**修改意图**:
+
+- 确保 News 功能在多种边界条件下都能正常工作，提高系统健壮性。
+- 通过测试覆盖关键路径，防止未来重构或修改时引入回归。
+- 遵循依赖注入原则，使代码更易测试和维护。
+
+**新增文件**:
+
+- `api/news_handler_test.go`: News API handler 测试（3 个测试函数，覆盖成功/错误/空结果）
+- `market/news/service_test.go`: News 服务层测试（9 个测试函数，覆盖缓存/刷新/并发等）
+- `web/src/pages/NewsPage.test.tsx`: News 页面前端测试（14 个测试用例）
+
+**修改文件**:
+
+- `api/server.go`: 添加 `NewsServiceInterface` 接口定义，将 `newsService` 字段类型改为接口
+- `web/src/pages/NewsPage.tsx`: Prettier 格式化修复
+
+**验证结果**:
+
+- `npm run lint` ✅ 通过
+- `npm run build` ✅ 通过
+- `npm run test` ✅ 133 tests passed (包括新增的 14 个 NewsPage 测试)
+- `go test ./...` ✅ 全部通过（包括新增的 api/news 和 market/news 测试）
+
+---
+
+### 2025-11-29 17:05:00 CST
+
+**变更摘要**: 修复"重启系统后前端未显示 News 页面"问题 —— 解决 TypeScript 编译错误并确保 News 相关文件被正确提交到 git。
+
+**设计思路**:
+
+- **问题分析**: 用户报告重启系统后 News 页面不显示。经调查发现两个问题：1) `NewsPage.tsx` 中有未使用的 `React` 导入，导致 TypeScript 编译失败（`error TS6133`）；2) 所有 News 相关文件（`api/news_handler.go`、`market/news/`、`web/src/pages/NewsPage.tsx`）都是 `untracked` 状态，从未被 git 提交。
+- **修复方案**: 移除 `NewsPage.tsx` 中多余的 `React` 导入（React 17+ 不需要显式导入），确保前端能够正确编译。
+
+**修改意图**:
+
+- 确保 News 功能在前端构建时不再因 TypeScript 错误而失败。
+- 提醒将 News 相关文件提交到 git（已添加到暂存区），避免未来版本丢失这些功能文件。
+
+**关键变更文件**:
+
+- `web/src/pages/NewsPage.tsx`: 移除未使用的 `React` 导入，修复 TS6133 错误
+
+**待提交文件（已 staged）**:
+
+- `api/news_handler.go`: 新闻 API handler
+- `market/news/`: 新闻服务包（client.go, service.go, types.go, client_test.go）
+- `web/src/pages/NewsPage.tsx`: 新闻页面组件
+
+---
+
 ### 2025-11-29 16:20:00 CST
 
-**变更摘要**: 解决并预防“清空数据库后仍提示邮箱已被注册”的问题 —— 增强数据库重置的可观测性、在注册流程中添加 dev-mode 调试日志、增加可复现的集成测试（删除->注册、WAL checkpoint），并在启动脚本文档中加入“安全重置数据库”步骤。
+**变更摘要**: 解决并预防"清空数据库后仍提示邮箱已被注册"的问题 —— 增强数据库重置的可观测性、在注册流程中添加 dev-mode 调试日志、增加可复现的集成测试（删除->注册、WAL checkpoint），并在启动脚本文档中加入"安全重置数据库"步骤。
 
 **设计思路**:
 
