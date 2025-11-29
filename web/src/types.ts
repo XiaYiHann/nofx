@@ -277,3 +277,14 @@ export interface TraderConfigData {
   is_running: boolean
   indicator_config?: IndicatorConfig
 }
+
+export interface NewsItem {
+  id: string
+  title: string
+  summary: string
+  url: string
+  source: string
+  category: string
+  published_at: string
+  score: number
+}

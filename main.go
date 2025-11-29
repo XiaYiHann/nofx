@@ -15,6 +15,7 @@ import (
 	"nofx/pool"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -189,7 +190,21 @@ func main() {
 		log.Fatalf("❌ 读取config.json失败: %v", err)
 	}
 
-	log.Printf("📋 初始化配置数据库: %s", dbPath)
+	// 🔧 打印数据库路径信息（帮助调试数据库清理问题）
+	absDBPath, _ := filepath.Abs(dbPath)
+	log.Printf("📋 初始化配置数据库: %s", absDBPath)
+
+	// 检查 WAL 文件状态（帮助开发者理解数据库状态）
+	walPath := absDBPath + "-wal"
+	shmPath := absDBPath + "-shm"
+	if _, err := os.Stat(walPath); err == nil {
+		walInfo, _ := os.Stat(walPath)
+		log.Printf("📋 发现 WAL 文件: %s (%.2f KB)", walPath, float64(walInfo.Size())/1024)
+	}
+	if _, err := os.Stat(shmPath); err == nil {
+		log.Printf("📋 发现 SHM 文件: %s", shmPath)
+	}
+
 	database, err := config.NewDatabase(dbPath)
 	if err != nil {
 		log.Fatalf("❌ 初始化数据库失败: %v", err)

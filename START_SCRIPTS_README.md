@@ -214,6 +214,101 @@ sqlite3 config.db "INSERT OR IGNORE INTO exchanges (id, user_id, name, type, ena
 
 ---
 
+## 🔄 安全重置数据库
+
+### ⚠️ 重要警告
+SQLite 使用 WAL（Write-Ahead Logging）模式来提高性能和数据安全性。重置数据库时，**必须同时删除主文件和 WAL 相关文件**，否则可能导致：
+- 旧数据在服务重启后恢复
+- 注册时提示"邮箱已被注册"但数据库中实际没有该用户
+- 数据不一致问题
+
+### 📋 数据库文件组成
+```
+config.db      # 主数据库文件
+config.db-wal  # WAL 日志文件（Write-Ahead Log）
+config.db-shm  # 共享内存文件（Shared Memory）
+```
+
+### 🛑 重置数据库步骤
+
+#### 本地开发模式
+```bash
+# 步骤 1: 停止服务（非常重要！）
+./start_local.sh stop
+
+# 步骤 2: 确认服务已停止
+ps aux | grep nofx | grep -v grep  # 应该没有输出
+
+# 步骤 3: 删除所有数据库相关文件
+rm -f config.db config.db-wal config.db-shm
+
+# 步骤 4: 重新启动服务（会创建新的数据库）
+./start_local.sh start --dev
+```
+
+#### Docker 部署模式
+```bash
+# 步骤 1: 停止容器
+./start_docker.sh stop
+
+# 步骤 2: 删除宿主机上的数据库文件
+rm -f config.db config.db-wal config.db-shm
+
+# 步骤 3: 重新启动
+./start_docker.sh start
+```
+
+### ⚡ 快速重置（危险操作，会丢失所有数据）
+```bash
+# 本地模式 - 一键重置
+./start_local.sh stop && rm -f config.db* && ./start_local.sh start --dev
+
+# Docker 模式 - 一键重置
+./start_docker.sh stop && rm -f config.db* && ./start_docker.sh start
+```
+
+### 🔧 仅删除用户数据（保留配置）
+如果只想删除用户而不重置整个数据库：
+```bash
+# 步骤 1: 停止服务
+./start_local.sh stop
+
+# 步骤 2: 使用 sqlite3 删除用户（需要安装 sqlite3）
+sqlite3 config.db "DELETE FROM users; PRAGMA wal_checkpoint(TRUNCATE);"
+
+# 步骤 3: 删除 WAL 文件（可选，但推荐）
+rm -f config.db-wal config.db-shm
+
+# 步骤 4: 重新启动服务
+./start_local.sh start --dev
+```
+
+### ❓ 常见问题
+
+**Q: 删除了数据库文件，但注册仍然提示"邮箱已被注册"？**
+
+A: 可能的原因：
+1. **服务未停止**：在运行的服务进程中，数据仍在内存/WAL 中。请先停止服务。
+2. **未删除 WAL 文件**：确保同时删除 `config.db`、`config.db-wal` 和 `config.db-shm`。
+3. **Docker 卷问题**：Docker 中数据库可能挂载在不同位置。使用 `docker exec` 检查容器内的实际文件。
+
+**Q: 如何确认服务使用的是哪个数据库文件？**
+
+A: 启动日志会显示数据库路径：
+```
+📋 初始化配置数据库: /Users/xxx/Code/nofx/config.db
+📋 发现 WAL 文件: /Users/xxx/Code/nofx/config.db-wal (2.50 KB)
+```
+
+**Q: 如何在不停止服务的情况下检查用户表？**
+
+A: 外部 sqlite3 连接可以读取（但修改可能不会立即被运行中的服务看到）：
+```bash
+sqlite3 config.db "SELECT email, created_at FROM users;"
+```
+
+---
+
 ## 📝 注意事项
 
 1. **首次启动**: 所有脚本都会自动设置加密环境（RSA密钥 + 数据加密密钥）
