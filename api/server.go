@@ -15,6 +15,7 @@ import (
 	"nofx/hook"
 	"nofx/manager"
 	"nofx/market"
+	"nofx/market/news"
 	"nofx/trader"
 	"os"
 	"path/filepath"
@@ -28,6 +29,11 @@ import (
 )
 
 // Server HTTP API服务器
+// NewsServiceInterface defines the interface for news service
+type NewsServiceInterface interface {
+	GetNews(category string) ([]news.NewsItem, error)
+}
+
 type Server struct {
 	router        *gin.Engine
 	httpServer    *http.Server
@@ -38,6 +44,7 @@ type Server struct {
 	disableOTP    bool
 	devMode       bool   // 开发模式（免登录调试）
 	devUserID     string // 开发模式下的测试用户 ID
+	newsService   NewsServiceInterface
 }
 
 // NewServer 创建API服务器
@@ -66,6 +73,7 @@ func NewServer(traderManager *manager.TraderManager, database *config.Database, 
 		disableOTP:    otpDisabled,
 		devMode:       devMode,
 		devUserID:     "dev-user", // 固定的测试用户 ID
+		newsService:   news.NewService(),
 	}
 
 	// 设置路由
@@ -94,6 +102,7 @@ func corsMiddleware() gin.HandlerFunc {
 func (s *Server) setupRoutes() {
 	// API路由组
 	api := s.router.Group("/api")
+	log.Println("🔧 Registering API routes...")
 	{
 		// 健康检查
 		api.Any("/health", s.handleHealth)
@@ -122,6 +131,10 @@ func (s *Server) setupRoutes() {
 		api.GET("/equity-history", s.handleEquityHistory)
 		api.POST("/equity-history-batch", s.handleEquityHistoryBatch)
 		api.GET("/traders/:id/public-config", s.handleGetPublicTraderConfig)
+
+		// 新闻接口（无需认证）
+		log.Println("🔧 Registering /api/news route")
+		api.GET("/news", s.handleGetNews)
 
 		// 认证相关路由（无需认证）
 		api.POST("/register", s.handleRegister)
@@ -1788,10 +1801,18 @@ func (s *Server) handleRegister(c *gin.Context) {
 		}
 
 		// 检查邮箱是否已存在
-		_, err := s.database.GetUserByEmail(req.Email)
+		existingUser, err := s.database.GetUserByEmail(req.Email)
 		if err == nil {
+			// 🔧 Dev-mode debug log: 记录邮箱已存在的情况（不暴露敏感信息）
+			if s.devMode {
+				log.Printf("🔍 [DEV] 注册检测到邮箱已存在: email=%s, existing_user_id=%s", req.Email, existingUser.ID)
+			}
 			c.JSON(http.StatusConflict, gin.H{"error": "邮箱已被注册"})
 			return
+		}
+		// 🔧 Dev-mode debug log: 记录邮箱查询结果
+		if s.devMode {
+			log.Printf("🔍 [DEV] 邮箱查询结果: email=%s, error=%v (预期 sql.ErrNoRows)", req.Email, err)
 		}
 
 		// 生成密码哈希
@@ -1883,10 +1904,18 @@ func (s *Server) handleRegister(c *gin.Context) {
 	}
 
 	// 检查邮箱是否已存在
-	_, err := s.database.GetUserByEmail(req.Email)
+	existingUser2, err := s.database.GetUserByEmail(req.Email)
 	if err == nil {
+		// 🔧 Dev-mode debug log: 记录邮箱已存在的情况（不暴露敏感信息）
+		if s.devMode {
+			log.Printf("🔍 [DEV] 注册检测到邮箱已存在: email=%s, existing_user_id=%s", req.Email, existingUser2.ID)
+		}
 		c.JSON(http.StatusConflict, gin.H{"error": "邮箱已被注册"})
 		return
+	}
+	// 🔧 Dev-mode debug log: 记录邮箱查询结果
+	if s.devMode {
+		log.Printf("🔍 [DEV] 邮箱查询结果: email=%s, error=%v (预期 sql.ErrNoRows)", req.Email, err)
 	}
 
 	// 生成密码哈希

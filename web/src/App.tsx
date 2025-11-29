@@ -12,6 +12,7 @@ import { FAQPage } from './pages/FAQPage'
 import StrategiesPage from './pages/StrategiesPage'
 import BacktestPage from './pages/BacktestPage'
 import BacktestDetailPage from './pages/BacktestDetailPage'
+import NewsPage from './pages/NewsPage'
 import HeaderBar from './components/landing/HeaderBar'
 import AILearning from './components/AILearning'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
@@ -34,6 +35,7 @@ type Page =
   | 'trader'
   | 'strategies'
   | 'backtest'
+  | 'news'
   | 'faq'
 
 // 获取友好的AI模型名称
@@ -66,6 +68,7 @@ function App() {
       return 'trader'
     if (path === '/strategies' || hash === 'strategies') return 'strategies'
     if (path.startsWith('/backtest')) return 'backtest'
+    if (path === '/news' || hash === 'news') return 'news'
     if (path === '/faq') return 'faq'
     return 'competition' // 默认为竞赛页面
   }
@@ -275,6 +278,9 @@ function App() {
             } else if (page === 'strategies') {
               window.history.pushState({}, '', '/strategies')
               setRoute('/strategies')
+            } else if (page === 'news') {
+              window.history.pushState({}, '', '/news')
+              setRoute('/news')
             } else if (page === 'backtest') {
               window.history.pushState({}, '', '/backtest')
               setRoute('/backtest')
@@ -336,6 +342,9 @@ function App() {
             } else if (page === 'strategies') {
               window.history.pushState({}, '', '/strategies')
               setRoute('/strategies')
+            } else if (page === 'news') {
+              window.history.pushState({}, '', '/news')
+              setRoute('/news')
             } else if (page === 'backtest') {
               window.history.pushState({}, '', '/backtest')
               setRoute('/backtest')
@@ -344,6 +353,50 @@ function App() {
         />
         <main className="max-w-[1920px] mx-auto px-6 py-6 pt-24">
           <FAQPage />
+        </main>
+      </div>
+    )
+  }
+  if (route === '/news') {
+    return (
+      <div
+        className="min-h-screen"
+        style={{ background: '#000000', color: '#EAECEF' }}
+      >
+        <HeaderBar
+          isLoggedIn={!!user}
+          currentPage="news"
+          language={language}
+          onLanguageChange={setLanguage}
+          user={user}
+          onLogout={logout}
+          onPageChange={(page) => {
+            if (page === 'competition') {
+              window.history.pushState({}, '', '/competition')
+              setRoute('/competition')
+            } else if (page === 'traders') {
+              window.history.pushState({}, '', '/traders')
+              setRoute('/traders')
+            } else if (page === 'trader') {
+              window.history.pushState({}, '', '/dashboard')
+              setRoute('/dashboard')
+            } else if (page === 'faq') {
+              window.history.pushState({}, '', '/faq')
+              setRoute('/faq')
+            } else if (page === 'news') {
+              window.history.pushState({}, '', '/news')
+              setRoute('/news')
+            } else if (page === 'strategies') {
+              window.history.pushState({}, '', '/strategies')
+              setRoute('/strategies')
+            } else if (page === 'backtest') {
+              window.history.pushState({}, '', '/backtest')
+              setRoute('/backtest')
+            }
+          }}
+        />
+        <main className="max-w-[1920px] mx-auto px-6 py-6 pt-24">
+          <NewsPage />
         </main>
       </div>
     )
@@ -390,6 +443,9 @@ function App() {
             } else if (page === 'strategies') {
               window.history.pushState({}, '', '/strategies')
               setRoute('/strategies')
+            } else if (page === 'news') {
+              window.history.pushState({}, '', '/news')
+              setRoute('/news')
             } else if (page === 'backtest') {
               window.history.pushState({}, '', '/backtest')
               setRoute('/backtest')
@@ -433,6 +489,9 @@ function App() {
             } else if (page === 'faq') {
               window.history.pushState({}, '', '/faq')
               setRoute('/faq')
+            } else if (page === 'news') {
+              window.history.pushState({}, '', '/news')
+              setRoute('/news')
             } else if (page === 'backtest') {
               window.history.pushState({}, '', '/backtest')
               setRoute('/backtest')
@@ -485,6 +544,9 @@ function App() {
               console.log('Navigating to strategies')
               window.history.pushState({}, '', '/strategies')
               setRoute('/strategies')
+            } else if (page === 'news') {
+              window.history.pushState({}, '', '/news')
+              setRoute('/news')
             } else if (page === 'backtest') {
               console.log('Navigating to backtest')
               window.history.pushState({}, '', '/backtest')
@@ -540,6 +602,9 @@ function App() {
             } else if (page === 'strategies') {
               window.history.pushState({}, '', '/strategies')
               setRoute('/strategies')
+            } else if (page === 'news') {
+              window.history.pushState({}, '', '/news')
+              setRoute('/news')
             } else if (page === 'backtest') {
               window.history.pushState({}, '', '/backtest')
               setRoute('/backtest')
@@ -594,6 +659,9 @@ function App() {
             } else if (page === 'strategies') {
               window.history.pushState({}, '', '/strategies')
               setRoute('/strategies')
+            } else if (page === 'news') {
+              window.history.pushState({}, '', '/news')
+              setRoute('/news')
             } else if (page === 'backtest') {
               window.history.pushState({}, '', '/backtest')
               setRoute('/backtest')
@@ -671,6 +739,9 @@ function App() {
           } else if (page === 'strategies') {
             window.history.pushState({}, '', '/strategies')
             setRoute('/strategies')
+          } else if (page === 'news') {
+            window.history.pushState({}, '', '/news')
+            setRoute('/news')
           } else if (page === 'backtest') {
             window.history.pushState({}, '', '/backtest')
             setRoute('/backtest')

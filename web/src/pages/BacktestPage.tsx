@@ -26,7 +26,7 @@ interface BacktestRun {
 }
 
 export default function BacktestPage() {
-  const { token } = useAuth()
+  const { user } = useAuth()
   const [backtests, setBacktests] = useState<BacktestRun[]>([])
   const [traders, setTraders] = useState<TraderInfo[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,11 +41,11 @@ export default function BacktestPage() {
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {
-    if (token) {
+    if (user) {
       loadBacktests()
       loadTraders()
     }
-  }, [token])
+  }, [user])
 
   const loadBacktests = async () => {
     try {

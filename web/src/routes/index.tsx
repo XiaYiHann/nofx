@@ -9,6 +9,7 @@ import { ResetPasswordPage } from '../components/ResetPasswordPage'
 import { CompetitionPage } from '../components/CompetitionPage'
 import { AITradersPage } from '../pages/AITradersPage'
 import TraderDashboard from '../pages/TraderDashboard'
+import NewsPage from '../pages/NewsPage'
 
 export const router = createBrowserRouter([
   {
@@ -52,6 +53,10 @@ export const router = createBrowserRouter([
       {
         path: '/dashboard',
         element: <TraderDashboard />,
+      },
+      {
+        path: '/news',
+        element: <NewsPage />,
       },
     ],
   },

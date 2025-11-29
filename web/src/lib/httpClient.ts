@@ -158,21 +158,24 @@ export class HttpClient {
 
         // Request used a different token - stale request with old token
         if (headerValue !== expectedHeader) {
-          console.error(
-            '[httpClient][401] 🛑 BLOCKED: Token mismatch.',
-            {
-              requestUrl,
-              headerValue: headerValue.substring(0, 20) + '...',
-              expectedHeader: expectedHeader.substring(0, 20) + '...',
-              match: headerValue === expectedHeader
-            }
-          )
+          console.error('[httpClient][401] 🛑 BLOCKED: Token mismatch.', {
+            requestUrl,
+            headerValue: headerValue.substring(0, 20) + '...',
+            expectedHeader: expectedHeader.substring(0, 20) + '...',
+            match: headerValue === expectedHeader,
+          })
           return Promise.reject(error)
         }
 
-        console.error('[httpClient][401] ✅ MATCH: Token matches, proceeding to logout.', { requestUrl })
+        console.error(
+          '[httpClient][401] ✅ MATCH: Token matches, proceeding to logout.',
+          { requestUrl }
+        )
       } else {
-        console.error('[httpClient][401] ⚠️ No current token, proceeding to logout.', { requestUrl })
+        console.error(
+          '[httpClient][401] ⚠️ No current token, proceeding to logout.',
+          { requestUrl }
+        )
       }
 
       if (HttpClient.isHandling401) {
@@ -207,7 +210,7 @@ export class HttpClient {
         window.location.href = '/login'
 
         // Return pending promise
-        return new Promise(() => { })
+        return new Promise(() => {})
       }
 
       throw new Error('Session expired')

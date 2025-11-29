@@ -291,3 +291,160 @@ func TestUpdateTraderSystemPromptTemplatePersistence(t *testing.T) {
 	require.Len(t, traders, 1)
 	require.Equal(t, "aggressive", traders[0].SystemPromptTemplate, "Database should have updated system_prompt_template")
 }
+
+// TestRegisterAfterUserDeletion 测试删除用户后重新注册
+// 场景：创建用户 -> 通过 SQL 删除用户记录 -> 再次调用 /api/register 应允许注册
+func TestRegisterAfterUserDeletion(t *testing.T) {
+	t.Helper()
+	testhelpers.LoadDotEnv(t)
+
+	if os.Getenv("DATA_ENCRYPTION_KEY") == "" {
+		os.Setenv("DATA_ENCRYPTION_KEY", defaultDataEncryptionKey)
+	}
+
+	cryptoService, err := crypto.NewCryptoService("secrets/rsa_key")
+	require.NoError(t, err)
+
+	dbPath := filepath.Join(t.TempDir(), "config.db")
+	database, err := config.NewDatabase(dbPath)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = database.Close() })
+	database.SetCryptoService(cryptoService)
+
+	auth.SetJWTSecret("test-jwt-secret-register-deletion")
+	traderManager := manager.NewTraderManager()
+	// 创建服务器（disableOTP=true 以简化测试，devMode=true 启用调试日志）
+	server := NewServer(traderManager, database, cryptoService, 0, true, true)
+
+	testEmail := "register-deletion-test@example.com"
+	testPassword := "TestPass123!"
+
+	// 步骤 1: 首次注册
+	registerPayload := map[string]string{
+		"email":    testEmail,
+		"password": testPassword,
+	}
+	body, err := json.Marshal(registerPayload)
+	require.NoError(t, err)
+
+	registerReq := httptest.NewRequest(http.MethodPost, "/api/register", bytes.NewReader(body))
+	registerReq.Header.Set("Content-Type", "application/json")
+	registerResp := httptest.NewRecorder()
+	server.router.ServeHTTP(registerResp, registerReq)
+	require.Equal(t, http.StatusOK, registerResp.Code, "首次注册应成功")
+
+	var firstRegisterData struct {
+		Token   string `json:"token"`
+		UserID  string `json:"user_id"`
+		Email   string `json:"email"`
+		Message string `json:"message"`
+	}
+	require.NoError(t, json.Unmarshal(registerResp.Body.Bytes(), &firstRegisterData))
+	require.NotEmpty(t, firstRegisterData.Token, "首次注册应返回 token")
+	require.NotEmpty(t, firstRegisterData.UserID, "首次注册应返回 user_id")
+
+	// 步骤 2: 验证邮箱已存在（再次注册应失败）
+	registerReq2 := httptest.NewRequest(http.MethodPost, "/api/register", bytes.NewReader(body))
+	registerReq2.Header.Set("Content-Type", "application/json")
+	registerResp2 := httptest.NewRecorder()
+	server.router.ServeHTTP(registerResp2, registerReq2)
+	require.Equal(t, http.StatusConflict, registerResp2.Code, "邮箱已存在应返回 409 Conflict")
+
+	var conflictData struct {
+		Error string `json:"error"`
+	}
+	require.NoError(t, json.Unmarshal(registerResp2.Body.Bytes(), &conflictData))
+	require.Contains(t, conflictData.Error, "邮箱已被注册", "应返回正确的错误消息")
+
+	// 步骤 3: 直接通过 SQL 删除用户记录（模拟用户手动清理数据库）
+	db := database.GetDB()
+	result, err := db.Exec("DELETE FROM users WHERE email = ?", testEmail)
+	require.NoError(t, err, "SQL 删除用户应成功")
+	rowsAffected, err := result.RowsAffected()
+	require.NoError(t, err)
+	require.Equal(t, int64(1), rowsAffected, "应删除 1 条记录")
+
+	// 步骤 4: 验证用户已不存在
+	_, err = database.GetUserByEmail(testEmail)
+	require.Error(t, err, "删除后 GetUserByEmail 应返回错误")
+
+	// 步骤 5: 再次注册相同邮箱（应允许注册）
+	registerReq3 := httptest.NewRequest(http.MethodPost, "/api/register", bytes.NewReader(body))
+	registerReq3.Header.Set("Content-Type", "application/json")
+	registerResp3 := httptest.NewRecorder()
+	server.router.ServeHTTP(registerResp3, registerReq3)
+	require.Equal(t, http.StatusOK, registerResp3.Code, "删除用户后重新注册应成功，得到: %s", registerResp3.Body.String())
+
+	var secondRegisterData struct {
+		Token   string `json:"token"`
+		UserID  string `json:"user_id"`
+		Email   string `json:"email"`
+		Message string `json:"message"`
+	}
+	require.NoError(t, json.Unmarshal(registerResp3.Body.Bytes(), &secondRegisterData))
+	require.NotEmpty(t, secondRegisterData.Token, "重新注册应返回新 token")
+	require.NotEmpty(t, secondRegisterData.UserID, "重新注册应返回新 user_id")
+	// 新用户 ID 应与之前不同（UUID 生成）
+	require.NotEqual(t, firstRegisterData.UserID, secondRegisterData.UserID, "新用户应有不同的 ID")
+}
+
+// TestRegisterWithWALCheckpoint 测试 WAL checkpoint 后注册行为
+// 验证 WAL 模式下数据库操作的一致性
+func TestRegisterWithWALCheckpoint(t *testing.T) {
+	t.Helper()
+	testhelpers.LoadDotEnv(t)
+
+	if os.Getenv("DATA_ENCRYPTION_KEY") == "" {
+		os.Setenv("DATA_ENCRYPTION_KEY", defaultDataEncryptionKey)
+	}
+
+	cryptoService, err := crypto.NewCryptoService("secrets/rsa_key")
+	require.NoError(t, err)
+
+	dbPath := filepath.Join(t.TempDir(), "config.db")
+	database, err := config.NewDatabase(dbPath)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = database.Close() })
+	database.SetCryptoService(cryptoService)
+
+	auth.SetJWTSecret("test-jwt-secret-wal")
+	traderManager := manager.NewTraderManager()
+	server := NewServer(traderManager, database, cryptoService, 0, true, true)
+
+	testEmail := "wal-test@example.com"
+	testPassword := "WALTestPass123!"
+
+	// 步骤 1: 注册用户
+	registerPayload := map[string]string{
+		"email":    testEmail,
+		"password": testPassword,
+	}
+	body, err := json.Marshal(registerPayload)
+	require.NoError(t, err)
+
+	registerReq := httptest.NewRequest(http.MethodPost, "/api/register", bytes.NewReader(body))
+	registerReq.Header.Set("Content-Type", "application/json")
+	registerResp := httptest.NewRecorder()
+	server.router.ServeHTTP(registerResp, registerReq)
+	require.Equal(t, http.StatusOK, registerResp.Code, "注册应成功")
+
+	// 步骤 2: 执行 WAL checkpoint
+	db := database.GetDB()
+	_, err = db.Exec("PRAGMA wal_checkpoint(TRUNCATE)")
+	require.NoError(t, err, "WAL checkpoint 应成功")
+
+	// 步骤 3: 删除用户
+	_, err = db.Exec("DELETE FROM users WHERE email = ?", testEmail)
+	require.NoError(t, err)
+
+	// 步骤 4: 再次执行 WAL checkpoint（确保删除被写入主文件）
+	_, err = db.Exec("PRAGMA wal_checkpoint(TRUNCATE)")
+	require.NoError(t, err, "WAL checkpoint 应成功")
+
+	// 步骤 5: 重新注册应成功
+	registerReq2 := httptest.NewRequest(http.MethodPost, "/api/register", bytes.NewReader(body))
+	registerReq2.Header.Set("Content-Type", "application/json")
+	registerResp2 := httptest.NewRecorder()
+	server.router.ServeHTTP(registerResp2, registerReq2)
+	require.Equal(t, http.StatusOK, registerResp2.Code, "WAL checkpoint 后重新注册应成功")
+}
