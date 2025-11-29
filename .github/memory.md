@@ -1,3 +1,68 @@
+### 2025-11-29 16:20:00 CST
+
+**变更摘要**: 解决并预防“清空数据库后仍提示邮箱已被注册”的问题 —— 增强数据库重置的可观测性、在注册流程中添加 dev-mode 调试日志、增加可复现的集成测试（删除->注册、WAL checkpoint），并在启动脚本文档中加入“安全重置数据库”步骤。
+
+**设计思路**:
+
+- 保障生产安全：只在 dev-mode 输出额外诊断日志（不记录敏感字段），确保修复不会泄露敏感信息或改变生产语义。
+- 可复现 + 可测性：把真实场景（删除用户、WAL 未 checkpoint）变为自动化集成测试，防止未来回归。
+- 可观测性优先：在启动时打印实际数据库路径及 WAL/SHM 状态，减少运维与开发人员在重置数据库时的误判。
+
+**修改意图**:
+
+- 帮助开发者与用户安全且确定性地重置数据库（停止服务、删除 main + wal + shm），避免因 WAL 或运行中的进程导致的数据残留。
+- 通过测试与日志，能快速定位“邮箱已被注册”类疑难场景并提供可操作的修复建议。
+- 在不影响生产安全性的前提下，提升开发和调试效率，减少重复工单与误操作。
+
+**工作区变更快照（staged/unstaged/untracked）**:
+- 修改（unstaged/working tree）: `.github/memory.md`, `START_SCRIPTS_README.md`, `api/server.go`, `api/server_integration_test.go`, `config/test_rsa_key.pem.pub`, `main.go`, `web/src/components/HeaderBar.tsx`, `web/src/layouts/MainLayout.tsx`, `web/src/routes/index.tsx`, `web/src/types.ts`
+- 新增/未跟踪 (in-progress feature work): `api/news_handler.go`, `market/news/`, `web/src/pages/NewsPage.tsx`, `screenshots/dev_mode_mcp_test.png`
+
+---
+
+### 2025-11-29 16:00:00 CST
+
+**变更摘要**: 修复"邮箱已被注册"问题的调试与文档改进，增加数据库重置指南与注册流程的可观测性。
+
+**设计思路**:
+
+- **问题分析**: 用户报告在清空数据库后仍提示"邮箱已被注册"。经调查确认问题根因不是代码 bug，而是用户可能：1) 未正确删除 WAL 文件 (`config.db-wal`, `config.db-shm`)；2) 服务仍在运行时删除数据库文件；3) Docker 环境中清理了宿主机文件但容器使用的是挂载卷中的不同文件。
+- **调试增强**: 在 `main.go` 启动时打印数据库绝对路径和 WAL 文件状态，帮助开发者快速定位实际使用的数据库文件；在 `handleRegister` 中添加 dev-mode 专属日志，记录邮箱查询结果（仅记录用户 ID 和错误类型，不暴露敏感信息）。
+- **文档补充**: 在 `START_SCRIPTS_README.md` 新增"安全重置数据库"章节，详细说明 WAL 模式的特性、正确的重置步骤（本地/Docker）、常见问题解答。
+
+**修改意图**:
+
+- **降低用户困惑**: 提供明确的数据库重置指南，避免用户因不了解 SQLite WAL 机制而陷入困境。
+- **提高可观测性**: 通过启动日志和 dev-mode 调试日志，使开发者能快速定位数据库和注册流程的问题。
+- **测试覆盖**: 新增两个集成测试 (`TestRegisterAfterUserDeletion`, `TestRegisterWithWALCheckpoint`)，验证删除用户后重新注册的行为符合预期。
+
+**关键变更文件**:
+
+- `main.go`: 添加数据库路径和 WAL 文件状态日志
+- `api/server.go`: 在 `handleRegister` 添加 dev-mode 调试日志
+- `api/server_integration_test.go`: 新增注册/删除/重新注册场景的集成测试
+- `START_SCRIPTS_README.md`: 新增"安全重置数据库"章节
+
+---
+
+### 2025-11-29 15:42:00 CST
+
+**变更摘要**: 集成 NewsNow 新闻聚合功能。实现了后端 `market/news` 包以抓取 Hacker News 和 CryptoPanic 数据，并提供 `/api/news` 接口；前端新增 `NewsPage.tsx` 页面，并在导航栏添加入口。
+
+**设计思路**:
+
+- **模块化设计**: 创建独立的 `market/news` 包，定义 `NewsSource` 接口，方便未来扩展更多新闻源（如 Twitter, Bloomberg）。
+- **缓存策略**: 在 `NewsService` 中实现内存缓存（TTL 5分钟），避免频繁请求外部 API 导致限流或延迟，同时保证数据相对实时。
+- **用户体验一致性**: 前端 `NewsPage` 沿用现有的 Glassmorphism 设计风格和 Tailwind CSS 组件，确保与整体应用视觉风格统一。
+
+**修改意图**:
+
+- **提供实时市场情报**: 满足用户对实时新闻聚合的需求，帮助交易员在应用内直接获取关键市场信息。
+- **增强应用粘性**: 通过集成新闻功能，增加用户在应用内的停留时间，使其成为更全面的交易辅助工具。
+- **验证开发模式**: 通过在 `--dev` 模式下开发和验证，进一步确认了本地开发环境的便捷性和可靠性。
+
+---
+
 ### 2025-11-29 03:01:00 CST
 
 **变更摘要**: 修复 `start_local.sh` 意外进入开发模式的问题，以及 `BacktestPage` 在开发模式下无限加载的 Bug；验证了前端测试套件的稳定性。
@@ -42,14 +107,14 @@
 **变更摘要**: 添加并验证“测试/开发模式 (--dev)”支持，允许本地绕过登录与 OTP（仅用于本地开发/测试），并在前后端与启动脚本中做了相应兼容改造。
 
 - 关键改动文件（未暂存）：
- 	- `api/server.go`（后端：auth 中间件、/api/config dev_mode 输出）
- 	- `main.go`（将 devMode 传入 API Server）
- 	- `start_local.sh`、`start.sh`、`docker-compose.yml`（启动脚本与部署：解析 --dev 并注入 NOFX_DEV_MODE）
- 	- `web/src/contexts/AuthContext.tsx`（前端：自动设置 dev 测试用户、保持 token=null）
- 	- `web/src/App.tsx`（路由保护放宽，只检查 user 不强制 token；SWR 条件调整）
- 	- `web/src/components/LoginPage.tsx`（显示 dev 模式 Banner 和“直接进入系统”按钮）
- 	- `web/src/pages/AITradersPage.tsx`、`web/src/stores/tradersConfigStore.ts`、`web/src/lib/config.ts`（其他兼容性调整）
- 	- 调试/验证产物：`screenshots/dev_mode_traders_page.png`, `screenshots/dev_mode_test_success.png`
+  - `api/server.go`（后端：auth 中间件、/api/config dev_mode 输出）
+  - `main.go`（将 devMode 传入 API Server）
+  - `start_local.sh`、`start.sh`、`docker-compose.yml`（启动脚本与部署：解析 --dev 并注入 NOFX_DEV_MODE）
+  - `web/src/contexts/AuthContext.tsx`（前端：自动设置 dev 测试用户、保持 token=null）
+  - `web/src/App.tsx`（路由保护放宽，只检查 user 不强制 token；SWR 条件调整）
+  - `web/src/components/LoginPage.tsx`（显示 dev 模式 Banner 和“直接进入系统”按钮）
+  - `web/src/pages/AITradersPage.tsx`、`web/src/stores/tradersConfigStore.ts`、`web/src/lib/config.ts`（其他兼容性调整）
+  - 调试/验证产物：`screenshots/dev_mode_traders_page.png`, `screenshots/dev_mode_test_success.png`
 
 **设计思路**:
 
