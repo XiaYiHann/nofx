@@ -1,3 +1,24 @@
+### 2025-12-01 02:40:00 CST
+
+**变更摘要**: 在 `web` 前端补齐并稳定化大量 Vitest + Testing Library 测试用例 —— 新增/完善多个关键模块的单元与集成测试（包括 `AuthContext`、`api`、`tradersConfigStore`、`HeaderBar`、`App`、`LoginPage`、`RegisterPage`、`EquityChart` 等），目前总计 356 个测试通过；工作区仍有未跟踪的新增测试文件与未暂存的 `web/package.json` / `web/package-lock.json` 修改。
+
+**设计思路**:
+
+- 优先确保关键路径高覆盖（Priority-1 模块目标 ≥80%），以降低回归风险；次序性地补充其他模块以逐步提高整体覆盖率（目标 ≥50%）。
+- 在不引入新依赖的前提下，保持测试稳定性：统一 SWR mock 模式、使用 `fireEvent`（项目约束下不使用 `@testing-library/user-event`）、对 i18n 使用实际中文文本断言、对重复 DOM 节点使用 `getAllByText()` 以防偶发断言失败。
+- 以可重复、可维护的 mock 策略为中心（SWR 明确 key 比对），避免脆弱测试和不可控的外部依赖。
+
+**修改意图**:
+
+- 快速提升关键模块的测试覆盖并保证稳定性，让 CI 与本地开发都能可靠地捕获回归。
+- 修复测试失败的常见根因（翻译 key 与真实文本不一致、SWR key 不精确匹配、多节点断言冲突、异步更新未被 act 包裹等），记录最佳实践以便后续编写测试时复用。
+- 在不牺牲稳定性的情况下，向团队展示如何以受控方式逐步提高整体覆盖，下一步将继续补齐剩余模块（如 AI 相关页面、PositionPage、ComparisonChart 等）以提升总体覆盖率。
+
+**工作区快照（临时）**:
+
+- 未暂存 (unstaged): `web/package.json`, `web/package-lock.json`
+- 未跟踪 (untracked): 多个新增测试文件（例如 `web/src/components/EquityChart.test.tsx`, `web/src/contexts/AuthContext.test.tsx`, `web/src/components/LoginPage.test.tsx`, `web/src/components/landing/HeaderBar.test.tsx`, `web/src/lib/api.test.ts`, `web/src/stores/tradersConfigStore.test.ts` 等）
+
 ### 2025-11-29 17:50:00 CST
 
 **变更摘要**: 确保 News 功能在 fresh clone / 系统重启后可见且稳健 —— 将 News 相关文件纳入版本库、修复前端路由与编译问题、为后端服务与处理器以及前端页面补充全面测试并完成 lint/build/test 验证。
