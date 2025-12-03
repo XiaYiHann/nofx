@@ -1,3 +1,18 @@
+### 2025-12-03 16:37:19 CST
+
+**变更摘要**: 支持“独立配置回测（standalone）”仅需选择 AI 模型（ai_model_id）即可创建并运行回测；前后端校验调整：后端在 standalone 模式仅要求 ai_model_id，前端将交易所(exchange)设为可选、仅在非 standalone 模式要求选择交易员(trader)；为确保 dev-mode 下 Backtest 详情页能正常加载，修复 BacktestDetailPage 的数据加载条件（由 token 改为 user），并补充相应的测试与文档更新，消除创建与查看回测时遇到的 400 错误和加载问题。
+
+**设计思路**:
+- 兼容性优先：在不影响旧流程（非 standalone 模式仍需 trader/exchange）的前提下，放宽 standalone 的必填项以降低用户门槛。
+- dev-mode 友好：前端在 dev 模式 token 为 null，但 user 存在，因此后端与前端需要以 user 为可用的加载条件来保证本地开发/测试流畅。
+- 可观测与渐进修复：通过增加后端/前端测试、短期调试日志帮助定位问题，同时保持变更小而可回滚。
+
+**修改意图**:
+- 让用户能用仅 AI 模型运行回测（支持 AI-only 回测场景），提高灵活性和可用性。
+- 修复 "查看回测详情无请求/不显示" 的 UX 问题，确保详情页在 dev 模式与生产模式都可见和自动刷新。
+- 保证改动有充足的测试覆盖与文档更新以避免回归。
+
+
 ### 2025-12-03 16:06:24 CST
 
 **变更摘要**: 在 `market` 包中新增并集成 10 种技术指标（SMA, VWAP, OBV, Stochastic, Williams %R, CCI, ADX, Parabolic SAR, CMF, Ichimoku）。这些改动涉及：在数据模型中添加字段（`TimeframeData` / `IntradayData`）、在 `data.go` 实现各指标的计算函数并在 `CalculateTimeframeData()` 中集成、补充并完善对应单元测试（`market/data_test.go`），同时更新前端配置界面 (`web/src/components/IndicatorConfigPanel.tsx`) 和 LLM prompt 模板 (`prompts/nof1.txt`)。已运行并通过相关测试与前端构建验证。
