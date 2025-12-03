@@ -16,6 +16,12 @@ type Config struct {
 	TradingSymbols []string      // 交易币种
 	Slippage       int           // 滑点基点(10 = 0.1%)
 
+	// 回测专用覆盖配置
+	AiModelID       string        // 覆盖使用的AI模型ID
+	Timeframe       string        // K线周期 (e.g. "3m", "15m")
+	DataPoints      int           // 指标计算数据点数量
+	PreheatDuration time.Duration // 预热时长
+
 	// 配置复用
 	UseTraderConfig      bool                    // 是否使用trader配置
 	IndicatorConfig      *market.IndicatorConfig // 指标配置

@@ -28,6 +28,7 @@ import (
 // TODO 现在与config.Config相同，未来会被替换， 现在为了兼容性不得不保留当前文件
 type ConfigFile struct {
 	BetaMode           bool                  `json:"beta_mode"`
+	DevMode            bool                  `json:"dev_mode"` // 开发模式（免登录）
 	APIServerPort      int                   `json:"api_server_port"`
 	UseDefaultCoins    bool                  `json:"use_default_coins"`
 	DefaultCoins       []string              `json:"default_coins"`
@@ -76,6 +77,7 @@ func syncConfigToDatabase(database *config.Database, configFile *ConfigFile) err
 	// 同步各配置项到数据库
 	configs := map[string]string{
 		"beta_mode":            fmt.Sprintf("%t", configFile.BetaMode),
+		"dev_mode":             fmt.Sprintf("%t", configFile.DevMode),
 		"api_server_port":      strconv.Itoa(configFile.APIServerPort),
 		"use_default_coins":    fmt.Sprintf("%t", configFile.UseDefaultCoins),
 		"coin_pool_api_url":    configFile.CoinPoolAPIURL,
@@ -164,20 +166,6 @@ func main() {
 	// In Docker Compose, variables are injected by the runtime and this is harmless.
 	_ = godotenv.Load()
 
-	// Check if dev mode is enabled (test mode with bypassed auth)
-	devModeEnv := strings.ToLower(os.Getenv("NOFX_DEV_MODE"))
-	devMode := devModeEnv == "true" || devModeEnv == "1"
-	if devMode {
-		log.Printf("🚧 NOFX_DEV_MODE=true: 启用测试模式 (JWT 鉴权已绕过，仅用于本地/测试)")
-	}
-
-	// Check if OTP should be disabled in development mode
-	// 在 dev 模式下自动禁用 OTP
-	disableOTP := os.Getenv("DISABLE_OTP") == "true" || devMode
-	if disableOTP {
-		log.Printf("🚫 OTP已禁用 (开发模式)")
-	}
-
 	// 初始化数据库配置
 	dbPath := "config.db"
 	if len(os.Args) > 1 {
@@ -188,6 +176,27 @@ func main() {
 	configFile, err := loadConfigFile()
 	if err != nil {
 		log.Fatalf("❌ 读取config.json失败: %v", err)
+	}
+
+	// Check if dev mode is enabled (test mode with bypassed auth)
+	// 优先级：环境变量 > config.json
+	devModeEnv := strings.ToLower(os.Getenv("NOFX_DEV_MODE"))
+	devMode := devModeEnv == "true" || devModeEnv == "1"
+	
+	// 如果环境变量未设置，检查 config.json
+	if !devMode && configFile != nil {
+		devMode = configFile.DevMode
+	}
+	
+	if devMode {
+		log.Printf("🚧 Dev Mode Enabled: 测试模式已启用 (JWT 鉴权已绕过，仅用于开发/测试环境)")
+	}
+
+	// Check if OTP should be disabled in development mode
+	// 在 dev 模式下自动禁用 OTP
+	disableOTP := os.Getenv("DISABLE_OTP") == "true" || devMode
+	if disableOTP {
+		log.Printf("🚫 OTP已禁用 (开发模式)")
 	}
 
 	// 🔧 打印数据库路径信息（帮助调试数据库清理问题）

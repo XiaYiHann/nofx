@@ -170,6 +170,10 @@ export default function BacktestDetailPage({
                 {new Date(backtest.start_time).toLocaleDateString()} -{' '}
                 {new Date(backtest.end_time).toLocaleDateString()}
               </p>
+              <div className="mt-2 text-xs text-gray-500 flex gap-3">
+                {backtest.timeframe && <span>周期: {backtest.timeframe}</span>}
+                {backtest.ai_model_id && <span>AI模型: {backtest.ai_model_id}</span>}
+              </div>
             </div>
             <div className="hidden sm:block">
               <div

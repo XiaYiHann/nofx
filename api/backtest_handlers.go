@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,16 +20,27 @@ import (
 
 // BacktestConfigRequest 回测配置请求
 type BacktestConfigRequest struct {
-	TraderID             string                 `json:"trader_id" binding:"required"`
-	StartTime            string                 `json:"start_time" binding:"required"`
-	EndTime              string                 `json:"end_time" binding:"required"`
-	InitialBalance       float64                `json:"initial_balance" binding:"required,gt=0"`
-	UseTraderConfig      *bool                  `json:"use_trader_config"`
-	MockMode             bool                   `json:"mock_mode"`
-	IndicatorConfig      map[string]interface{} `json:"indicator_config,omitempty"`
-	CustomPrompt         string                 `json:"custom_prompt,omitempty"`
-	SystemPromptTemplate string                 `json:"system_prompt_template,omitempty"`
-	TradingSymbols       string                 `json:"trading_symbols,omitempty"`
+	TraderID             string                  `json:"trader_id"` // Optional for standalone mode
+	StartTime            string                  `json:"start_time" binding:"required"`
+	EndTime              string                  `json:"end_time" binding:"required"`
+	InitialBalance       float64                 `json:"initial_balance" binding:"required,gt=0"`
+	UseTraderConfig      *bool                   `json:"use_trader_config"`
+	MockMode             bool                    `json:"mock_mode"`
+	IndicatorConfig      *market.IndicatorConfig `json:"indicator_config,omitempty"`
+	CustomPrompt         string                  `json:"custom_prompt,omitempty"`
+	SystemPromptTemplate string                  `json:"system_prompt_template,omitempty"`
+	TradingSymbols       string                  `json:"trading_symbols,omitempty"`
+	// 新增回测配置字段
+	AiModelID           string `json:"ai_model_id,omitempty"`
+	ExchangeID          string `json:"exchange_id,omitempty"` // Standalone mode only
+	Timeframe           string `json:"timeframe,omitempty"`
+	DataPoints          int    `json:"data_points,omitempty"`
+	PreheatHours        int    `json:"preheat_hours,omitempty"`
+	ScanIntervalMinutes int    `json:"scan_interval_minutes,omitempty"`
+	Slippage            int    `json:"slippage,omitempty"`
+	BTCETHLeverage      int    `json:"btc_eth_leverage,omitempty"` // Standalone mode
+	AltcoinLeverage     int    `json:"altcoin_leverage,omitempty"` // Standalone mode
+	OverrideBasePrompt  bool   `json:"override_base_prompt,omitempty"`
 }
 
 // handleCreateBacktest 创建回测
@@ -71,63 +83,168 @@ func (s *Server) handleCreateBacktest(c *gin.Context) {
 		useTraderConfig = *req.UseTraderConfig
 	}
 
-	// 验证trader存在
-	trader, aiModel, _, err := s.database.GetTraderConfig(userID, req.TraderID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Trader not found"})
-		return
+	var trader *config.TraderRecord
+	var aiModel *config.AIModelConfig
+
+
+	if req.TraderID != "" {
+		// 验证trader存在
+		var exchange *config.ExchangeConfig
+		trader, aiModel, exchange, err = s.database.GetTraderConfig(userID, req.TraderID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Trader not found"})
+			return
+		}
+		// Ensure exchange is loaded if needed, though runBacktest doesn't use it directly yet
+		_ = exchange
+	} else {
+		// Standalone Mode
+		if req.AiModelID == "" || req.ExchangeID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ai_model_id and exchange_id are required for standalone backtest"})
+			return
+		}
+
+		// Fetch AI Model
+		aiModel, err = s.database.GetAIModelByID(userID, req.AiModelID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "AI Model not found"})
+			return
+		}
+
+		// Find or create placeholder trader for FK constraint
+		placeholderID := fmt.Sprintf("standalone_%s", userID)
+		trader, _, _, err = s.database.GetTraderConfig(userID, placeholderID)
+		if err != nil {
+			// Create placeholder trader
+			trader = &config.TraderRecord{
+				ID:             placeholderID,
+				UserID:         userID,
+				Name:           "Standalone Backtest",
+				ExchangeID:     req.ExchangeID,
+				AIModelID:      req.AiModelID,
+				InitialBalance: req.InitialBalance,
+				CreatedAt:      time.Now(),
+				UpdatedAt:      time.Now(),
+			}
+			if err := s.database.CreateTrader(trader); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create placeholder trader"})
+				return
+			}
+		}
+
+		// Override trader config with request values for this run
+		// We create a copy to avoid modifying the cached/DB record
+		traderCopy := *trader
+		traderCopy.ExchangeID = req.ExchangeID
+		traderCopy.AIModelID = req.AiModelID
+		if req.BTCETHLeverage > 0 {
+			traderCopy.BTCETHLeverage = req.BTCETHLeverage
+		} else {
+			traderCopy.BTCETHLeverage = 5 // Default
+		}
+		if req.AltcoinLeverage > 0 {
+			traderCopy.AltcoinLeverage = req.AltcoinLeverage
+		} else {
+			traderCopy.AltcoinLeverage = 5 // Default
+		}
+		
+		trader = &traderCopy
+		req.TraderID = placeholderID // Set for BacktestRun FK
+		useTraderConfig = false // Force false for standalone
 	}
 
-	// Handle Mock Mode by using CustomPrompt as a storage mechanism
-	customPrompt := req.CustomPrompt
-	if useTraderConfig {
-		customPrompt = trader.CustomPrompt
-	}
-	if req.MockMode {
-		customPrompt = "MOCK_MODE_ALWAYS_LONG"
+	// 1. 确定基础配置 (从 Trader 继承或使用默认值)
+	// 扫描间隔
+	scanInterval := trader.ScanIntervalMinutes
+	if req.ScanIntervalMinutes > 0 {
+		scanInterval = req.ScanIntervalMinutes
+	} else if scanInterval <= 0 {
+		scanInterval = 3 // Default fallback
 	}
 
-	// Determine trading symbols
-	tradingSymbols := req.TradingSymbols
+	// 交易币种
+	tradingSymbols := trader.TradingSymbols
+	if req.TradingSymbols != "" {
+		tradingSymbols = req.TradingSymbols
+	}
 	if tradingSymbols == "" {
-		// 强制使用固定的主流币种进行回测
 		tradingSymbols = "BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT,DOGEUSDT"
 	}
 
-	// Prepare indicator config JSON string
+	// 其他高级参数 (优先使用请求参数，否则使用默认值)
+	timeframe := req.Timeframe
+	if timeframe == "" {
+		timeframe = "3m"
+	}
+	dataPoints := req.DataPoints
+	if dataPoints <= 0 {
+		dataPoints = 100
+	}
+	preheatHours := req.PreheatHours
+	if preheatHours <= 0 {
+		preheatHours = 12
+	}
+	slippage := req.Slippage
+	if slippage < 0 {
+		slippage = 10 // default 10 bps
+	}
+
+	// 2. 确定策略配置 (Prompt, Indicator, SystemTemplate)
 	var indicatorConfigJSON string
-	if req.IndicatorConfig != nil {
-		indicatorConfigJSON = fmt.Sprintf("%v", req.IndicatorConfig)
+	var customPrompt string
+	var systemPromptTemplate string
+	var overrideBasePrompt bool
+
+	if useTraderConfig {
+		// 沿用 Trader 配置
+		indicatorConfigJSON = trader.IndicatorConfig
+		customPrompt = trader.CustomPrompt
+		systemPromptTemplate = trader.SystemPromptTemplate
+		overrideBasePrompt = trader.OverrideBasePrompt
+	} else {
+		// 使用请求中的自定义配置
+		if req.IndicatorConfig != nil {
+			jsonBytes, err := json.Marshal(req.IndicatorConfig)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid indicator_config"})
+				return
+			}
+			indicatorConfigJSON = string(jsonBytes)
+		}
+		customPrompt = req.CustomPrompt
+		systemPromptTemplate = req.SystemPromptTemplate
+		overrideBasePrompt = req.OverrideBasePrompt
+	}
+
+	// Handle Mock Mode
+	if req.MockMode {
+		customPrompt = "MOCK_MODE_ALWAYS_LONG"
 	}
 
 	// 创建回测记录
 	backtestID := uuid.New().String()
 	backtestRun := &config.BacktestRun{
-		ID:                  backtestID,
-		UserID:              userID,
-		TraderID:            req.TraderID,
-		StartTime:           startTime,
-		EndTime:             endTime,
-		InitialBalance:      req.InitialBalance,
-		ScanIntervalMinutes: trader.ScanIntervalMinutes,
-		TradingSymbols:      tradingSymbols,
-		UseTraderConfig:     useTraderConfig,
-		Status:              "pending",
-		Progress:            0,
-		CreatedAt:           time.Now(),
-	}
-
-	// 如果使用trader配置,复制配置
-	if useTraderConfig {
-		backtestRun.IndicatorConfig = trader.IndicatorConfig
-		backtestRun.CustomPrompt = customPrompt
-		backtestRun.OverrideBasePrompt = trader.OverrideBasePrompt
-		backtestRun.SystemPromptTemplate = trader.SystemPromptTemplate
-	} else {
-		// 使用自定义配置
-		backtestRun.IndicatorConfig = indicatorConfigJSON
-		backtestRun.CustomPrompt = customPrompt
-		backtestRun.SystemPromptTemplate = req.SystemPromptTemplate
+		ID:                   backtestID,
+		UserID:               userID,
+		TraderID:             req.TraderID,
+		StartTime:            startTime,
+		EndTime:              endTime,
+		InitialBalance:       req.InitialBalance,
+		ScanIntervalMinutes:  scanInterval,
+		TradingSymbols:       tradingSymbols,
+		UseTraderConfig:      useTraderConfig,
+		Status:               "pending",
+		Progress:             0,
+		CreatedAt:            time.Now(),
+		AiModelID:            req.AiModelID,
+		Timeframe:            timeframe,
+		DataPoints:           dataPoints,
+		PreheatHours:         preheatHours,
+		Slippage:             slippage,
+		IndicatorConfig:      indicatorConfigJSON,
+		CustomPrompt:         customPrompt,
+		OverrideBasePrompt:   overrideBasePrompt,
+		SystemPromptTemplate: systemPromptTemplate,
 	}
 
 	// 保存到数据库
@@ -311,7 +428,7 @@ func (s *Server) runBacktest(backtestID string, backtestRun *config.BacktestRun,
 		InitialBalance:       backtestRun.InitialBalance,
 		ScanInterval:         time.Duration(backtestRun.ScanIntervalMinutes) * time.Minute,
 		TradingSymbols:       tradingSymbols,
-		Slippage:             10, // 默认10基点(0.1%)滑点
+		Slippage:             backtestRun.Slippage,
 		UseTraderConfig:      backtestRun.UseTraderConfig,
 		MockMode:             backtestRun.CustomPrompt == "MOCK_MODE_ALWAYS_LONG", // Detect MockMode from CustomPrompt
 		IndicatorConfig:      indicatorConfig,                                     // Use the parsed indicatorConfig
@@ -320,22 +437,44 @@ func (s *Server) runBacktest(backtestID string, backtestRun *config.BacktestRun,
 		SystemPromptTemplate: backtestRun.SystemPromptTemplate,
 		BTCETHLeverage:       trader.BTCETHLeverage,
 		AltcoinLeverage:      float64(trader.AltcoinLeverage),
+		// 新增配置
+		AiModelID:       backtestRun.AiModelID,
+		Timeframe:       backtestRun.Timeframe,
+		DataPoints:      backtestRun.DataPoints,
+		PreheatDuration: time.Duration(backtestRun.PreheatHours) * time.Hour,
+	}
+
+	// 确定使用的AI模型 (优先使用回测指定的模型ID)
+	var activeAIModel *config.AIModelConfig
+	if backtestRun.AiModelID != "" {
+		// 尝试获取指定的AI模型
+		model, err := s.database.GetAIModelByID(backtestRun.UserID, backtestRun.AiModelID)
+		if err != nil {
+			log.Printf("[Backtest %s] Failed to get AI model %s: %v, falling back to trader model", 
+				backtestID, backtestRun.AiModelID, err)
+			activeAIModel = aiModel // Fallback
+		} else {
+			activeAIModel = model
+			log.Printf("[Backtest %s] Using overridden AI model: %s (%s)", backtestID, model.Name, model.Provider)
+		}
+	} else {
+		activeAIModel = aiModel
 	}
 
 	// 创建MCP客户端
 	mcpClient := mcp.New()
-	provider := strings.ToLower(strings.TrimSpace(aiModel.Provider))
+	provider := strings.ToLower(strings.TrimSpace(activeAIModel.Provider))
 	switch provider {
 	case "openai", "custom":
-		mcpClient.SetCustomAPI(aiModel.CustomAPIURL, aiModel.APIKey, aiModel.CustomModelName)
+		mcpClient.SetCustomAPI(activeAIModel.CustomAPIURL, activeAIModel.APIKey, activeAIModel.CustomModelName)
 	case "qwen":
-		mcpClient.SetQwenAPIKey(aiModel.APIKey, aiModel.CustomAPIURL, aiModel.CustomModelName)
+		mcpClient.SetQwenAPIKey(activeAIModel.APIKey, activeAIModel.CustomAPIURL, activeAIModel.CustomModelName)
 	case "glm":
-		mcpClient.SetGLMAPIKey(aiModel.APIKey, aiModel.CustomAPIURL, aiModel.CustomModelName)
+		mcpClient.SetGLMAPIKey(activeAIModel.APIKey, activeAIModel.CustomAPIURL, activeAIModel.CustomModelName)
 	case "deepseek":
-		mcpClient.SetDeepSeekAPIKey(aiModel.APIKey, aiModel.CustomAPIURL, aiModel.CustomModelName)
+		mcpClient.SetDeepSeekAPIKey(activeAIModel.APIKey, activeAIModel.CustomAPIURL, activeAIModel.CustomModelName)
 	default:
-		log.Printf("[Backtest %s] Unknown AI model provider: '%s' (normalized: '%s')", backtestID, aiModel.Provider, provider)
+		log.Printf("[Backtest %s] Unknown AI model provider: '%s' (normalized: '%s')", backtestID, activeAIModel.Provider, provider)
 		s.database.UpdateBacktestStatus(backtestID, "failed", 0)
 		return
 	}

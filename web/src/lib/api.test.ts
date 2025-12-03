@@ -686,7 +686,7 @@ describe('api module', () => {
     })
 
     describe('createBacktest', () => {
-      it('should create backtest', async () => {
+      it('should create backtest with basic fields', async () => {
         const request = {
           trader_id: 't1',
           start_time: '2024-01-01',
@@ -701,6 +701,32 @@ describe('api module', () => {
 
         const result = await api.createBacktest(request)
         expect(result.id).toBe('new-bt')
+        expect(httpClient.post).toHaveBeenCalledWith('/api/backtest', request, expect.any(Object))
+      })
+
+      it('should create backtest with advanced config fields', async () => {
+        const request = {
+          trader_id: 't1',
+          start_time: '2024-01-01',
+          end_time: '2024-01-31',
+          initial_balance: 10000,
+          ai_model_id: 'custom-model',
+          timeframe: '15m',
+          data_points: 200,
+          preheat_hours: 24,
+          scan_interval_minutes: 5,
+          slippage: 20,
+          trading_symbols: 'BTCUSDT,ETHUSDT'
+        }
+
+        vi.mocked(httpClient.post).mockResolvedValueOnce({
+          success: true,
+          data: { id: 'advanced-bt', status: 'running' },
+        })
+
+        const result = await api.createBacktest(request)
+        expect(result.id).toBe('advanced-bt')
+        expect(httpClient.post).toHaveBeenCalledWith('/api/backtest', request, expect.any(Object))
       })
 
       it('should throw error on failure', async () => {

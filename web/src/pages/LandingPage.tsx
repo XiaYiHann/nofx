@@ -45,6 +45,9 @@ export function LandingPage() {
           } else if (page === 'backtest') {
             window.history.pushState(null, '', '/backtest')
             window.dispatchEvent(new PopStateEvent('popstate'))
+          } else if (page === 'news') {
+            window.history.pushState(null, '', '/news')
+            window.dispatchEvent(new PopStateEvent('popstate'))
           }
         }}
       />

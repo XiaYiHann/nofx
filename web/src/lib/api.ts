@@ -396,12 +396,28 @@ export const api = {
   },
 
   async createBacktest(request: {
-    trader_id: string
+    trader_id?: string
     start_time: string
     end_time: string
     initial_balance: number
     use_trader_config?: boolean
     mock_mode?: boolean
+    // 新增配置字段
+    ai_model_id?: string
+    exchange_id?: string
+    timeframe?: string
+    data_points?: number
+    preheat_hours?: number
+    scan_interval_minutes?: number
+    slippage?: number
+    btc_eth_leverage?: number
+    altcoin_leverage?: number
+    trading_symbols?: string
+    // 策略配置
+    indicator_config?: any
+    custom_prompt?: string
+    override_base_prompt?: boolean
+    system_prompt_template?: string
   }): Promise<any> {
     const res = await httpClient.post(
       `${API_BASE}/backtest`,

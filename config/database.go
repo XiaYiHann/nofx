@@ -26,6 +26,7 @@ type DatabaseInterface interface {
 	UpdateUserOTPVerified(userID string, verified bool) error
 	GetAIModels(userID string) ([]*AIModelConfig, error)
 	UpdateAIModel(userID, id string, enabled bool, apiKey, customAPIURL, customModelName string) error
+	GetAIModelByID(userID, modelID string) (*AIModelConfig, error)
 	GetExchanges(userID string) ([]*ExchangeConfig, error)
 	UpdateExchange(userID, id string, enabled bool, apiKey, secretKey string, testnet bool, hyperliquidWalletAddr, asterUser, asterSigner, asterPrivateKey, lighterWalletAddr, lighterPrivateKey string) error
 	CreateAIModel(userID, id, name, provider string, enabled bool, apiKey, customAPIURL string) error
@@ -367,6 +368,13 @@ func (d *Database) createTables() error {
 		// 2FA 相关字段
 		`ALTER TABLE users ADD COLUMN otp_secret TEXT`,
 		`ALTER TABLE users ADD COLUMN otp_verified BOOLEAN DEFAULT 0`,
+
+		// Backtest Run 新增字段
+		`ALTER TABLE backtest_runs ADD COLUMN ai_model_id TEXT DEFAULT ''`,
+		`ALTER TABLE backtest_runs ADD COLUMN timeframe TEXT DEFAULT '3m'`,
+		`ALTER TABLE backtest_runs ADD COLUMN data_points INTEGER DEFAULT 100`,
+		`ALTER TABLE backtest_runs ADD COLUMN preheat_hours INTEGER DEFAULT 12`,
+		`ALTER TABLE backtest_runs ADD COLUMN slippage INTEGER DEFAULT 10`,
 	}
 
 	for _, query := range alterQueries {
@@ -654,7 +662,12 @@ type BacktestRun struct {
 	CustomPrompt         string     `json:"custom_prompt"`
 	OverrideBasePrompt   bool       `json:"override_base_prompt"`
 	SystemPromptTemplate string     `json:"system_prompt_template"`
-	Status               string     `json:"status"` // pending/running/completed/failed
+	AiModelID            string     `json:"ai_model_id"`   // 可选：指定AI模型
+	Timeframe            string     `json:"timeframe"`     // K线周期 (e.g. "3m")
+	DataPoints           int        `json:"data_points"`   // 数据点数量
+	PreheatHours         int        `json:"preheat_hours"` // 预热小时数
+	Slippage             int        `json:"slippage"`      // 滑点(基点)
+	Status               string     `json:"status"`        // pending/running/completed/failed
 	Progress             float64    `json:"progress"`
 	FinalEquity          float64    `json:"final_equity"`
 	TotalPnL             float64    `json:"total_pnl"`
@@ -939,6 +952,28 @@ func (d *Database) UpdateAIModel(userID, id string, enabled bool, apiKey, custom
 	`, newModelID, userID, name, provider, enabled, encryptedAPIKey, customAPIURL, customModelName)
 
 	return err
+}
+
+// GetAIModelByID 获取指定AI模型配置
+func (d *Database) GetAIModelByID(userID, modelID string) (*AIModelConfig, error) {
+	var model AIModelConfig
+	err := d.db.QueryRow(`
+		SELECT id, user_id, name, provider, enabled, api_key,
+		       COALESCE(custom_api_url, '') as custom_api_url,
+		       COALESCE(custom_model_name, '') as custom_model_name,
+		       created_at, updated_at
+		FROM ai_models WHERE id = ? AND user_id = ?
+	`, modelID, userID).Scan(
+		&model.ID, &model.UserID, &model.Name, &model.Provider,
+		&model.Enabled, &model.APIKey, &model.CustomAPIURL, &model.CustomModelName,
+		&model.CreatedAt, &model.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	// 解密API Key
+	model.APIKey = d.decryptSensitiveData(model.APIKey)
+	return &model, nil
 }
 
 // GetExchanges 获取用户的交易所配置
@@ -1545,12 +1580,15 @@ func (d *Database) CreateBacktest(backtest *BacktestRun) error {
 			id, user_id, trader_id, start_time, end_time, initial_balance,
 			scan_interval_minutes, trading_symbols, use_trader_config,
 			indicator_config, custom_prompt, override_base_prompt,
-			system_prompt_template, status, progress
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			system_prompt_template, ai_model_id, timeframe, data_points,
+			preheat_hours, slippage, status, progress
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, backtest.ID, backtest.UserID, backtest.TraderID, backtest.StartTime,
 		backtest.EndTime, backtest.InitialBalance, backtest.ScanIntervalMinutes,
 		backtest.TradingSymbols, backtest.UseTraderConfig, backtest.IndicatorConfig,
 		backtest.CustomPrompt, backtest.OverrideBasePrompt, backtest.SystemPromptTemplate,
+		backtest.AiModelID, backtest.Timeframe, backtest.DataPoints,
+		backtest.PreheatHours, backtest.Slippage,
 		backtest.Status, backtest.Progress)
 	return err
 }
@@ -1738,7 +1776,13 @@ func (d *Database) GetBacktest(id string) (*BacktestRun, error) {
 		SELECT id, user_id, trader_id, start_time, end_time, initial_balance,
 			scan_interval_minutes, trading_symbols, use_trader_config,
 			indicator_config, custom_prompt, override_base_prompt,
-			system_prompt_template, status, progress, final_equity,
+			system_prompt_template, 
+			COALESCE(ai_model_id, '') as ai_model_id,
+			COALESCE(timeframe, '3m') as timeframe,
+			COALESCE(data_points, 100) as data_points,
+			COALESCE(preheat_hours, 12) as preheat_hours,
+			COALESCE(slippage, 10) as slippage,
+			status, progress, final_equity,
 			total_pnl, total_pnl_pct, max_drawdown, sharpe_ratio,
 			win_rate, total_trades, created_at, completed_at
 		FROM backtest_runs WHERE id = ?
@@ -1747,6 +1791,8 @@ func (d *Database) GetBacktest(id string) (*BacktestRun, error) {
 		&backtest.EndTime, &backtest.InitialBalance, &backtest.ScanIntervalMinutes,
 		&backtest.TradingSymbols, &backtest.UseTraderConfig, &backtest.IndicatorConfig,
 		&backtest.CustomPrompt, &backtest.OverrideBasePrompt, &backtest.SystemPromptTemplate,
+		&backtest.AiModelID, &backtest.Timeframe, &backtest.DataPoints,
+		&backtest.PreheatHours, &backtest.Slippage,
 		&backtest.Status, &backtest.Progress, &backtest.FinalEquity,
 		&backtest.TotalPnL, &backtest.TotalPnLPct, &backtest.MaxDrawdown,
 		&backtest.SharpeRatio, &backtest.WinRate, &backtest.TotalTrades,
@@ -1845,6 +1891,11 @@ func (d *Database) ListBacktests(userID string) ([]BacktestRun, error) {
 	rows, err := d.db.Query(`
 		SELECT id, user_id, trader_id, start_time, end_time, initial_balance,
 			scan_interval_minutes, trading_symbols, use_trader_config,
+			COALESCE(ai_model_id, '') as ai_model_id,
+			COALESCE(timeframe, '3m') as timeframe,
+			COALESCE(data_points, 100) as data_points,
+			COALESCE(preheat_hours, 12) as preheat_hours,
+			COALESCE(slippage, 10) as slippage,
 			status, progress, total_pnl_pct, total_trades, created_at
 		FROM backtest_runs
 		WHERE user_id = ?
@@ -1861,8 +1912,10 @@ func (d *Database) ListBacktests(userID string) ([]BacktestRun, error) {
 		err := rows.Scan(
 			&backtest.ID, &backtest.UserID, &backtest.TraderID, &backtest.StartTime,
 			&backtest.EndTime, &backtest.InitialBalance, &backtest.ScanIntervalMinutes,
-			&backtest.TradingSymbols, &backtest.UseTraderConfig, &backtest.Status,
-			&backtest.Progress, &backtest.TotalPnLPct, &backtest.TotalTrades,
+			&backtest.TradingSymbols, &backtest.UseTraderConfig,
+			&backtest.AiModelID, &backtest.Timeframe, &backtest.DataPoints,
+			&backtest.PreheatHours, &backtest.Slippage,
+			&backtest.Status, &backtest.Progress, &backtest.TotalPnLPct, &backtest.TotalTrades,
 			&backtest.CreatedAt,
 		)
 		if err != nil {

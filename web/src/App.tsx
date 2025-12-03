@@ -1042,10 +1042,15 @@ function TraderDetailsPage({
           {/* Trader Selector */}
           {traders && traders.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-sm" style={{ color: '#848E9C' }}>
+              <label
+                htmlFor="trader-selector"
+                className="text-sm"
+                style={{ color: '#848E9C' }}
+              >
                 {t('switchTrader', language)}:
-              </span>
+              </label>
               <select
+                id="trader-selector"
                 value={selectedTraderId}
                 onChange={(e) => onTraderSelect(e.target.value)}
                 className="rounded px-3 py-2 text-sm font-medium cursor-pointer transition-colors"

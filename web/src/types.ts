@@ -104,6 +104,7 @@ export interface TraderInfo {
   use_coin_pool?: boolean
   use_oi_top?: boolean
   system_prompt_template?: string
+  scan_interval_minutes?: number
 }
 
 export interface AIModel {
@@ -217,6 +218,8 @@ export interface Backtest {
   id: string
   user_id: string
   trader_id: string
+  ai_model_id?: string
+  timeframe?: string
   start_time: string
   end_time: string
   initial_balance: number

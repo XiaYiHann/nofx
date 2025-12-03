@@ -67,7 +67,7 @@ web/.vite/
 eslint-*.json
 
 # VS code
-.vscode
+# .vscode
 
 # 密钥和敏感文件
 # 注意：crypto目录包含加密服务代码，应该被提交

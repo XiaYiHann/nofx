@@ -251,13 +251,20 @@ func (e *Engine) loadHistoricalData(ctx context.Context) error {
 	log.Printf("[Backtest %s] Loading historical data for %d symbols",
 		e.backtestID, len(e.config.TradingSymbols))
 
-	// 预加载12小时的数据用于计算指标
-	preheatDuration := 12 * time.Hour
+	// 预加载数据用于计算指标 (默认为12小时，可配置)
+	preheatDuration := e.config.PreheatDuration
+	if preheatDuration == 0 {
+		preheatDuration = 12 * time.Hour
+	}
+	
 	startMs := e.config.StartTime.Add(-preheatDuration).UnixMilli()
 	endMs := e.config.EndTime.UnixMilli()
 
-	// 计算需要的间隔(3m用于主数据)
-	interval := "3m"
+	// 计算需要的间隔(默认为3m)
+	interval := e.config.Timeframe
+	if interval == "" {
+		interval = "3m"
+	}
 
 	cacheHits := 0
 	cacheMisses := 0
@@ -324,8 +331,13 @@ func (e *Engine) getMarketDataAtTime(t time.Time) (map[string]*market.Data, erro
 			continue
 		}
 
-		// 找到目标时间之前的最近100根K线
-		recentKlines := e.getRecentKlines(klines, targetMs, 100)
+		// 找到目标时间之前的最近N根K线
+		dataPoints := e.config.DataPoints
+		if dataPoints <= 0 {
+			dataPoints = 100
+		}
+		
+		recentKlines := e.getRecentKlines(klines, targetMs, dataPoints)
 		if len(recentKlines) < 20 {
 			// 数据不足,跳过
 			continue
@@ -393,7 +405,13 @@ func (e *Engine) getMockDecisions(marketDataMap map[string]*market.Data) ([]deci
 
 			// Add some indicator info to reasoning to verify data calculation
 			indicators := fmt.Sprintf("Price: %.2f", currentPrice)
-			if tfData, ok := data.TimeframeData["3m"]; ok && len(tfData.MidPrices) > 0 {
+			
+			timeframe := e.config.Timeframe
+			if timeframe == "" {
+				timeframe = "3m"
+			}
+			
+			if tfData, ok := data.TimeframeData[timeframe]; ok && len(tfData.MidPrices) > 0 {
 				indicators += fmt.Sprintf(", LastClose: %.2f", tfData.MidPrices[len(tfData.MidPrices)-1])
 			}
 
@@ -462,10 +480,20 @@ func (e *Engine) calculateMarketData(symbol string, klines []market.Kline) (*mar
 	}
 
 	// 使用market包计算完整指标
-	// 使用100个数据点以提供足够的上下文给AI
-	tfData := market.CalculateTimeframeData(klines, "3m", 100)
+	// 使用配置的数据点数量，默认为100
+	dataPoints := e.config.DataPoints
+	if dataPoints <= 0 {
+		dataPoints = 100
+	}
+	
+	timeframe := e.config.Timeframe
+	if timeframe == "" {
+		timeframe = "3m"
+	}
+
+	tfData := market.CalculateTimeframeData(klines, timeframe, dataPoints)
 	if tfData != nil {
-		data.TimeframeData["3m"] = tfData
+		data.TimeframeData[timeframe] = tfData
 
 		// 填充当前指标值 (使用最新一个点的数据)
 		if len(tfData.EMA20Values) > 0 {
