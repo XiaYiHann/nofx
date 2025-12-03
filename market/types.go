@@ -16,6 +16,18 @@ type TimeframeData struct {
 	BollingerLower []float64 `json:"bollinger_lower"` // 布林带下轨
 	Volume         []float64 `json:"volume"`          // 成交量序列
 	ATR14          float64   `json:"atr14"`           // ATR14 指标值
+	SMAValues      []float64 `json:"sma_values"`      // SMA 指标值
+	VWAPValues     []float64 `json:"vwap_values"`     // VWAP 指标值
+	OBVValues      []float64 `json:"obv_values"`      // OBV 指标值
+	StochKValues   []float64 `json:"stoch_k_values"`  // Stochastic %K 值
+	StochDValues   []float64 `json:"stoch_d_values"`  // Stochastic %D 值
+	WilliamsR      []float64 `json:"williams_r"`      // Williams %R 值
+	CCIValues      []float64 `json:"cci_values"`      // CCI 指标值
+	ADXValues      []float64 `json:"adx_values"`      // ADX 指标值
+	PSARValues     []float64 `json:"psar_values"`     // Parabolic SAR 值
+	CMFValues      []float64 `json:"cmf_values"`      // 资金流量 CMF 值
+	IchimokuTenkan []float64 `json:"ichimoku_tenkan"` // 一目转换线
+	IchimokuKijun  []float64 `json:"ichimoku_kijun"`  // 一目基准线
 }
 
 // Data 市场数据结构
@@ -58,6 +70,18 @@ type IntradayData struct {
 	BollingerUpper []float64
 	BollingerMid   []float64
 	BollingerLower []float64
+	SMAValues      []float64
+	VWAPValues     []float64
+	OBVValues      []float64
+	StochKValues   []float64
+	StochDValues   []float64
+	WilliamsR      []float64
+	CCIValues      []float64
+	ADXValues      []float64
+	PSARValues     []float64
+	CMFValues      []float64
+	IchimokuTenkan []float64
+	IchimokuKijun  []float64
 }
 
 // LongerTermData 长期数据(4小时时间框架)
@@ -198,7 +222,7 @@ type IndicatorConfig struct {
 // GetDefaultIndicatorConfig 返回默认的指标配置
 func GetDefaultIndicatorConfig() *IndicatorConfig {
 	return &IndicatorConfig{
-		Indicators: []string{"ema", "macd", "rsi", "atr", "volume"},
+		Indicators: []string{"ema", "macd", "rsi", "atr", "volume", "sma", "vwap", "obv", "stochastic", "williams_r", "cci", "adx", "psar", "cmf", "ichimoku"},
 		Timeframes: []string{"3m", "4h"},
 		DataPoints: map[string]int{
 			"3m": 40, // 40条3分钟K线 = 2小时
@@ -211,6 +235,7 @@ func GetDefaultIndicatorConfig() *IndicatorConfig {
 			"macd_slow":   26,
 			"macd_signal": 9,
 			"atr_period":  14,
+			"sma_period":  20,
 		},
 	}
 }

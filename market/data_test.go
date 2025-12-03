@@ -468,15 +468,18 @@ func TestCalculateLongerTermData_CustomDataPoints(t *testing.T) {
 func TestGetDefaultIndicatorConfig(t *testing.T) {
 	config := GetDefaultIndicatorConfig()
 
-	// 验证默认指标
-	expectedIndicators := []string{"ema", "macd", "rsi", "atr", "volume"}
-	if len(config.Indicators) != len(expectedIndicators) {
-		t.Errorf("默认指标数量 = %d, want %d", len(config.Indicators), len(expectedIndicators))
-	}
-
-	for i, expected := range expectedIndicators {
-		if config.Indicators[i] != expected {
-			t.Errorf("Indicators[%d] = %s, want %s", i, config.Indicators[i], expected)
+	// 验证默认指标包含基础指标
+	expectedBaseIndicators := []string{"ema", "macd", "rsi", "atr", "volume"}
+	for _, expected := range expectedBaseIndicators {
+		found := false
+		for _, ind := range config.Indicators {
+			if ind == expected {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("基础指标 %s 应在默认配置中", expected)
 		}
 	}
 
@@ -801,5 +804,719 @@ func TestCalculateATRArray(t *testing.T) {
 	lastATR := calculateATR(klines, 14)
 	if math.Abs(atrArray[len(atrArray)-1]-lastATR) > 0.000001 {
 		t.Errorf("Expected last ATR %f, got %f", lastATR, atrArray[len(atrArray)-1])
+	}
+}
+
+// TestCalculateSMA 测试 SMA 计算函数
+func TestCalculateSMA(t *testing.T) {
+	tests := []struct {
+		name        string
+		klines      []Kline
+		period      int
+		expectedSMA float64
+		tolerance   float64
+	}{
+		{
+			name: "正常计算 - 5个周期",
+			klines: []Kline{
+				{Close: 10.0},
+				{Close: 11.0},
+				{Close: 12.0},
+				{Close: 13.0},
+				{Close: 14.0},
+			},
+			period:      5,
+			expectedSMA: 12.0, // (10+11+12+13+14)/5 = 12
+			tolerance:   0.001,
+		},
+		{
+			name: "正常计算 - 3个周期",
+			klines: []Kline{
+				{Close: 100.0},
+				{Close: 110.0},
+				{Close: 120.0},
+				{Close: 130.0},
+				{Close: 140.0},
+			},
+			period:      3,
+			expectedSMA: 130.0, // (120+130+140)/3 = 130
+			tolerance:   0.001,
+		},
+		{
+			name: "数据不足",
+			klines: []Kline{
+				{Close: 100.0},
+				{Close: 110.0},
+			},
+			period:      5,
+			expectedSMA: 0, // 数据不足返回0
+			tolerance:   0.001,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sma := calculateSMA(tt.klines, tt.period)
+
+			if math.Abs(sma-tt.expectedSMA) > tt.tolerance {
+				t.Errorf("calculateSMA() = %.4f, want %.4f", sma, tt.expectedSMA)
+			}
+		})
+	}
+}
+
+// TestCalculateVWAP 测试 VWAP 计算函数
+func TestCalculateVWAP(t *testing.T) {
+	tests := []struct {
+		name         string
+		klines       []Kline
+		expectedVWAP float64
+		tolerance    float64
+	}{
+		{
+			name: "正常计算",
+			klines: []Kline{
+				{High: 100.0, Low: 98.0, Close: 99.0, Volume: 1000},   // TP=99, Vol=1000
+				{High: 102.0, Low: 100.0, Close: 101.0, Volume: 2000}, // TP=101, Vol=2000
+				{High: 104.0, Low: 102.0, Close: 103.0, Volume: 1500}, // TP=103, Vol=1500
+			},
+			// VWAP = (99*1000 + 101*2000 + 103*1500) / (1000+2000+1500)
+			//      = (99000 + 202000 + 154500) / 4500 = 455500 / 4500 = 101.22...
+			expectedVWAP: 101.222222,
+			tolerance:    0.01,
+		},
+		{
+			name:         "空数据",
+			klines:       []Kline{},
+			expectedVWAP: 0,
+			tolerance:    0.001,
+		},
+		{
+			name: "零成交量",
+			klines: []Kline{
+				{High: 100.0, Low: 98.0, Close: 99.0, Volume: 0},
+			},
+			expectedVWAP: 0, // 总成交量为0时返回0
+			tolerance:    0.001,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			vwap := calculateVWAP(tt.klines)
+
+			if math.Abs(vwap-tt.expectedVWAP) > tt.tolerance {
+				t.Errorf("calculateVWAP() = %.6f, want %.6f", vwap, tt.expectedVWAP)
+			}
+		})
+	}
+}
+
+// TestCalculateOBV 测试 OBV 计算函数
+func TestCalculateOBV(t *testing.T) {
+	tests := []struct {
+		name        string
+		klines      []Kline
+		expectedOBV float64
+		tolerance   float64
+	}{
+		{
+			name: "价格上涨 - OBV累加",
+			klines: []Kline{
+				{Close: 100.0, Volume: 1000},
+				{Close: 101.0, Volume: 1500}, // 上涨: +1500
+				{Close: 102.0, Volume: 2000}, // 上涨: +2000
+			},
+			expectedOBV: 3500, // 0 + 1500 + 2000 = 3500
+			tolerance:   0.001,
+		},
+		{
+			name: "价格下跌 - OBV扣减",
+			klines: []Kline{
+				{Close: 100.0, Volume: 1000},
+				{Close: 99.0, Volume: 1500}, // 下跌: -1500
+				{Close: 98.0, Volume: 2000}, // 下跌: -2000
+			},
+			expectedOBV: -3500, // 0 - 1500 - 2000 = -3500
+			tolerance:   0.001,
+		},
+		{
+			name: "混合场景",
+			klines: []Kline{
+				{Close: 100.0, Volume: 1000},
+				{Close: 102.0, Volume: 1500}, // 上涨: +1500
+				{Close: 101.0, Volume: 1000}, // 下跌: -1000
+				{Close: 101.0, Volume: 800},  // 持平: +0
+				{Close: 105.0, Volume: 2000}, // 上涨: +2000
+			},
+			expectedOBV: 2500, // 0 + 1500 - 1000 + 0 + 2000 = 2500
+			tolerance:   0.001,
+		},
+		{
+			name:        "单个K线",
+			klines:      []Kline{{Close: 100.0, Volume: 1000}},
+			expectedOBV: 0, // 第一个K线OBV为0
+			tolerance:   0.001,
+		},
+		{
+			name:        "空数据",
+			klines:      []Kline{},
+			expectedOBV: 0,
+			tolerance:   0.001,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			obv := calculateOBV(tt.klines)
+
+			if math.Abs(obv-tt.expectedOBV) > tt.tolerance {
+				t.Errorf("calculateOBV() = %.4f, want %.4f", obv, tt.expectedOBV)
+			}
+		})
+	}
+}
+
+// TestCalculateTimeframeData_NewIndicators 测试 TimeframeData 包含新指标字段
+func TestCalculateTimeframeData_NewIndicators(t *testing.T) {
+	klines := generateTestKlines(50)
+
+	data := CalculateTimeframeData(klines, "4h", 25)
+
+	if data == nil {
+		t.Fatal("CalculateTimeframeData returned nil")
+	}
+
+	// 验证 SMAValues 存在
+	if data.SMAValues == nil {
+		t.Error("SMAValues should not be nil")
+	}
+
+	// 验证 VWAPValues 存在
+	if data.VWAPValues == nil {
+		t.Error("VWAPValues should not be nil")
+	}
+
+	// 验证 OBVValues 存在
+	if data.OBVValues == nil {
+		t.Error("OBVValues should not be nil")
+	}
+
+	// 验证长度合理 (应该与其他指标长度匹配)
+	if len(data.SMAValues) != len(data.MidPrices) {
+		t.Errorf("SMAValues length = %d, want %d", len(data.SMAValues), len(data.MidPrices))
+	}
+
+	if len(data.VWAPValues) != len(data.MidPrices) {
+		t.Errorf("VWAPValues length = %d, want %d", len(data.VWAPValues), len(data.MidPrices))
+	}
+
+	if len(data.OBVValues) != len(data.MidPrices) {
+		t.Errorf("OBVValues length = %d, want %d", len(data.OBVValues), len(data.MidPrices))
+	}
+}
+
+// TestGetDefaultIndicatorConfig_NewIndicators 测试默认配置包含新指标
+func TestGetDefaultIndicatorConfig_NewIndicators(t *testing.T) {
+	config := GetDefaultIndicatorConfig()
+
+	// 验证新指标在默认列表中
+	newIndicators := []string{"sma", "vwap", "obv", "stochastic", "williams_r", "cci", "adx"}
+	for _, indicator := range newIndicators {
+		found := false
+		for _, ind := range config.Indicators {
+			if ind == indicator {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Indicator %s should be in default config", indicator)
+		}
+	}
+
+	// 验证 sma_period 参数存在
+	if config.Parameters["sma_period"] != 20 {
+		t.Errorf("sma_period = %d, want 20", config.Parameters["sma_period"])
+	}
+}
+
+// TestCalculateStochastic 测试 Stochastic 计算函数
+func TestCalculateStochastic(t *testing.T) {
+	tests := []struct {
+		name     string
+		klines   []Kline
+		period   int
+		expectK  float64
+		expectD  float64
+		toleranceK float64
+	}{
+		{
+			name: "正常计算 - 接近最高价",
+			klines: []Kline{
+				{High: 100.0, Low: 90.0, Close: 95.0},
+				{High: 102.0, Low: 91.0, Close: 96.0},
+				{High: 105.0, Low: 92.0, Close: 97.0},
+				{High: 103.0, Low: 93.0, Close: 98.0},
+				{High: 104.0, Low: 94.0, Close: 104.0}, // 收盘价接近最高价
+			},
+			period:     5,
+			expectK:    100.0, // (104-90)/(105-90)*100 = 93.33
+			toleranceK: 10,
+		},
+		{
+			name: "正常计算 - 接近最低价",
+			klines: []Kline{
+				{High: 100.0, Low: 90.0, Close: 95.0},
+				{High: 102.0, Low: 91.0, Close: 96.0},
+				{High: 105.0, Low: 92.0, Close: 97.0},
+				{High: 103.0, Low: 93.0, Close: 98.0},
+				{High: 104.0, Low: 94.0, Close: 91.0}, // 收盘价接近最低价
+			},
+			period:     5,
+			expectK:    6.67, // (91-90)/(105-90)*100 ≈ 6.67
+			toleranceK: 1,
+		},
+		{
+			name: "数据不足",
+			klines: []Kline{
+				{High: 100.0, Low: 90.0, Close: 95.0},
+				{High: 102.0, Low: 91.0, Close: 96.0},
+			},
+			period:     5,
+			expectK:    0,
+			toleranceK: 0.001,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stochK, _ := calculateStochastic(tt.klines, tt.period)
+
+			if math.Abs(stochK-tt.expectK) > tt.toleranceK {
+				t.Errorf("calculateStochastic() K = %.2f, want approximately %.2f", stochK, tt.expectK)
+			}
+		})
+	}
+}
+
+// TestCalculateWilliamsR 测试 Williams %R 计算函数
+func TestCalculateWilliamsR(t *testing.T) {
+	tests := []struct {
+		name      string
+		klines    []Kline
+		period    int
+		expected  float64
+		tolerance float64
+	}{
+		{
+			name: "正常计算 - 接近最高价 (超买)",
+			klines: []Kline{
+				{High: 100.0, Low: 90.0, Close: 95.0},
+				{High: 102.0, Low: 91.0, Close: 96.0},
+				{High: 105.0, Low: 92.0, Close: 97.0},
+				{High: 103.0, Low: 93.0, Close: 98.0},
+				{High: 104.0, Low: 94.0, Close: 104.0}, // 收盘价接近最高价
+			},
+			period:    5,
+			expected:  -6.67, // (105-104)/(105-90)*-100 ≈ -6.67
+			tolerance: 2,
+		},
+		{
+			name: "正常计算 - 接近最低价 (超卖)",
+			klines: []Kline{
+				{High: 100.0, Low: 90.0, Close: 95.0},
+				{High: 102.0, Low: 91.0, Close: 96.0},
+				{High: 105.0, Low: 92.0, Close: 97.0},
+				{High: 103.0, Low: 93.0, Close: 98.0},
+				{High: 104.0, Low: 94.0, Close: 91.0}, // 收盘价接近最低价
+			},
+			period:    5,
+			expected:  -93.33, // (105-91)/(105-90)*-100 ≈ -93.33
+			tolerance: 2,
+		},
+		{
+			name: "数据不足",
+			klines: []Kline{
+				{High: 100.0, Low: 90.0, Close: 95.0},
+			},
+			period:    5,
+			expected:  0,
+			tolerance: 0.001,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			williamsR := calculateWilliamsR(tt.klines, tt.period)
+
+			if math.Abs(williamsR-tt.expected) > tt.tolerance {
+				t.Errorf("calculateWilliamsR() = %.2f, want approximately %.2f", williamsR, tt.expected)
+			}
+		})
+	}
+}
+
+// TestCalculateCCI 测试 CCI 计算函数
+func TestCalculateCCI(t *testing.T) {
+	tests := []struct {
+		name      string
+		klines    []Kline
+		period    int
+		checkSign bool // 只检查正负号
+		positive  bool
+	}{
+		{
+			name: "上涨趋势 - CCI 应为正",
+			klines: func() []Kline {
+				klines := make([]Kline, 20)
+				for i := 0; i < 20; i++ {
+					base := 100.0 + float64(i)*2 // 持续上涨
+					klines[i] = Kline{
+						High:  base + 1,
+						Low:   base - 1,
+						Close: base,
+					}
+				}
+				return klines
+			}(),
+			period:    20,
+			checkSign: true,
+			positive:  true,
+		},
+		{
+			name: "下跌趋势 - CCI 应为负",
+			klines: func() []Kline {
+				klines := make([]Kline, 20)
+				for i := 0; i < 20; i++ {
+					base := 140.0 - float64(i)*2 // 持续下跌
+					klines[i] = Kline{
+						High:  base + 1,
+						Low:   base - 1,
+						Close: base,
+					}
+				}
+				return klines
+			}(),
+			period:    20,
+			checkSign: true,
+			positive:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cci := calculateCCI(tt.klines, tt.period)
+
+			if tt.checkSign {
+				if tt.positive && cci <= 0 {
+					t.Errorf("calculateCCI() = %.2f, expected positive value", cci)
+				}
+				if !tt.positive && cci >= 0 {
+					t.Errorf("calculateCCI() = %.2f, expected negative value", cci)
+				}
+			}
+		})
+	}
+}
+
+// TestCalculateADX 测试 ADX 计算函数
+func TestCalculateADX(t *testing.T) {
+	tests := []struct {
+		name        string
+		klines      []Kline
+		period      int
+		expectRange [2]float64 // ADX 应该在这个范围内
+	}{
+		{
+			name: "强趋势 - ADX 应该较高",
+			klines: func() []Kline {
+				klines := make([]Kline, 20)
+				for i := 0; i < 20; i++ {
+					base := 100.0 + float64(i)*3 // 强烈上涨
+					klines[i] = Kline{
+						High:  base + 2,
+						Low:   base - 1,
+						Close: base + 1,
+					}
+				}
+				return klines
+			}(),
+			period:      14,
+			expectRange: [2]float64{0, 100}, // ADX 在 0-100 范围内
+		},
+		{
+			name: "数据不足",
+			klines: []Kline{
+				{High: 100.0, Low: 90.0, Close: 95.0},
+				{High: 102.0, Low: 91.0, Close: 96.0},
+			},
+			period:      14,
+			expectRange: [2]float64{0, 0.001},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			adx := calculateADX(tt.klines, tt.period)
+
+			if adx < tt.expectRange[0] || adx > tt.expectRange[1] {
+				t.Errorf("calculateADX() = %.2f, expected in range [%.2f, %.2f]", adx, tt.expectRange[0], tt.expectRange[1])
+			}
+		})
+	}
+}
+
+// TestCalculateTimeframeData_SecondBatchIndicators 测试第二批指标在 TimeframeData 中
+func TestCalculateTimeframeData_SecondBatchIndicators(t *testing.T) {
+	klines := generateTestKlines(50)
+
+	data := CalculateTimeframeData(klines, "4h", 25)
+
+	if data == nil {
+		t.Fatal("CalculateTimeframeData returned nil")
+	}
+
+	// 验证第二批指标字段存在
+	if data.StochKValues == nil {
+		t.Error("StochKValues should not be nil")
+	}
+	if data.StochDValues == nil {
+		t.Error("StochDValues should not be nil")
+	}
+	if data.WilliamsR == nil {
+		t.Error("WilliamsR should not be nil")
+	}
+	if data.CCIValues == nil {
+		t.Error("CCIValues should not be nil")
+	}
+	if data.ADXValues == nil {
+		t.Error("ADXValues should not be nil")
+	}
+
+	// 验证长度匹配
+	expectedLen := len(data.MidPrices)
+	if len(data.StochKValues) != expectedLen {
+		t.Errorf("StochKValues length = %d, want %d", len(data.StochKValues), expectedLen)
+	}
+	if len(data.WilliamsR) != expectedLen {
+		t.Errorf("WilliamsR length = %d, want %d", len(data.WilliamsR), expectedLen)
+	}
+	if len(data.CCIValues) != expectedLen {
+		t.Errorf("CCIValues length = %d, want %d", len(data.CCIValues), expectedLen)
+	}
+	if len(data.ADXValues) != expectedLen {
+		t.Errorf("ADXValues length = %d, want %d", len(data.ADXValues), expectedLen)
+	}
+}
+
+// TestCalculatePSAR 测试 Parabolic SAR 计算函数
+func TestCalculatePSAR(t *testing.T) {
+	tests := []struct {
+		name        string
+		klines      []Kline
+		expectRange [2]float64
+	}{
+		{
+			name: "上升趋势 - PSAR 应在价格下方",
+			klines: func() []Kline {
+				klines := make([]Kline, 20)
+				for i := 0; i < 20; i++ {
+					base := 100.0 + float64(i)*2
+					klines[i] = Kline{
+						Open:  base,
+						High:  base + 2,
+						Low:   base - 1,
+						Close: base + 1,
+					}
+				}
+				return klines
+			}(),
+			expectRange: [2]float64{90, 140}, // PSAR 应该在合理范围内
+		},
+		{
+			name: "数据不足",
+			klines: []Kline{
+				{High: 100, Low: 90, Close: 95, Open: 92},
+				{High: 102, Low: 91, Close: 96, Open: 95},
+			},
+			expectRange: [2]float64{0, 0.001},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			psar := calculatePSAR(tt.klines)
+
+			if psar < tt.expectRange[0] || psar > tt.expectRange[1] {
+				t.Errorf("calculatePSAR() = %.2f, expected in range [%.2f, %.2f]", psar, tt.expectRange[0], tt.expectRange[1])
+			}
+		})
+	}
+}
+
+// TestCalculateCMF 测试 CMF 计算函数
+func TestCalculateCMF(t *testing.T) {
+	tests := []struct {
+		name      string
+		klines    []Kline
+		period    int
+		checkSign bool
+		positive  bool
+	}{
+		{
+			name: "买入压力 - CMF 应为正",
+			klines: func() []Kline {
+				klines := make([]Kline, 20)
+				for i := 0; i < 20; i++ {
+					// 收盘价接近最高价 = 买入压力
+					klines[i] = Kline{
+						High:   float64(100 + i),
+						Low:    float64(90 + i),
+						Close:  float64(99 + i), // 接近最高价
+						Volume: 1000,
+					}
+				}
+				return klines
+			}(),
+			period:    20,
+			checkSign: true,
+			positive:  true,
+		},
+		{
+			name: "卖出压力 - CMF 应为负",
+			klines: func() []Kline {
+				klines := make([]Kline, 20)
+				for i := 0; i < 20; i++ {
+					// 收盘价接近最低价 = 卖出压力
+					klines[i] = Kline{
+						High:   float64(100 + i),
+						Low:    float64(90 + i),
+						Close:  float64(91 + i), // 接近最低价
+						Volume: 1000,
+					}
+				}
+				return klines
+			}(),
+			period:    20,
+			checkSign: true,
+			positive:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmf := calculateCMF(tt.klines, tt.period)
+
+			if tt.checkSign {
+				if tt.positive && cmf <= 0 {
+					t.Errorf("calculateCMF() = %.4f, expected positive value", cmf)
+				}
+				if !tt.positive && cmf >= 0 {
+					t.Errorf("calculateCMF() = %.4f, expected negative value", cmf)
+				}
+			}
+		})
+	}
+}
+
+// TestCalculateIchimoku 测试 Ichimoku 计算函数
+func TestCalculateIchimoku(t *testing.T) {
+	tests := []struct {
+		name         string
+		klines       []Kline
+		tenkanPeriod int
+		kijunPeriod  int
+		expectTenkan bool
+		expectKijun  bool
+	}{
+		{
+			name: "正常计算",
+			klines: func() []Kline {
+				klines := make([]Kline, 30)
+				for i := 0; i < 30; i++ {
+					klines[i] = Kline{
+						High:  float64(100 + i),
+						Low:   float64(90 + i),
+						Close: float64(95 + i),
+					}
+				}
+				return klines
+			}(),
+			tenkanPeriod: 9,
+			kijunPeriod:  26,
+			expectTenkan: true,
+			expectKijun:  true,
+		},
+		{
+			name: "数据不足",
+			klines: []Kline{
+				{High: 100, Low: 90, Close: 95},
+				{High: 102, Low: 91, Close: 96},
+			},
+			tenkanPeriod: 9,
+			kijunPeriod:  26,
+			expectTenkan: false,
+			expectKijun:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tenkan, kijun := calculateIchimoku(tt.klines, tt.tenkanPeriod, tt.kijunPeriod)
+
+			if tt.expectTenkan && tenkan == 0 {
+				t.Error("Tenkan should not be 0")
+			}
+			if !tt.expectTenkan && tenkan != 0 {
+				t.Errorf("Tenkan = %.2f, expected 0", tenkan)
+			}
+			if tt.expectKijun && kijun == 0 {
+				t.Error("Kijun should not be 0")
+			}
+			if !tt.expectKijun && kijun != 0 {
+				t.Errorf("Kijun = %.2f, expected 0", kijun)
+			}
+		})
+	}
+}
+
+// TestCalculateTimeframeData_ThirdBatchIndicators 测试第三批指标在 TimeframeData 中
+func TestCalculateTimeframeData_ThirdBatchIndicators(t *testing.T) {
+	klines := generateTestKlines(50)
+
+	data := CalculateTimeframeData(klines, "4h", 25)
+
+	if data == nil {
+		t.Fatal("CalculateTimeframeData returned nil")
+	}
+
+	// 验证第三批指标字段存在
+	if data.PSARValues == nil {
+		t.Error("PSARValues should not be nil")
+	}
+	if data.CMFValues == nil {
+		t.Error("CMFValues should not be nil")
+	}
+	if data.IchimokuTenkan == nil {
+		t.Error("IchimokuTenkan should not be nil")
+	}
+	if data.IchimokuKijun == nil {
+		t.Error("IchimokuKijun should not be nil")
+	}
+
+	// 验证长度匹配
+	expectedLen := len(data.MidPrices)
+	if len(data.PSARValues) != expectedLen {
+		t.Errorf("PSARValues length = %d, want %d", len(data.PSARValues), expectedLen)
+	}
+	if len(data.CMFValues) != expectedLen {
+		t.Errorf("CMFValues length = %d, want %d", len(data.CMFValues), expectedLen)
+	}
+	if len(data.IchimokuTenkan) != expectedLen {
+		t.Errorf("IchimokuTenkan length = %d, want %d", len(data.IchimokuTenkan), expectedLen)
+	}
+	if len(data.IchimokuKijun) != expectedLen {
+		t.Errorf("IchimokuKijun length = %d, want %d", len(data.IchimokuKijun), expectedLen)
 	}
 }

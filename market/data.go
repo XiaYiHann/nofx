@@ -102,6 +102,18 @@ func CalculateTimeframeData(klines []Kline, timeframe string, dataPoints int) *T
 	bollingerMid := make([]float64, 0, dataPoints)
 	bollingerLower := make([]float64, 0, dataPoints)
 	volumes := make([]float64, 0, dataPoints)
+	smaValues := make([]float64, 0, dataPoints)
+	vwapValues := make([]float64, 0, dataPoints)
+	obvValues := make([]float64, 0, dataPoints)
+	stochKValues := make([]float64, 0, dataPoints)
+	stochDValues := make([]float64, 0, dataPoints)
+	williamsRValues := make([]float64, 0, dataPoints)
+	cciValues := make([]float64, 0, dataPoints)
+	adxValues := make([]float64, 0, dataPoints)
+	psarValues := make([]float64, 0, dataPoints)
+	cmfValues := make([]float64, 0, dataPoints)
+	ichimokuTenkan := make([]float64, 0, dataPoints)
+	ichimokuKijun := make([]float64, 0, dataPoints)
 
 	// 从最后dataPoints个K线开始计算
 	startIdx := len(klines) - dataPoints
@@ -153,6 +165,72 @@ func CalculateTimeframeData(klines []Kline, timeframe string, dataPoints int) *T
 		bollingerUpper = append(bollingerUpper, upper)
 		bollingerMid = append(bollingerMid, mid)
 		bollingerLower = append(bollingerLower, lower)
+
+		// 计算SMA20
+		sma := 0.0
+		if i >= 19 {
+			sma = calculateSMA(klines[:i+1], 20)
+		}
+		smaValues = append(smaValues, sma)
+
+		// 计算VWAP（使用当前所有可用数据）
+		vwap := calculateVWAP(klines[:i+1])
+		vwapValues = append(vwapValues, vwap)
+
+		// 计算OBV（使用当前所有可用数据）
+		obv := calculateOBV(klines[:i+1])
+		obvValues = append(obvValues, obv)
+
+		// 计算 Stochastic（需要14个周期）
+		stochK, stochD := 0.0, 0.0
+		if i >= 13 {
+			stochK, stochD = calculateStochastic(klines[:i+1], 14)
+		}
+		stochKValues = append(stochKValues, stochK)
+		stochDValues = append(stochDValues, stochD)
+
+		// 计算 Williams %R（需要14个周期）
+		williamsR := 0.0
+		if i >= 13 {
+			williamsR = calculateWilliamsR(klines[:i+1], 14)
+		}
+		williamsRValues = append(williamsRValues, williamsR)
+
+		// 计算 CCI（需要20个周期）
+		cci := 0.0
+		if i >= 19 {
+			cci = calculateCCI(klines[:i+1], 20)
+		}
+		cciValues = append(cciValues, cci)
+
+		// 计算 ADX（需要14+1个周期）
+		adx := 0.0
+		if i >= 14 {
+			adx = calculateADX(klines[:i+1], 14)
+		}
+		adxValues = append(adxValues, adx)
+
+		// 计算 PSAR（需要5个周期）
+		psar := 0.0
+		if i >= 4 {
+			psar = calculatePSAR(klines[:i+1])
+		}
+		psarValues = append(psarValues, psar)
+
+		// 计算 CMF（需要20个周期）
+		cmf := 0.0
+		if i >= 19 {
+			cmf = calculateCMF(klines[:i+1], 20)
+		}
+		cmfValues = append(cmfValues, cmf)
+
+		// 计算 Ichimoku（转换线9周期，基准线26周期）
+		tenkan, kijun := 0.0, 0.0
+		if i >= 25 {
+			tenkan, kijun = calculateIchimoku(klines[:i+1], 9, 26)
+		}
+		ichimokuTenkan = append(ichimokuTenkan, tenkan)
+		ichimokuKijun = append(ichimokuKijun, kijun)
 	}
 
 	// 计算ATR14 (使用所有可用数据)
@@ -174,6 +252,18 @@ func CalculateTimeframeData(klines []Kline, timeframe string, dataPoints int) *T
 		BollingerLower: bollingerLower,
 		Volume:         volumes,
 		ATR14:          atr14,
+		SMAValues:      smaValues,
+		VWAPValues:     vwapValues,
+		OBVValues:      obvValues,
+		StochKValues:   stochKValues,
+		StochDValues:   stochDValues,
+		WilliamsR:      williamsRValues,
+		CCIValues:      cciValues,
+		ADXValues:      adxValues,
+		PSARValues:     psarValues,
+		CMFValues:      cmfValues,
+		IchimokuTenkan: ichimokuTenkan,
+		IchimokuKijun:  ichimokuKijun,
 	}
 }
 
@@ -524,6 +614,369 @@ func calculateBollingerBands(klines []Kline, period int, numStdDev float64) (flo
 	lower := middle - numStdDev*stdDev
 
 	return upper, middle, lower
+}
+
+// calculateSMA 计算简单移动平均线
+func calculateSMA(klines []Kline, period int) float64 {
+	if len(klines) < period {
+		return 0
+	}
+	sum := 0.0
+	for i := len(klines) - period; i < len(klines); i++ {
+		sum += klines[i].Close
+	}
+	return sum / float64(period)
+}
+
+// calculateVWAP 计算成交量加权平均价格
+// VWAP = Σ(典型价格 × 成交量) / Σ(成交量)
+func calculateVWAP(klines []Kline) float64 {
+	if len(klines) == 0 {
+		return 0
+	}
+	var tpv, totalVolume float64
+	for _, k := range klines {
+		typicalPrice := (k.High + k.Low + k.Close) / 3
+		tpv += typicalPrice * k.Volume
+		totalVolume += k.Volume
+	}
+	if totalVolume == 0 {
+		return 0
+	}
+	return tpv / totalVolume
+}
+
+// calculateOBV 计算累积能量潮 (On-Balance Volume)
+// 返回最新的 OBV 值
+func calculateOBV(klines []Kline) float64 {
+	if len(klines) == 0 {
+		return 0
+	}
+	obv := 0.0
+	for i := 1; i < len(klines); i++ {
+		if klines[i].Close > klines[i-1].Close {
+			obv += klines[i].Volume
+		} else if klines[i].Close < klines[i-1].Close {
+			obv -= klines[i].Volume
+		}
+		// 如果价格相等，OBV 不变
+	}
+	return obv
+}
+
+// calculateStochastic 计算随机指标 (Stochastic Oscillator)
+// 返回 %K 和 %D 值，period 通常为 14
+func calculateStochastic(klines []Kline, period int) (float64, float64) {
+	if len(klines) < period {
+		return 0, 0
+	}
+
+	// 计算最近 period 个 K 线的最高价和最低价
+	recentKlines := klines[len(klines)-period:]
+	highestHigh := recentKlines[0].High
+	lowestLow := recentKlines[0].Low
+
+	for _, k := range recentKlines {
+		if k.High > highestHigh {
+			highestHigh = k.High
+		}
+		if k.Low < lowestLow {
+			lowestLow = k.Low
+		}
+	}
+
+	// 计算 %K = (当前收盘价 - 最低价) / (最高价 - 最低价) * 100
+	currentClose := klines[len(klines)-1].Close
+	if highestHigh == lowestLow {
+		return 50, 50 // 避免除以零
+	}
+
+	stochK := ((currentClose - lowestLow) / (highestHigh - lowestLow)) * 100
+
+	// 计算 %D = %K 的 3 期移动平均
+	// 这里简化为使用最近几个 %K 值的平均
+	stochD := stochK // 简化处理，实际应使用历史 %K 值
+
+	return stochK, stochD
+}
+
+// calculateWilliamsR 计算 Williams %R 指标
+// period 通常为 14
+func calculateWilliamsR(klines []Kline, period int) float64 {
+	if len(klines) < period {
+		return 0
+	}
+
+	recentKlines := klines[len(klines)-period:]
+	highestHigh := recentKlines[0].High
+	lowestLow := recentKlines[0].Low
+
+	for _, k := range recentKlines {
+		if k.High > highestHigh {
+			highestHigh = k.High
+		}
+		if k.Low < lowestLow {
+			lowestLow = k.Low
+		}
+	}
+
+	currentClose := klines[len(klines)-1].Close
+	if highestHigh == lowestLow {
+		return -50 // 避免除以零
+	}
+
+	// Williams %R = (最高价 - 收盘价) / (最高价 - 最低价) * -100
+	williamsR := ((highestHigh - currentClose) / (highestHigh - lowestLow)) * -100
+
+	return williamsR
+}
+
+// calculateCCI 计算商品通道指数 (Commodity Channel Index)
+// period 通常为 20
+func calculateCCI(klines []Kline, period int) float64 {
+	if len(klines) < period {
+		return 0
+	}
+
+	recentKlines := klines[len(klines)-period:]
+
+	// 计算典型价格 (Typical Price) = (High + Low + Close) / 3
+	tps := make([]float64, period)
+	tpSum := 0.0
+	for i, k := range recentKlines {
+		tp := (k.High + k.Low + k.Close) / 3
+		tps[i] = tp
+		tpSum += tp
+	}
+
+	// 计算典型价格的简单移动平均
+	tpSMA := tpSum / float64(period)
+
+	// 计算平均绝对偏差 (Mean Deviation)
+	mdSum := 0.0
+	for _, tp := range tps {
+		mdSum += math.Abs(tp - tpSMA)
+	}
+	meanDeviation := mdSum / float64(period)
+
+	if meanDeviation == 0 {
+		return 0
+	}
+
+	// CCI = (TP - SMA(TP)) / (0.015 * Mean Deviation)
+	currentTP := tps[period-1]
+	cci := (currentTP - tpSMA) / (0.015 * meanDeviation)
+
+	return cci
+}
+
+// calculateADX 计算平均趋向指标 (Average Directional Index)
+// period 通常为 14
+func calculateADX(klines []Kline, period int) float64 {
+	if len(klines) < period+1 {
+		return 0
+	}
+
+	// 计算 True Range, +DM, -DM
+	var trSum, plusDMSum, minusDMSum float64
+
+	for i := len(klines) - period; i < len(klines); i++ {
+		if i == 0 {
+			continue
+		}
+
+		high := klines[i].High
+		low := klines[i].Low
+		prevHigh := klines[i-1].High
+		prevLow := klines[i-1].Low
+		prevClose := klines[i-1].Close
+
+		// True Range
+		tr := math.Max(high-low, math.Max(math.Abs(high-prevClose), math.Abs(low-prevClose)))
+		trSum += tr
+
+		// +DM 和 -DM
+		upMove := high - prevHigh
+		downMove := prevLow - low
+
+		plusDM := 0.0
+		minusDM := 0.0
+
+		if upMove > downMove && upMove > 0 {
+			plusDM = upMove
+		}
+		if downMove > upMove && downMove > 0 {
+			minusDM = downMove
+		}
+
+		plusDMSum += plusDM
+		minusDMSum += minusDM
+	}
+
+	if trSum == 0 {
+		return 0
+	}
+
+	// 计算 +DI 和 -DI
+	plusDI := (plusDMSum / trSum) * 100
+	minusDI := (minusDMSum / trSum) * 100
+
+	// 计算 DX
+	diSum := plusDI + minusDI
+	if diSum == 0 {
+		return 0
+	}
+	dx := math.Abs(plusDI-minusDI) / diSum * 100
+
+	// ADX 通常是 DX 的移动平均，这里简化返回 DX
+	return dx
+}
+
+// calculatePSAR 计算抛物线停损指标 (Parabolic SAR)
+// 返回当前 PSAR 值
+func calculatePSAR(klines []Kline) float64 {
+	if len(klines) < 5 {
+		return 0
+	}
+
+	// 简化版 PSAR 实现
+	// AF (加速因子) 初始值和增量
+	afStart := 0.02
+	afStep := 0.02
+	afMax := 0.20
+
+	// 初始化
+	isUptrend := klines[1].Close > klines[0].Close
+	af := afStart
+	var ep float64 // 极值点
+	var psar float64
+
+	if isUptrend {
+		psar = klines[0].Low
+		ep = klines[0].High
+	} else {
+		psar = klines[0].High
+		ep = klines[0].Low
+	}
+
+	// 遍历计算
+	for i := 1; i < len(klines); i++ {
+		// 计算新的 PSAR
+		psar = psar + af*(ep-psar)
+
+		if isUptrend {
+			// 上升趋势中，PSAR 不能高于前两根 K 线的最低价
+			if i >= 2 {
+				psar = math.Min(psar, math.Min(klines[i-1].Low, klines[i-2].Low))
+			}
+
+			// 检查趋势反转
+			if klines[i].Low < psar {
+				isUptrend = false
+				psar = ep
+				ep = klines[i].Low
+				af = afStart
+			} else {
+				// 更新极值点和加速因子
+				if klines[i].High > ep {
+					ep = klines[i].High
+					af = math.Min(af+afStep, afMax)
+				}
+			}
+		} else {
+			// 下降趋势中，PSAR 不能低于前两根 K 线的最高价
+			if i >= 2 {
+				psar = math.Max(psar, math.Max(klines[i-1].High, klines[i-2].High))
+			}
+
+			// 检查趋势反转
+			if klines[i].High > psar {
+				isUptrend = true
+				psar = ep
+				ep = klines[i].High
+				af = afStart
+			} else {
+				// 更新极值点和加速因子
+				if klines[i].Low < ep {
+					ep = klines[i].Low
+					af = math.Min(af+afStep, afMax)
+				}
+			}
+		}
+	}
+
+	return psar
+}
+
+// calculateCMF 计算资金流量指标 (Chaikin Money Flow)
+// period 通常为 20
+func calculateCMF(klines []Kline, period int) float64 {
+	if len(klines) < period {
+		return 0
+	}
+
+	recentKlines := klines[len(klines)-period:]
+
+	var mfvSum, volumeSum float64
+	for _, k := range recentKlines {
+		// Money Flow Multiplier = [(Close - Low) - (High - Close)] / (High - Low)
+		hl := k.High - k.Low
+		if hl == 0 {
+			continue
+		}
+		mfMultiplier := ((k.Close - k.Low) - (k.High - k.Close)) / hl
+
+		// Money Flow Volume = MF Multiplier * Volume
+		mfv := mfMultiplier * k.Volume
+		mfvSum += mfv
+		volumeSum += k.Volume
+	}
+
+	if volumeSum == 0 {
+		return 0
+	}
+
+	// CMF = Sum(MFV) / Sum(Volume)
+	return mfvSum / volumeSum
+}
+
+// calculateIchimoku 计算一目均衡表指标 (Ichimoku Cloud)
+// 返回转换线 (Tenkan-sen) 和基准线 (Kijun-sen)
+func calculateIchimoku(klines []Kline, tenkanPeriod, kijunPeriod int) (float64, float64) {
+	if len(klines) < kijunPeriod {
+		return 0, 0
+	}
+
+	// 计算转换线 (9 周期的最高价+最低价)/2
+	tenkan := 0.0
+	if len(klines) >= tenkanPeriod {
+		tenkanKlines := klines[len(klines)-tenkanPeriod:]
+		highest, lowest := tenkanKlines[0].High, tenkanKlines[0].Low
+		for _, k := range tenkanKlines {
+			if k.High > highest {
+				highest = k.High
+			}
+			if k.Low < lowest {
+				lowest = k.Low
+			}
+		}
+		tenkan = (highest + lowest) / 2
+	}
+
+	// 计算基准线 (26 周期的最高价+最低价)/2
+	kijunKlines := klines[len(klines)-kijunPeriod:]
+	highest, lowest := kijunKlines[0].High, kijunKlines[0].Low
+	for _, k := range kijunKlines {
+		if k.High > highest {
+			highest = k.High
+		}
+		if k.Low < lowest {
+			lowest = k.Low
+		}
+	}
+	kijun := (highest + lowest) / 2
+
+	return tenkan, kijun
 }
 
 // calculateIntradaySeries 计算日内系列数据

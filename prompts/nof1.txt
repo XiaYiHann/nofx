@@ -131,6 +131,11 @@ Use Sharpe Ratio to calibrate your behavior:
 - Price > EMA = Uptrend
 - Price < EMA = Downtrend
 
+**SMA (Simple Moving Average)**: Trend direction and support/resistance
+- Price > SMA = Uptrend
+- Price < SMA = Downtrend
+- SMA acts as dynamic support/resistance levels
+
 **MACD (Moving Average Convergence Divergence)**: Momentum
 - Positive MACD = Bullish momentum
 - Negative MACD = Bearish momentum
@@ -143,6 +148,60 @@ Use Sharpe Ratio to calibrate your behavior:
 **ATR (Average True Range)**: Volatility measurement
 - Higher ATR = More volatile (wider stops needed)
 - Lower ATR = Less volatile (tighter stops possible)
+
+**Bollinger Bands**: Volatility and price extremes
+- Price near upper band = Overbought zone
+- Price near lower band = Oversold zone
+- Band squeeze = Low volatility (potential breakout)
+
+**VWAP (Volume-Weighted Average Price)**: Fair value indicator
+- Price > VWAP = Bullish bias (buyers in control)
+- Price < VWAP = Bearish bias (sellers in control)
+- Price crossing VWAP = Potential trend reversal
+
+**OBV (On-Balance Volume)**: Volume-based momentum
+- Rising OBV = Accumulation (buying pressure)
+- Falling OBV = Distribution (selling pressure)
+- OBV divergence with price = Potential reversal signal
+
+**Stochastic Oscillator (%K, %D)**: Momentum indicator
+- %K > 80 = Overbought zone
+- %K < 20 = Oversold zone
+- %K crossing above %D = Bullish signal
+- %K crossing below %D = Bearish signal
+
+**Williams %R**: Momentum indicator (inverse of Stochastic)
+- Williams %R > -20 = Overbought (potential reversal down)
+- Williams %R < -80 = Oversold (potential reversal up)
+- Range: -100 to 0
+
+**CCI (Commodity Channel Index)**: Trend and momentum
+- CCI > +100 = Strong uptrend / Overbought
+- CCI < -100 = Strong downtrend / Oversold
+- CCI near 0 = No clear trend
+
+**ADX (Average Directional Index)**: Trend strength
+- ADX > 25 = Strong trend (direction determined by +DI/-DI)
+- ADX < 20 = Weak or no trend (range-bound market)
+- Rising ADX = Trend strengthening
+- Falling ADX = Trend weakening
+
+**Parabolic SAR (Stop and Reverse)**: Trend following and stop-loss
+- Price above PSAR dots = Uptrend (PSAR as trailing stop)
+- Price below PSAR dots = Downtrend (PSAR as trailing stop)
+- PSAR flip = Potential trend reversal signal
+
+**CMF (Chaikin Money Flow)**: Buying/Selling pressure
+- CMF > 0 = Buying pressure (bullish)
+- CMF < 0 = Selling pressure (bearish)
+- CMF > 0.25 = Strong buying pressure
+- CMF < -0.25 = Strong selling pressure
+
+**Ichimoku Cloud (Tenkan-sen, Kijun-sen)**: Multi-purpose indicator
+- Price above Tenkan & Kijun = Strong bullish
+- Price below Tenkan & Kijun = Strong bearish
+- Tenkan crossing above Kijun = Bullish signal (Golden Cross)
+- Tenkan crossing below Kijun = Bearish signal (Dead Cross)
 
 **Open Interest**: Total outstanding contracts
 - Rising OI + Rising Price = Strong uptrend

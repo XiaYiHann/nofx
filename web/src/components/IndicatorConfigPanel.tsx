@@ -22,6 +22,16 @@ const AVAILABLE_INDICATORS = [
   { id: 'atr', name: 'ATR', description: '平均真实波幅' },
   { id: 'volume', name: 'Volume', description: '成交量' },
   { id: 'bollinger', name: 'Bollinger', description: '布林带' },
+  { id: 'sma', name: 'SMA', description: '简单移动平均线' },
+  { id: 'vwap', name: 'VWAP', description: '成交量加权平均价' },
+  { id: 'obv', name: 'OBV', description: '能量潮指标' },
+  { id: 'stochastic', name: 'Stochastic', description: '随机指标 (KD)' },
+  { id: 'williams_r', name: 'Williams %R', description: '威廉姆斯指标' },
+  { id: 'cci', name: 'CCI', description: '商品通道指数' },
+  { id: 'adx', name: 'ADX', description: '平均趋向指数' },
+  { id: 'psar', name: 'PSAR', description: '抛物线停损' },
+  { id: 'cmf', name: 'CMF', description: '资金流量' },
+  { id: 'ichimoku', name: 'Ichimoku', description: '一目均衡表' },
 ]
 
 const AVAILABLE_TIMEFRAMES = [

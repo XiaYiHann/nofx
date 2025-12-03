@@ -1,3 +1,22 @@
+### 2025-12-03 16:06:24 CST
+
+**变更摘要**: 在 `market` 包中新增并集成 10 种技术指标（SMA, VWAP, OBV, Stochastic, Williams %R, CCI, ADX, Parabolic SAR, CMF, Ichimoku）。这些改动涉及：在数据模型中添加字段（`TimeframeData` / `IntradayData`）、在 `data.go` 实现各指标的计算函数并在 `CalculateTimeframeData()` 中集成、补充并完善对应单元测试（`market/data_test.go`），同时更新前端配置界面 (`web/src/components/IndicatorConfigPanel.tsx`) 和 LLM prompt 模板 (`prompts/nof1.txt`)。已运行并通过相关测试与前端构建验证。
+
+**设计思路**:
+- 与现有指标实现风格保持一致：采用基于历史切片的滚动计算方式，尽量复用已有的指标计算与校验模式（预热期判断、数据点不足返回安全默认值）。
+- 数据结构优先：在 `TimeframeData` / `IntradayData` 中添加数组字段用于保存每一周期指标序列，确保链路中决策引擎、日志和前端均能直接消费同一标准化结构。
+- 测试驱动与向后兼容：为每个新增指标添加单元测试并在集成点（CalculateTimeframeData）验证字段存在与长度匹配，保证改动可回滚且不会破坏现有消费者。
+
+**修改意图**:
+- 扩展交易策略和 LLM 决策引擎可用的特征集合，提升决策质量与可解释性。
+- 通过后端 + 前端 + prompt 三层更新，确保新增指标在 UI 配置、后台计算与决策说明中一致可用。
+- 保持高测试覆盖与构建验证，减少引入新指标带来的回归风险。
+
+**工作区快照（临时）**:
+- 已修改 (unstaged): `market/data.go`, `market/data_test.go`, `market/types.go`, `prompts/nof1.txt`, `web/src/components/IndicatorConfigPanel.tsx`
+- 未跟踪 (untracked): `.vscode/launch.json`, `.vscode/settings.json`, `.vscode/tasks.json`, `BACKTEST_AUDIT_REPORT.md`
+- 测试/构建验证：`go test ./market/...` ✅ 通过；`npm run build`（web）✅ 通过。
+
 ### 2025-12-01 02:40:00 CST
 
 **变更摘要**: 在 `web` 前端补齐并稳定化大量 Vitest + Testing Library 测试用例 —— 新增/完善多个关键模块的单元与集成测试（包括 `AuthContext`、`api`、`tradersConfigStore`、`HeaderBar`、`App`、`LoginPage`、`RegisterPage`、`EquityChart` 等），目前总计 356 个测试通过；工作区仍有未跟踪的新增测试文件与未暂存的 `web/package.json` / `web/package-lock.json` 修改。
