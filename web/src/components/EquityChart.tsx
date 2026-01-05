@@ -30,11 +30,24 @@ interface EquityPoint {
   cycle_number: number
 }
 
+// 外部数据格式（来自 WebSocket）
+interface ExternalEquityPoint {
+  cycle: number
+  timestamp: string
+  total_equity: number
+  pnl: number
+  pnl_pct: number
+}
+
 interface EquityChartProps {
   traderId?: string
   backtestId?: string // 回测ID，提供时使用回测API
   initialBalance?: number // 初始余额，回测模式下必须提供
   isBacktest?: boolean // 明确标识为回测模式
+  // 实时推送数据支持
+  externalData?: ExternalEquityPoint[] // WebSocket 推送的实时数据
+  playheadCycle?: number // 当前播放头位置（用于动画）
+  showPlayhead?: boolean // 是否显示播放头
 }
 
 export function EquityChart({
@@ -42,16 +55,25 @@ export function EquityChart({
   backtestId,
   initialBalance: propsInitialBalance,
   isBacktest,
+  externalData,
+  playheadCycle,
+  showPlayhead = false,
 }: EquityChartProps) {
   const { language } = useLanguage()
   const [displayMode, setDisplayMode] = useState<'dollar' | 'percent'>('dollar')
 
+  // 如果有外部数据（WebSocket 实时推送），优先使用外部数据
+  const hasExternalData = externalData && externalData.length > 0
+
   const { data: history, error } = useSWR<EquityPoint[]>(
-    backtestId
-      ? `backtest-equity-history-${backtestId}`
-      : traderId
-        ? `equity-history-${traderId}`
-        : 'equity-history',
+    // 有外部数据时不请求 API
+    hasExternalData
+      ? null
+      : backtestId
+        ? `backtest-equity-history-${backtestId}`
+        : traderId
+          ? `equity-history-${traderId}`
+          : 'equity-history',
     async () => {
       if (backtestId) {
         // 回测模式：获取回测净值历史，并转换数据格式
@@ -83,6 +105,17 @@ export function EquityChart({
     }
   )
 
+  // 合并外部数据和 API 数据
+  const mergedHistory: EquityPoint[] = hasExternalData
+    ? externalData!.map((p) => ({
+        timestamp: p.timestamp,
+        total_equity: p.total_equity,
+        pnl: p.pnl,
+        pnl_pct: p.pnl_pct,
+        cycle_number: p.cycle,
+      }))
+    : history || []
+
   // 回测模式下不需要获取account数据
   const { data: account } = useSWR(
     backtestId || isBacktest
@@ -98,7 +131,7 @@ export function EquityChart({
     }
   )
 
-  if (error) {
+  if (error && !hasExternalData) {
     return (
       <div className="binance-card p-6">
         <div
@@ -123,7 +156,7 @@ export function EquityChart({
   }
 
   // 过滤掉无效数据：total_equity为0或小于1的数据点（API失败导致）
-  const validHistory = history?.filter((point) => point.total_equity > 1) || []
+  const validHistory = mergedHistory.filter((point) => point.total_equity > 1)
 
   if (!validHistory || validHistory.length === 0) {
     return (
@@ -413,6 +446,21 @@ export function EquityChart({
               }}
               connectNulls={true}
             />
+            {/* 播放头指示器 - 显示当前回测进度位置 */}
+            {showPlayhead && playheadCycle && playheadCycle > 0 && (
+              <ReferenceLine
+                x={chartData.find((d) => d.cycle === playheadCycle)?.time}
+                stroke="#F0B90B"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                label={{
+                  value: `Cycle ${playheadCycle}`,
+                  fill: '#F0B90B',
+                  fontSize: 10,
+                  position: 'top',
+                }}
+              />
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>

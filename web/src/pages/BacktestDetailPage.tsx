@@ -7,20 +7,58 @@ import {
   TrendingDown,
   BarChart3,
   Target,
+  Wifi,
+  WifiOff,
+  Activity,
+  Brain,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { EquityChart } from '../components/EquityChart'
+import { useBacktestSocket } from '../hooks/useBacktestSocket'
 import type { Backtest, BacktestTrade, DecisionRecord } from '../types'
+import type { EquitySnapshotPayload, DecisionPayload } from '../lib/backtestSocket'
 
 export default function BacktestDetailPage({
   backtestId,
 }: {
   backtestId: string
 }) {
-  const { token } = useAuth()
+  const { user } = useAuth()
   const [backtest, setBacktest] = useState<Backtest | null>(null)
   const [trades, setTrades] = useState<BacktestTrade[]>([])
   const [decisions, setDecisions] = useState<DecisionRecord[]>([])
   const [loading, setLoading] = useState(true)
+
+  // 实时决策面板状态
+  const [expandedDecisions, setExpandedDecisions] = useState<Set<number>>(new Set())
+  const [showLivePanel, setShowLivePanel] = useState(true)
+
+  // WebSocket 连接 - 仅在回测运行时启用
+  const isRunning = backtest?.status === 'running'
+  const {
+    status: wsStatus,
+    progress,
+    snapshots: wsSnapshots,
+    decisions: wsDecisions,
+    currentCycle,
+    progressMessage,
+    isComplete: wsComplete,
+    error: wsError,
+  } = useBacktestSocket(backtestId, {
+    enabled: isRunning,
+    autoConnect: true,
+    debug: import.meta.env.DEV,
+  })
+
+  // 转换 WS 快照格式为 EquityChart 需要的格式
+  const externalEquityData = wsSnapshots.map((s: EquitySnapshotPayload) => ({
+    cycle: s.cycle,
+    timestamp: s.timestamp,
+    total_equity: s.total_equity,
+    pnl: s.pnl,
+    pnl_pct: s.pnl_pct,
+  }))
 
   const loadBacktestData = useCallback(async () => {
     try {
@@ -54,19 +92,27 @@ export default function BacktestDetailPage({
   }, [backtestId])
 
   useEffect(() => {
-    if (token && backtestId) {
+    if (user && backtestId) {
       loadBacktestData()
     }
-  }, [token, backtestId, loadBacktestData])
+  }, [user, backtestId, loadBacktestData])
 
+  // WebSocket 完成时刷新数据
   useEffect(() => {
-    if (backtest?.status === 'running') {
+    if (wsComplete) {
+      loadBacktestData()
+    }
+  }, [wsComplete, loadBacktestData])
+
+  // 仅在未建立 WebSocket 连接时使用轮询（降级方案）
+  useEffect(() => {
+    if (backtest?.status === 'running' && wsStatus !== 'connected') {
       const timer = setInterval(() => {
         loadBacktestData()
-      }, 3000)
+      }, 5000) // 降低轮询频率（WS 作为主要通道）
       return () => clearInterval(timer)
     }
-  }, [backtest?.status, loadBacktestData])
+  }, [backtest?.status, wsStatus, loadBacktestData])
 
   const handleBack = () => {
     window.history.pushState({}, '', '/backtest')
@@ -175,7 +221,45 @@ export default function BacktestDetailPage({
                 {backtest.ai_model_id && <span>AI模型: {backtest.ai_model_id}</span>}
               </div>
             </div>
-            <div className="hidden sm:block">
+            <div className="hidden sm:flex items-center gap-3">
+              {/* WebSocket 状态指示器 */}
+              {isRunning && (
+                <div
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
+                  style={{
+                    background:
+                      wsStatus === 'connected'
+                        ? 'rgba(14, 203, 129, 0.1)'
+                        : wsStatus === 'connecting'
+                          ? 'rgba(240, 185, 11, 0.1)'
+                          : 'rgba(246, 70, 93, 0.1)',
+                    color:
+                      wsStatus === 'connected'
+                        ? '#0ECB81'
+                        : wsStatus === 'connecting'
+                          ? '#F0B90B'
+                          : '#F6465D',
+                    border: `1px solid ${
+                      wsStatus === 'connected'
+                        ? 'rgba(14, 203, 129, 0.2)'
+                        : wsStatus === 'connecting'
+                          ? 'rgba(240, 185, 11, 0.2)'
+                          : 'rgba(246, 70, 93, 0.2)'
+                    }`,
+                  }}
+                >
+                  {wsStatus === 'connected' ? (
+                    <Wifi className="w-3 h-3" />
+                  ) : (
+                    <WifiOff className="w-3 h-3" />
+                  )}
+                  {wsStatus === 'connected'
+                    ? '实时推送'
+                    : wsStatus === 'connecting'
+                      ? '连接中...'
+                      : '离线'}
+                </div>
+              )}
               <div
                 className="px-4 py-2 rounded-lg text-sm font-bold"
                 style={{
@@ -368,12 +452,238 @@ export default function BacktestDetailPage({
         </div>
       </div>
 
+      {/* 实时进度面板 - 仅在运行中显示 */}
+      {isRunning && showLivePanel && (
+        <div
+          className="mb-6 animate-slide-in"
+          style={{ animationDelay: '0.15s' }}
+        >
+          <div
+            className="binance-card p-4 sm:p-5"
+            style={{
+              border: '1px solid rgba(240, 185, 11, 0.3)',
+              boxShadow: '0 0 20px rgba(240, 185, 11, 0.1)',
+            }}
+          >
+            {/* 进度条 */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <Activity
+                  className="w-5 h-5 animate-pulse"
+                  style={{ color: '#F0B90B' }}
+                />
+                <span
+                  className="text-sm font-semibold"
+                  style={{ color: '#EAECEF' }}
+                >
+                  实时回测进度
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span
+                  className="text-sm mono font-bold"
+                  style={{ color: '#F0B90B' }}
+                >
+                  Cycle {currentCycle} ({progress.toFixed(1)}%)
+                </span>
+                <button
+                  onClick={() => setShowLivePanel(false)}
+                  className="p-1 rounded hover:bg-gray-700 transition-colors"
+                  title="隐藏面板"
+                >
+                  <ChevronUp className="w-4 h-4" style={{ color: '#848E9C' }} />
+                </button>
+              </div>
+            </div>
+
+            {/* 进度条可视化 */}
+            <div
+              className="w-full h-2 rounded-full mb-4"
+              style={{ background: '#2B3139' }}
+            >
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.min(progress, 100)}%`,
+                  background: 'linear-gradient(90deg, #F0B90B 0%, #FCD535 100%)',
+                  boxShadow: '0 0 10px rgba(240, 185, 11, 0.5)',
+                }}
+              />
+            </div>
+
+            {/* 最近的 AI 决策 */}
+            {wsDecisions.length > 0 && (
+              <div className="mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Brain className="w-4 h-4" style={{ color: '#7C3AED' }} />
+                  <span
+                    className="text-xs font-semibold uppercase tracking-wider"
+                    style={{ color: '#848E9C' }}
+                  >
+                    最新 AI 决策
+                  </span>
+                </div>
+
+                {/* 显示最近 3 条决策 */}
+                <div className="space-y-2">
+                  {wsDecisions.slice(-3).reverse().map((decision: DecisionPayload) => (
+                    <div
+                      key={decision.cycle}
+                      className="rounded-lg p-3"
+                      style={{
+                        background: 'rgba(124, 58, 237, 0.05)',
+                        border: '1px solid rgba(124, 58, 237, 0.1)',
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span
+                          className="text-xs font-mono"
+                          style={{ color: '#848E9C' }}
+                        >
+                          Cycle {decision.cycle} •{' '}
+                          {new Date(decision.timestamp).toLocaleTimeString('zh-CN')}
+                        </span>
+                        <button
+                          onClick={() => {
+                            const newSet = new Set(expandedDecisions)
+                            if (newSet.has(decision.cycle)) {
+                              newSet.delete(decision.cycle)
+                            } else {
+                              newSet.add(decision.cycle)
+                            }
+                            setExpandedDecisions(newSet)
+                          }}
+                          className="p-1 rounded hover:bg-gray-700 transition-colors"
+                        >
+                          {expandedDecisions.has(decision.cycle) ? (
+                            <ChevronUp
+                              className="w-4 h-4"
+                              style={{ color: '#848E9C' }}
+                            />
+                          ) : (
+                            <ChevronDown
+                              className="w-4 h-4"
+                              style={{ color: '#848E9C' }}
+                            />
+                          )}
+                        </button>
+                      </div>
+
+                      {/* 决策摘要 */}
+                      <div className="flex flex-wrap gap-2">
+                        {decision.decisions.map((d, i) => (
+                          <span
+                            key={i}
+                            className="px-2 py-1 rounded text-xs font-bold"
+                            style={{
+                              background:
+                                d.action === 'buy' || d.action === 'long'
+                                  ? 'rgba(14, 203, 129, 0.1)'
+                                  : d.action === 'sell' || d.action === 'short'
+                                    ? 'rgba(246, 70, 93, 0.1)'
+                                    : 'rgba(132, 142, 156, 0.1)',
+                              color:
+                                d.action === 'buy' || d.action === 'long'
+                                  ? '#0ECB81'
+                                  : d.action === 'sell' || d.action === 'short'
+                                    ? '#F6465D'
+                                    : '#848E9C',
+                              border: `1px solid ${
+                                d.action === 'buy' || d.action === 'long'
+                                  ? 'rgba(14, 203, 129, 0.2)'
+                                  : d.action === 'sell' || d.action === 'short'
+                                    ? 'rgba(246, 70, 93, 0.2)'
+                                    : 'rgba(132, 142, 156, 0.2)'
+                              }`,
+                            }}
+                          >
+                            {d.symbol}: {d.action} ({d.confidence}%)
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* 展开的 CoT 推理 */}
+                      {expandedDecisions.has(decision.cycle) && decision.cot_trace && (
+                        <div
+                          className="mt-3 p-3 rounded text-xs"
+                          style={{
+                            background: '#0B0E11',
+                            border: '1px solid #2B3139',
+                            maxHeight: '200px',
+                            overflowY: 'auto',
+                          }}
+                        >
+                          <div
+                            className="font-semibold mb-2"
+                            style={{ color: '#7C3AED' }}
+                          >
+                            🧠 LLM 思维链 (截断)
+                          </div>
+                          <pre
+                            className="whitespace-pre-wrap font-mono"
+                            style={{ color: '#EAECEF' }}
+                          >
+                            {decision.cot_trace}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 错误提示 */}
+            {wsError && (
+              <div
+                className="mt-3 p-3 rounded text-sm"
+                style={{
+                  background: 'rgba(246, 70, 93, 0.1)',
+                  border: '1px solid rgba(246, 70, 93, 0.2)',
+                  color: '#F6465D',
+                }}
+              >
+                ⚠️ {wsError}
+              </div>
+            )}
+
+            {/* 状态信息 */}
+            {progressMessage && (
+              <div className="mt-2 text-xs" style={{ color: '#848E9C' }}>
+                {progressMessage}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 隐藏时的迷你按钮 */}
+      {isRunning && !showLivePanel && (
+        <div className="mb-4">
+          <button
+            onClick={() => setShowLivePanel(true)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-105"
+            style={{
+              background: 'rgba(240, 185, 11, 0.1)',
+              border: '1px solid rgba(240, 185, 11, 0.2)',
+              color: '#F0B90B',
+            }}
+          >
+            <Activity className="w-4 h-4 animate-pulse" />
+            显示实时进度 ({progress.toFixed(1)}%)
+          </button>
+        </div>
+      )}
+
       {/* 净值曲线 - 使用EquityChart组件 */}
       <div className="mb-6 animate-slide-in" style={{ animationDelay: '0.2s' }}>
         <EquityChart
           backtestId={backtestId}
           initialBalance={backtest.initial_balance}
           isBacktest={true}
+          externalData={isRunning && externalEquityData.length > 0 ? externalEquityData : undefined}
+          playheadCycle={isRunning ? currentCycle : undefined}
+          showPlayhead={isRunning && wsStatus === 'connected'}
         />
       </div>
 

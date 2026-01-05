@@ -30,6 +30,7 @@ type Engine struct {
 	equitySnapshots []EquitySnapshot
 	trades          []Trade
 	decisions       []config.BacktestDecision
+	currentCycle    int // 当前周期编号
 
 	// 增量保存状态
 	lastSavedSnapshotIdx int
@@ -38,20 +39,25 @@ type Engine struct {
 
 	// 数据缓存
 	klineCache map[string][]market.Kline // symbol -> klines
+
+	// 实时进度发布
+	progressPublisher ProgressPublisher
 }
 
 // NewEngine 创建回测引擎
+// 可选参数 publisher 用于实时发布进度事件到 WebSocket 客户端
 func NewEngine(
 	backtestID string,
 	cfg *Config,
 	db *config.Database,
 	mcpClient *mcp.Client,
+	publisher ...ProgressPublisher,
 ) *Engine {
 	// 初始化决策日志记录器
 	logDir := fmt.Sprintf("decision_logs/backtest_%s", backtestID)
 	decisionLogger := logger.NewDecisionLogger(logDir)
 
-	return &Engine{
+	engine := &Engine{
 		config:          cfg,
 		db:              db,
 		apiClient:       market.NewAPIClient(),
@@ -65,7 +71,15 @@ func NewEngine(
 		trades:          []Trade{},
 		decisions:       []config.BacktestDecision{},
 		klineCache:      make(map[string][]market.Kline),
+		currentCycle:    0,
 	}
+
+	// 设置可选的进度发布器
+	if len(publisher) > 0 && publisher[0] != nil {
+		engine.progressPublisher = publisher[0]
+	}
+
+	return engine
 }
 
 // Run 执行回测
@@ -85,6 +99,7 @@ func (e *Engine) Run(ctx context.Context) error {
 	// 3. 主回测循环
 	for e.timeSimulator.HasNext() {
 		stepCount++
+		e.currentCycle = stepCount
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -211,6 +226,9 @@ func (e *Engine) Run(ctx context.Context) error {
 			log.Printf("[Backtest %s] Failed to log decision to file: %v", e.backtestID, err)
 		}
 
+		// 发布决策事件到 WebSocket 客户端
+		e.publishDecisionEvent(record, stepCount, currentTime)
+
 		// 执行交易决策
 		if err := e.executeDecisions(decisions, marketDataMap, currentTime); err != nil {
 			log.Printf("[Backtest %s] Failed to execute decisions: %v", e.backtestID, err)
@@ -225,6 +243,9 @@ func (e *Engine) Run(ctx context.Context) error {
 			if err := e.saveIntermediateResults(); err != nil {
 				log.Printf("[Backtest %s] Failed to save intermediate results: %v", e.backtestID, err)
 			}
+			// 发布净值快照和进度事件
+			e.publishEquitySnapshotEvent(stepCount, currentTime)
+			e.publishProgressEvent(stepCount, progress)
 		}
 	}
 
@@ -239,6 +260,9 @@ func (e *Engine) Run(ctx context.Context) error {
 	if err := e.saveResult(result); err != nil {
 		return fmt.Errorf("failed to save result: %w", err)
 	}
+
+	// 发布完成事件
+	e.publishCompleteEvent(result)
 
 	log.Printf("[Backtest %s] Completed. Final Equity: %.2f, Total PnL: %.2f (%.2f%%)",
 		e.backtestID, result.FinalEquity, result.TotalPnL, result.TotalPnLPct)
@@ -256,7 +280,7 @@ func (e *Engine) loadHistoricalData(ctx context.Context) error {
 	if preheatDuration == 0 {
 		preheatDuration = 12 * time.Hour
 	}
-	
+
 	startMs := e.config.StartTime.Add(-preheatDuration).UnixMilli()
 	endMs := e.config.EndTime.UnixMilli()
 
@@ -336,7 +360,7 @@ func (e *Engine) getMarketDataAtTime(t time.Time) (map[string]*market.Data, erro
 		if dataPoints <= 0 {
 			dataPoints = 100
 		}
-		
+
 		recentKlines := e.getRecentKlines(klines, targetMs, dataPoints)
 		if len(recentKlines) < 20 {
 			// 数据不足,跳过
@@ -405,12 +429,12 @@ func (e *Engine) getMockDecisions(marketDataMap map[string]*market.Data) ([]deci
 
 			// Add some indicator info to reasoning to verify data calculation
 			indicators := fmt.Sprintf("Price: %.2f", currentPrice)
-			
+
 			timeframe := e.config.Timeframe
 			if timeframe == "" {
 				timeframe = "3m"
 			}
-			
+
 			if tfData, ok := data.TimeframeData[timeframe]; ok && len(tfData.MidPrices) > 0 {
 				indicators += fmt.Sprintf(", LastClose: %.2f", tfData.MidPrices[len(tfData.MidPrices)-1])
 			}
@@ -485,7 +509,7 @@ func (e *Engine) calculateMarketData(symbol string, klines []market.Kline) (*mar
 	if dataPoints <= 0 {
 		dataPoints = 100
 	}
-	
+
 	timeframe := e.config.Timeframe
 	if timeframe == "" {
 		timeframe = "3m"
@@ -1010,4 +1034,167 @@ func ParseIndicatorConfig(configJSON string) (*market.IndicatorConfig, error) {
 	}
 
 	return &config, nil
+}
+
+// ============================================================================
+// 进度发布方法 - 用于 WebSocket 实时推送
+// ============================================================================
+
+// publishProgressEvent 发布进度事件
+func (e *Engine) publishProgressEvent(cycle int, progressPct float64) {
+	if e.progressPublisher == nil {
+		return
+	}
+
+	event := ProgressEvent{
+		Type:       EventTypeProgress,
+		BacktestID: e.backtestID,
+		Timestamp:  time.Now().UTC().Format(time.RFC3339),
+		Payload: ProgressPayload{
+			ProgressPct: progressPct,
+			Cycle:       cycle,
+		},
+	}
+
+	if err := e.progressPublisher.Publish(event); err != nil {
+		log.Printf("[Backtest %s] Failed to publish progress event: %v", e.backtestID, err)
+	}
+}
+
+// publishEquitySnapshotEvent 发布净值快照事件
+func (e *Engine) publishEquitySnapshotEvent(cycle int, timestamp time.Time) {
+	if e.progressPublisher == nil {
+		return
+	}
+
+	if len(e.equitySnapshots) == 0 {
+		return
+	}
+
+	snapshot := e.equitySnapshots[len(e.equitySnapshots)-1]
+	event := ProgressEvent{
+		Type:       EventTypeEquitySnapshot,
+		BacktestID: e.backtestID,
+		Timestamp:  time.Now().UTC().Format(time.RFC3339),
+		Payload: EquitySnapshotPayload{
+			Cycle:       cycle,
+			Timestamp:   snapshot.Time.Format(time.RFC3339),
+			TotalEquity: snapshot.Equity,
+			PnL:         snapshot.PnL,
+			PnLPct:      snapshot.PnLPct,
+		},
+	}
+
+	if err := e.progressPublisher.Publish(event); err != nil {
+		log.Printf("[Backtest %s] Failed to publish equity snapshot event: %v", e.backtestID, err)
+	}
+}
+
+// publishDecisionEvent 发布决策事件
+func (e *Engine) publishDecisionEvent(record *logger.DecisionRecord, cycle int, timestamp time.Time) {
+	if e.progressPublisher == nil {
+		return
+	}
+
+	// 转换决策详情
+	decisions := make([]DecisionItemDetail, 0, len(record.Decisions))
+	for _, dec := range record.Decisions {
+		decisions = append(decisions, DecisionItemDetail{
+			Action:     dec.Action,
+			Symbol:     dec.Symbol,
+			Quantity:   dec.Quantity,
+			Price:      dec.Price,
+			Confidence: int(dec.Confidence),
+			Reasoning:  truncateString(dec.Reasoning, 500), // 截断过长的推理文本
+			Success:    dec.Success,
+		})
+	}
+
+	// 转换持仓快照
+	positions := make([]map[string]interface{}, 0, len(record.Positions))
+	for _, pos := range record.Positions {
+		positions = append(positions, map[string]interface{}{
+			"symbol":            pos.Symbol,
+			"side":              pos.Side,
+			"quantity":          pos.PositionAmt,
+			"entry_price":       pos.EntryPrice,
+			"mark_price":        pos.MarkPrice,
+			"unrealized_profit": pos.UnrealizedProfit,
+			"leverage":          pos.Leverage,
+		})
+	}
+
+	event := ProgressEvent{
+		Type:       EventTypeDecision,
+		BacktestID: e.backtestID,
+		Timestamp:  time.Now().UTC().Format(time.RFC3339),
+		Payload: DecisionPayload{
+			Cycle:     cycle,
+			Timestamp: timestamp.Format(time.RFC3339),
+			Decisions: decisions,
+			AccountState: map[string]interface{}{
+				"total_balance":     record.AccountState.TotalBalance,
+				"available_balance": record.AccountState.AvailableBalance,
+				"position_count":    record.AccountState.PositionCount,
+				"initial_balance":   record.AccountState.InitialBalance,
+			},
+			Positions: positions,
+		},
+	}
+
+	if err := e.progressPublisher.Publish(event); err != nil {
+		log.Printf("[Backtest %s] Failed to publish decision event: %v", e.backtestID, err)
+	}
+}
+
+// publishCompleteEvent 发布完成事件
+func (e *Engine) publishCompleteEvent(result *Result) {
+	if e.progressPublisher == nil {
+		return
+	}
+
+	var finalSnapshot *EquitySnapshotPayload
+	if len(e.equitySnapshots) > 0 {
+		s := e.equitySnapshots[len(e.equitySnapshots)-1]
+		finalSnapshot = &EquitySnapshotPayload{
+			Cycle:       e.currentCycle,
+			Timestamp:   s.Time.Format(time.RFC3339),
+			TotalEquity: s.Equity,
+			PnL:         s.PnL,
+			PnLPct:      s.PnLPct,
+		}
+	}
+
+	event := ProgressEvent{
+		Type:       EventTypeComplete,
+		BacktestID: e.backtestID,
+		Timestamp:  time.Now().UTC().Format(time.RFC3339),
+		Payload: CompletePayload{
+			FinalEquity:   result.FinalEquity,
+			TotalPnL:      result.TotalPnL,
+			TotalPnLPct:   result.TotalPnLPct,
+			MaxDrawdown:   result.MaxDrawdown,
+			SharpeRatio:   result.SharpeRatio,
+			WinRate:       result.WinRate,
+			TotalTrades:   result.TotalTrades,
+			FinalSnapshot: finalSnapshot,
+		},
+	}
+
+	if err := e.progressPublisher.Publish(event); err != nil {
+		log.Printf("[Backtest %s] Failed to publish complete event: %v", e.backtestID, err)
+	}
+}
+
+// truncateString 截断字符串到指定长度
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
+}
+
+// SetProgressPublisher 设置进度发布器（用于测试）
+func (e *Engine) SetProgressPublisher(publisher ProgressPublisher) {
+	e.progressPublisher = publisher
 }

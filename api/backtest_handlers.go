@@ -86,7 +86,6 @@ func (s *Server) handleCreateBacktest(c *gin.Context) {
 	var trader *config.TraderRecord
 	var aiModel *config.AIModelConfig
 
-
 	if req.TraderID != "" {
 		// 验证trader存在
 		var exchange *config.ExchangeConfig
@@ -98,44 +97,59 @@ func (s *Server) handleCreateBacktest(c *gin.Context) {
 		// Ensure exchange is loaded if needed, though runBacktest doesn't use it directly yet
 		_ = exchange
 	} else {
-		// Standalone Mode
-		if req.AiModelID == "" || req.ExchangeID == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "ai_model_id and exchange_id are required for standalone backtest"})
+		// Standalone Mode: only ai_model_id is required, exchange_id is optional
+		if req.AiModelID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ai_model_id is required for standalone backtest (or provide trader_id for trader-based backtest)"})
 			return
 		}
 
 		// Fetch AI Model
-		aiModel, err = s.database.GetAIModelByID(userID, req.AiModelID)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "AI Model not found"})
-			return
+		if req.AiModelID == "nvidia-qwen" {
+			aiModel = &config.AIModelConfig{
+				ID:       "nvidia-qwen",
+				Name:     "NVIDIA Qwen3 (Independent)",
+				Provider: "openai", // Use OpenAI compatible handler
+			}
+		} else {
+			var err error
+			aiModel, err = s.database.GetAIModelByID(userID, req.AiModelID)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "AI Model not found"})
+				return
+			}
 		}
 
 		// Find or create placeholder trader for FK constraint
 		placeholderID := fmt.Sprintf("standalone_%s", userID)
-		trader, _, _, err = s.database.GetTraderConfig(userID, placeholderID)
-		if err != nil {
-			// Create placeholder trader
+
+		// First, try to get the existing placeholder trader directly (without JOIN)
+		existingTrader, getErr := s.database.GetTraderByIDSimple(userID, placeholderID)
+		if getErr != nil {
+			// Trader doesn't exist, create it
 			trader = &config.TraderRecord{
 				ID:             placeholderID,
 				UserID:         userID,
 				Name:           "Standalone Backtest",
-				ExchangeID:     req.ExchangeID,
+				ExchangeID:     req.ExchangeID, // Can be empty string
 				AIModelID:      req.AiModelID,
 				InitialBalance: req.InitialBalance,
 				CreatedAt:      time.Now(),
 				UpdatedAt:      time.Now(),
 			}
 			if err := s.database.CreateTrader(trader); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create placeholder trader"})
+				log.Printf("[Backtest] Failed to create placeholder trader: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create placeholder trader: " + err.Error()})
 				return
 			}
+		} else {
+			// Use existing trader
+			trader = existingTrader
 		}
 
 		// Override trader config with request values for this run
 		// We create a copy to avoid modifying the cached/DB record
 		traderCopy := *trader
-		traderCopy.ExchangeID = req.ExchangeID
+		traderCopy.ExchangeID = req.ExchangeID // Can be empty string for standalone
 		traderCopy.AIModelID = req.AiModelID
 		if req.BTCETHLeverage > 0 {
 			traderCopy.BTCETHLeverage = req.BTCETHLeverage
@@ -147,10 +161,10 @@ func (s *Server) handleCreateBacktest(c *gin.Context) {
 		} else {
 			traderCopy.AltcoinLeverage = 5 // Default
 		}
-		
+
 		trader = &traderCopy
 		req.TraderID = placeholderID // Set for BacktestRun FK
-		useTraderConfig = false // Force false for standalone
+		useTraderConfig = false      // Force false for standalone
 	}
 
 	// 1. 确定基础配置 (从 Trader 继承或使用默认值)
@@ -249,7 +263,8 @@ func (s *Server) handleCreateBacktest(c *gin.Context) {
 
 	// 保存到数据库
 	if err := s.database.CreateBacktest(backtestRun); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create backtest"})
+		log.Printf("[Backtest] Failed to create backtest in DB: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create backtest: " + err.Error()})
 		return
 	}
 
@@ -450,7 +465,7 @@ func (s *Server) runBacktest(backtestID string, backtestRun *config.BacktestRun,
 		// 尝试获取指定的AI模型
 		model, err := s.database.GetAIModelByID(backtestRun.UserID, backtestRun.AiModelID)
 		if err != nil {
-			log.Printf("[Backtest %s] Failed to get AI model %s: %v, falling back to trader model", 
+			log.Printf("[Backtest %s] Failed to get AI model %s: %v, falling back to trader model",
 				backtestID, backtestRun.AiModelID, err)
 			activeAIModel = aiModel // Fallback
 		} else {
@@ -463,24 +478,37 @@ func (s *Server) runBacktest(backtestID string, backtestRun *config.BacktestRun,
 
 	// 创建MCP客户端
 	mcpClient := mcp.New()
-	provider := strings.ToLower(strings.TrimSpace(activeAIModel.Provider))
-	switch provider {
-	case "openai", "custom":
-		mcpClient.SetCustomAPI(activeAIModel.CustomAPIURL, activeAIModel.APIKey, activeAIModel.CustomModelName)
-	case "qwen":
-		mcpClient.SetQwenAPIKey(activeAIModel.APIKey, activeAIModel.CustomAPIURL, activeAIModel.CustomModelName)
-	case "glm":
-		mcpClient.SetGLMAPIKey(activeAIModel.APIKey, activeAIModel.CustomAPIURL, activeAIModel.CustomModelName)
-	case "deepseek":
-		mcpClient.SetDeepSeekAPIKey(activeAIModel.APIKey, activeAIModel.CustomAPIURL, activeAIModel.CustomModelName)
-	default:
-		log.Printf("[Backtest %s] Unknown AI model provider: '%s' (normalized: '%s')", backtestID, activeAIModel.Provider, provider)
-		s.database.UpdateBacktestStatus(backtestID, "failed", 0)
-		return
+
+	// 特殊处理：独立配置的 NVIDIA 模型
+	if activeAIModel.ID == "nvidia-qwen" {
+		mcpClient.SetCustomAPI(
+			"https://integrate.api.nvidia.com/v1",
+			"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",
+			"qwen/qwen3-next-80b-a3b-instruct",
+		)
+		mcpClient.MaxTokens = 4096
+		log.Printf("[Backtest %s] Using hardcoded NVIDIA Qwen3 configuration", backtestID)
+	} else {
+		provider := strings.ToLower(strings.TrimSpace(activeAIModel.Provider))
+		switch provider {
+		case "openai", "custom":
+			mcpClient.SetCustomAPI(activeAIModel.CustomAPIURL, activeAIModel.APIKey, activeAIModel.CustomModelName)
+		case "qwen":
+			mcpClient.SetQwenAPIKey(activeAIModel.APIKey, activeAIModel.CustomAPIURL, activeAIModel.CustomModelName)
+		case "glm":
+			mcpClient.SetGLMAPIKey(activeAIModel.APIKey, activeAIModel.CustomAPIURL, activeAIModel.CustomModelName)
+		case "deepseek":
+			mcpClient.SetDeepSeekAPIKey(activeAIModel.APIKey, activeAIModel.CustomAPIURL, activeAIModel.CustomModelName)
+		default:
+			log.Printf("[Backtest %s] Unknown AI model provider: '%s' (normalized: '%s')", backtestID, activeAIModel.Provider, provider)
+			s.database.UpdateBacktestStatus(backtestID, "failed", 0)
+			return
+		}
 	}
 
-	// 创建回测引擎
-	engine := backtest.NewEngine(backtestID, cfg, s.database, mcpClient)
+	// 创建回测引擎，传入 Hub 作为进度发布器
+	// Hub 实现了 backtest.ProgressPublisher 接口
+	engine := backtest.NewEngine(backtestID, cfg, s.database, mcpClient, s.backtestHub)
 
 	// 执行回测
 	ctx := context.Background()

@@ -14,7 +14,6 @@ import {
 import type { TraderInfo, IndicatorConfig } from '../types'
 import { IndicatorConfigPanel } from '../components/IndicatorConfigPanel'
 
-
 interface BacktestRun {
   id: string
   trader_id: string
@@ -58,6 +57,7 @@ export default function BacktestPage() {
 
   // 表单状态
   const [isStandaloneMode, setIsStandaloneMode] = useState(false)
+  const [isNvidiaMode, setIsNvidiaMode] = useState(false)
   const [selectedTrader, setSelectedTrader] = useState('')
   const [selectedExchange, setSelectedExchange] = useState('')
   const [btcEthLeverage, setBtcEthLeverage] = useState('5')
@@ -78,7 +78,9 @@ export default function BacktestPage() {
   const [tradingSymbols, setTradingSymbols] = useState('')
 
   // 策略配置状态
-  const [indicatorConfig, setIndicatorConfig] = useState<IndicatorConfig>(DEFAULT_INDICATOR_CONFIG)
+  const [indicatorConfig, setIndicatorConfig] = useState<IndicatorConfig>(
+    DEFAULT_INDICATOR_CONFIG
+  )
   const [customPrompt, setCustomPrompt] = useState('')
   const [overrideBasePrompt, setOverrideBasePrompt] = useState(false)
   const [systemPromptTemplate, setSystemPromptTemplate] = useState('default')
@@ -150,7 +152,7 @@ export default function BacktestPage() {
   // 当选择交易员时，自动填充部分默认值
   const handleTraderChange = (traderId: string) => {
     setSelectedTrader(traderId)
-    const trader = traders.find(t => t.trader_id === traderId)
+    const trader = traders.find((t) => t.trader_id === traderId)
     if (trader) {
       setScanInterval(trader.scan_interval_minutes?.toString() || '3')
     }
@@ -176,15 +178,18 @@ export default function BacktestPage() {
     setCreating(true)
 
     try {
-      // 验证
+      // 验证：独立模式还需要 AI 模型，交易所可选
       if (isStandaloneMode) {
-        if (!selectedAiModel) {
+        if (!selectedAiModel && !isNvidiaMode) {
           alert('请选择 AI 模型')
           setCreating(false)
           return
         }
-        if (!selectedExchange) {
-          alert('请选择交易所')
+        // selectedExchange 是可选的，不再强制校验
+      } else {
+        // 基于交易员模式：必须选择交易员
+        if (!selectedTrader) {
+          alert('请选择交易员')
           setCreating(false)
           return
         }
@@ -192,26 +197,39 @@ export default function BacktestPage() {
 
       const data = await api.createBacktest({
         trader_id: isStandaloneMode ? undefined : selectedTrader,
-        exchange_id: isStandaloneMode ? selectedExchange : undefined,
+        exchange_id:
+          isStandaloneMode && selectedExchange ? selectedExchange : undefined,
         start_time: new Date(startDate).toISOString(),
         end_time: new Date(endDate).toISOString(),
         initial_balance: parseFloat(initialBalance),
         use_trader_config: isStandaloneMode ? false : useTraderConfig,
         // 高级配置
-        ai_model_id: selectedAiModel || undefined,
+        ai_model_id: isNvidiaMode
+          ? 'nvidia-qwen'
+          : selectedAiModel || undefined,
         timeframe: timeframe,
         data_points: parseInt(dataPoints),
         preheat_hours: parseInt(preheatHours),
         scan_interval_minutes: parseInt(scanInterval),
         slippage: parseInt(slippage),
-        btc_eth_leverage: isStandaloneMode ? parseInt(btcEthLeverage) : undefined,
-        altcoin_leverage: isStandaloneMode ? parseInt(altcoinLeverage) : undefined,
+        btc_eth_leverage: isStandaloneMode
+          ? parseInt(btcEthLeverage)
+          : undefined,
+        altcoin_leverage: isStandaloneMode
+          ? parseInt(altcoinLeverage)
+          : undefined,
         trading_symbols: tradingSymbols || undefined,
         // 策略配置 (独立模式或不使用交易员配置时生效)
-        indicator_config: (isStandaloneMode || !useTraderConfig) ? indicatorConfig : undefined,
-        custom_prompt: (isStandaloneMode || !useTraderConfig) ? customPrompt : undefined,
-        override_base_prompt: (isStandaloneMode || !useTraderConfig) ? overrideBasePrompt : undefined,
-        system_prompt_template: (isStandaloneMode || !useTraderConfig) ? systemPromptTemplate : undefined,
+        indicator_config:
+          isStandaloneMode || !useTraderConfig ? indicatorConfig : undefined,
+        custom_prompt:
+          isStandaloneMode || !useTraderConfig ? customPrompt : undefined,
+        override_base_prompt:
+          isStandaloneMode || !useTraderConfig ? overrideBasePrompt : undefined,
+        system_prompt_template:
+          isStandaloneMode || !useTraderConfig
+            ? systemPromptTemplate
+            : undefined,
       })
 
       console.log('Backtest created:', data)
@@ -224,6 +242,7 @@ export default function BacktestPage() {
       setEndDate('')
       setInitialBalance('10000')
       setUseTraderConfig(true)
+      setIsNvidiaMode(false)
       // 重置高级选项
       setSelectedAiModel('')
       setTradingSymbols('')
@@ -303,7 +322,6 @@ export default function BacktestPage() {
         alert('无法自动创建 Mock 交易员，请手动创建一个交易员后再试。')
         return
       }
-
     }
 
     const now = new Date()
@@ -330,7 +348,6 @@ export default function BacktestPage() {
       alert('启动 Mock 测试失败')
     }
   }
-
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -407,12 +424,16 @@ export default function BacktestPage() {
             {/* 基础信息 */}
             <div className="space-y-4">
               {/* 模式选择 */}
-              <div className="flex gap-4 mb-4">
+              <div className="flex flex-wrap gap-4 mb-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
+                    name="backtestMode"
                     checked={!isStandaloneMode}
-                    onChange={() => setIsStandaloneMode(false)}
+                    onChange={() => {
+                      setIsStandaloneMode(false)
+                      setIsNvidiaMode(false)
+                    }}
                     className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-700 focus:ring-blue-500"
                   />
                   <span className="text-gray-200">基于现有交易员</span>
@@ -420,11 +441,30 @@ export default function BacktestPage() {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
-                    checked={isStandaloneMode}
-                    onChange={() => setIsStandaloneMode(true)}
+                    name="backtestMode"
+                    checked={isStandaloneMode && !isNvidiaMode}
+                    onChange={() => {
+                      setIsStandaloneMode(true)
+                      setIsNvidiaMode(false)
+                    }}
                     className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-700 focus:ring-blue-500"
                   />
-                  <span className="text-gray-200">独立配置回测</span>
+                  <span className="text-gray-200">独立配置 (自定义 AI)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="backtestMode"
+                    checked={isStandaloneMode && isNvidiaMode}
+                    onChange={() => {
+                      setIsStandaloneMode(true)
+                      setIsNvidiaMode(true)
+                    }}
+                    className="w-4 h-4 text-purple-600 bg-gray-800 border-gray-700 focus:ring-purple-500"
+                  />
+                  <span className="text-purple-400 font-medium">
+                    NVIDIA 标准测试 (Qwen3)
+                  </span>
                 </label>
               </div>
 
@@ -455,15 +495,14 @@ export default function BacktestPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      选择交易所 <span className="text-red-500">*</span>
+                      选择交易所 <span className="text-gray-500">(可选)</span>
                     </label>
                     <select
                       value={selectedExchange}
                       onChange={(e) => setSelectedExchange(e.target.value)}
-                      required={isStandaloneMode}
                       className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
                     >
-                      <option value="">请选择...</option>
+                      <option value="">不指定 (使用默认)</option>
                       {exchanges.map((ex) => (
                         <option key={ex.id} value={ex.id}>
                           {ex.name} ({ex.type})
@@ -473,21 +512,27 @@ export default function BacktestPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      选择 AI 模型 <span className="text-red-500">*</span>
+                      AI 模型 <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      value={selectedAiModel}
-                      onChange={(e) => setSelectedAiModel(e.target.value)}
-                      required={isStandaloneMode}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                    >
-                      <option value="">请选择...</option>
-                      {aiModels.map((model) => (
-                        <option key={model.id} value={model.id}>
-                          {model.name} ({model.provider})
-                        </option>
-                      ))}
-                    </select>
+                    {isNvidiaMode ? (
+                      <div className="w-full bg-purple-900/20 border border-purple-500/30 rounded-lg px-4 py-2 text-purple-300 text-sm">
+                        锁定使用: NVIDIA Qwen3 Next 80B
+                      </div>
+                    ) : (
+                      <select
+                        value={selectedAiModel}
+                        onChange={(e) => setSelectedAiModel(e.target.value)}
+                        required={isStandaloneMode && !isNvidiaMode}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                      >
+                        <option value="">请选择...</option>
+                        {aiModels.map((model) => (
+                          <option key={model.id} value={model.id}>
+                            {model.name} ({model.provider})
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -631,25 +676,40 @@ export default function BacktestPage() {
                     {/* 左侧：参数设置 */}
                     <div className="space-y-4">
                       <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700/50">
-                        <h4 className="text-sm font-medium text-gray-300 mb-3">基础参数</h4>
+                        <h4 className="text-sm font-medium text-gray-300 mb-3">
+                          基础参数
+                        </h4>
                         <div className="space-y-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-400 mb-1">
                               AI 模型 {isStandaloneMode && '(已在上方选择)'}
                             </label>
-                            <select
-                              value={selectedAiModel}
-                              onChange={(e) => setSelectedAiModel(e.target.value)}
-                              disabled={isStandaloneMode}
-                              className={`w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm ${isStandaloneMode ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                              <option value="">{isStandaloneMode ? '已选择' : '默认 (使用交易员模型)'}</option>
-                              {!isStandaloneMode && aiModels.map((model) => (
-                                <option key={model.id} value={model.id}>
-                                  {model.name} ({model.provider})
+                            {isNvidiaMode ? (
+                              <div className="w-full bg-purple-900/10 border border-purple-500/20 rounded-lg px-3 py-2 text-purple-400 text-xs">
+                                NVIDIA Qwen3 (硬编码锁定)
+                              </div>
+                            ) : (
+                              <select
+                                value={selectedAiModel}
+                                onChange={(e) =>
+                                  setSelectedAiModel(e.target.value)
+                                }
+                                disabled={isStandaloneMode}
+                                className={`w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm ${isStandaloneMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                <option value="">
+                                  {isStandaloneMode
+                                    ? '已选择'
+                                    : '默认 (使用交易员模型)'}
                                 </option>
-                              ))}
-                            </select>
+                                {!isStandaloneMode &&
+                                  aiModels.map((model) => (
+                                    <option key={model.id} value={model.id}>
+                                      {model.name} ({model.provider})
+                                    </option>
+                                  ))}
+                              </select>
+                            )}
                           </div>
 
                           <div>
@@ -659,7 +719,9 @@ export default function BacktestPage() {
                             <input
                               type="text"
                               value={tradingSymbols}
-                              onChange={(e) => setTradingSymbols(e.target.value)}
+                              onChange={(e) =>
+                                setTradingSymbols(e.target.value)
+                              }
                               placeholder="BTCUSDT,ETHUSDT"
                               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
                             />
@@ -668,7 +730,9 @@ export default function BacktestPage() {
                       </div>
 
                       <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700/50">
-                        <h4 className="text-sm font-medium text-gray-300 mb-3">回测参数</h4>
+                        <h4 className="text-sm font-medium text-gray-300 mb-3">
+                          回测参数
+                        </h4>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-400 mb-1">
@@ -742,7 +806,9 @@ export default function BacktestPage() {
                     {/* 右侧：策略与指标 */}
                     <div className="space-y-4">
                       <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700/50">
-                        <h4 className="text-sm font-medium text-gray-300 mb-3">策略配置</h4>
+                        <h4 className="text-sm font-medium text-gray-300 mb-3">
+                          策略配置
+                        </h4>
                         <div className="space-y-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-400 mb-1">
@@ -750,11 +816,16 @@ export default function BacktestPage() {
                             </label>
                             <select
                               value={systemPromptTemplate}
-                              onChange={(e) => setSystemPromptTemplate(e.target.value)}
+                              onChange={(e) =>
+                                setSystemPromptTemplate(e.target.value)
+                              }
                               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
                             >
                               {promptTemplates.map((template) => (
-                                <option key={template.name} value={template.name}>
+                                <option
+                                  key={template.name}
+                                  value={template.name}
+                                >
                                   {template.name}
                                 </option>
                               ))}
@@ -766,10 +837,15 @@ export default function BacktestPage() {
                               type="checkbox"
                               id="overrideBasePrompt"
                               checked={overrideBasePrompt}
-                              onChange={(e) => setOverrideBasePrompt(e.target.checked)}
+                              onChange={(e) =>
+                                setOverrideBasePrompt(e.target.checked)
+                              }
                               className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-700 rounded"
                             />
-                            <label htmlFor="overrideBasePrompt" className="text-sm text-gray-300">
+                            <label
+                              htmlFor="overrideBasePrompt"
+                              className="text-sm text-gray-300"
+                            >
                               覆盖基础 Prompt
                             </label>
                           </div>
@@ -790,7 +866,9 @@ export default function BacktestPage() {
                       </div>
 
                       <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700/50">
-                        <h4 className="text-sm font-medium text-gray-300 mb-3">指标配置</h4>
+                        <h4 className="text-sm font-medium text-gray-300 mb-3">
+                          指标配置
+                        </h4>
                         <IndicatorConfigPanel
                           config={indicatorConfig}
                           onConfigChange={setIndicatorConfig}
@@ -881,10 +959,11 @@ export default function BacktestPage() {
                         <div>
                           <div className="text-gray-400 mb-1">总收益</div>
                           <div
-                            className={`font-medium ${backtest.total_pnl_pct >= 0
-                              ? 'text-green-500'
-                              : 'text-red-500'
-                              }`}
+                            className={`font-medium ${
+                              backtest.total_pnl_pct >= 0
+                                ? 'text-green-500'
+                                : 'text-red-500'
+                            }`}
                           >
                             {backtest.total_pnl_pct >= 0 ? (
                               <TrendingUp className="inline w-4 h-4" />
@@ -912,14 +991,14 @@ export default function BacktestPage() {
                 <div className="flex gap-2">
                   {(backtest.status === 'completed' ||
                     backtest.status === 'running') && (
-                      <button
-                        onClick={() => handleViewDetails(backtest.id)}
-                        className="border border-gray-700 text-gray-300 hover:bg-gray-800 p-2 rounded-lg"
-                        title="查看详情"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleViewDetails(backtest.id)}
+                      className="border border-gray-700 text-gray-300 hover:bg-gray-800 p-2 rounded-lg"
+                      title="查看详情"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  )}
                   <button
                     onClick={() => handleDelete(backtest.id)}
                     className="border border-gray-700 text-red-500 hover:bg-gray-800 p-2 rounded-lg"

@@ -45,6 +45,7 @@ type Server struct {
 	devMode       bool   // 开发模式（免登录调试）
 	devUserID     string // 开发模式下的测试用户 ID
 	newsService   NewsServiceInterface
+	backtestHub   *BacktestHub // WebSocket 回测进度推送
 }
 
 // NewServer 创建API服务器
@@ -74,6 +75,7 @@ func NewServer(traderManager *manager.TraderManager, database *config.Database, 
 		devMode:       devMode,
 		devUserID:     "dev-user", // 固定的测试用户 ID
 		newsService:   news.NewService(),
+		backtestHub:   NewBacktestHub(),
 	}
 
 	// 设置路由
@@ -205,6 +207,11 @@ func (s *Server) setupRoutes() {
 			protected.DELETE("/backtest/cache/clear", s.handleClearCache)
 		}
 	}
+
+	// WebSocket 路由（单独处理，不在 /api 前缀下）
+	// GET /ws/backtest/:id/progress - 回测实时进度推送
+	s.router.GET("/ws/backtest/:id/progress", s.handleBacktestWSProgress)
+	log.Println("🔌 WebSocket route registered: /ws/backtest/:id/progress")
 }
 
 // handleHealth 健康检查

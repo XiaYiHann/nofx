@@ -7,8 +7,13 @@ import (
 )
 
 func TestCalculateMarketData(t *testing.T) {
-	// Create a dummy engine
-	engine := &Engine{}
+	// Create a dummy engine with proper config
+	engine := &Engine{
+		config: &Config{
+			Timeframe:   "3m",
+			DataPoints:  100,
+		},
+	}
 
 	// Generate dummy klines (enough for indicators)
 	klines := make([]market.Kline, 200)
